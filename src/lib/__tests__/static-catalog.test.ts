@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { americanExpressCardCatalog } from '../american-express-card-catalog';
 import { AMEX_CATALOG_IDENTITY_REGISTRY, AMEX_WRITABLE_DESTINATIONS } from '../amex-catalog/catalog-registry';
 import {
@@ -63,6 +65,24 @@ describe('static catalog', () => {
     const card = getPublicStaticCardByName(name as string);
     expect(card).toEqual(expect.objectContaining({ id: catalogKey, catalogKey, name, issuer, annualFee }));
     expect(card!.benefits.every((benefit) => benefit.parentCatalogKey === catalogKey)).toBe(true);
+  });
+
+  it('ships local card art for every newly added product', () => {
+    const names = [
+      'Southwest Rapid Rewards Performance Business Card',
+      'Sapphire Reserve for Business',
+      'American Airlines AAdvantage MileUp Card',
+      'Citi / AAdvantage Platinum Select World Elite Mastercard',
+      'Citi / AAdvantage Executive World Elite Mastercard',
+      'Citi / AAdvantage Business World Elite Mastercard',
+      'Citi / AAdvantage Globe Mastercard',
+    ];
+
+    for (const name of names) {
+      const card = getPublicStaticCardByName(name);
+      expect(card?.imageUrl).toMatch(/^\/images\/cards\/.+/);
+      expect(existsSync(resolve(process.cwd(), 'public', card!.imageUrl!.slice(1)))).toBe(true);
+    }
   });
 
   it('retains four-year renewal periods for the new security screening credits', () => {
