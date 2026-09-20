@@ -38,7 +38,7 @@ export default async function BrowseCardsPage() {
 
   // Calculate total benefits value for a card
   const calculateTotalValue = (benefits: typeof predefinedCards[number]['benefits']) =>
-    benefits.reduce((total, benefit) => total + calculateAnnualBenefitValue(benefit.maxAmount, benefit.frequency), 0);
+    benefits.reduce((total, benefit) => total + calculateAnnualBenefitValue(benefit.maxAmount, benefit.frequency, benefit.fixedCycleDurationMonths), 0);
 
   const itemListJsonLd = {
     '@context': 'https://schema.org',

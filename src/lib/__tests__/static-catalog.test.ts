@@ -51,8 +51,44 @@ describe('static catalog', () => {
     }));
   });
 
+  it.each([
+    ['card:southwest-performance-business', 'Southwest Rapid Rewards Performance Business Card', 'Chase', 299],
+    ['card:sapphire-reserve-business', 'Sapphire Reserve for Business', 'Chase', 795],
+    ['card:citi-aadvantage-mileup', 'American Airlines AAdvantage MileUp Card', 'Citi', 0],
+    ['card:citi-aadvantage-platinum-select', 'Citi / AAdvantage Platinum Select World Elite Mastercard', 'Citi', 99],
+    ['card:citi-aadvantage-executive', 'Citi / AAdvantage Executive World Elite Mastercard', 'Citi', 595],
+    ['card:citi-aadvantage-business', 'Citi / AAdvantage Business World Elite Mastercard', 'Citi', 99],
+    ['card:citi-aadvantage-globe', 'Citi / AAdvantage Globe Mastercard', 'Citi', 350],
+  ])('exposes requested product %s through the public catalog', (catalogKey, name, issuer, annualFee) => {
+    const card = getPublicStaticCardByName(name as string);
+    expect(card).toEqual(expect.objectContaining({ id: catalogKey, catalogKey, name, issuer, annualFee }));
+    expect(card!.benefits.every((benefit) => benefit.parentCatalogKey === catalogKey)).toBe(true);
+  });
+
+  it('retains four-year renewal periods for the new security screening credits', () => {
+    const cards = getPublicStaticCards().filter((card) => [
+      'card:southwest-performance-business',
+      'card:sapphire-reserve-business',
+      'card:citi-aadvantage-executive',
+      'card:citi-aadvantage-globe',
+    ].includes(card.catalogKey));
+    for (const card of cards) {
+      expect(card.benefits.find((benefit) => benefit.description.includes('Global Entry'))).toEqual(
+        expect.objectContaining({
+          maxAmount: 120,
+          cycleAlignment: 'CARD_ANNIVERSARY',
+          fixedCycleDurationMonths: 48,
+          usageWay: expect.objectContaining({ slug: 'security-screening-credits' }),
+        }),
+      );
+    }
+  });
+
   it('keeps annual value and suggestions available without a database', () => {
     expect(calculateAnnualBenefitValue(10, 'MONTHLY')).toBe(120);
+    expect(calculateAnnualBenefitValue(120, 'YEARLY', 48)).toBe(30);
+    expect(calculateAnnualBenefitValue(120, 'YEARLY', 54)).toBeCloseTo(26.67, 2);
+    expect(calculateAnnualBenefitValue(200, 'YEARLY', 6)).toBe(200);
     expect(getStaticSearchSuggestions()).toEqual(expect.arrayContaining(['American Express', 'Dining', 'amex']));
     expect(benefitUsageWays.length).toBeGreaterThan(0);
   });

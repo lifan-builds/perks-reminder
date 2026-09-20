@@ -9,8 +9,8 @@ function copyCatalog(): StaticPredefinedCard[] {
 describe("global static catalog validation", () => {
   it("validates every explicit identity and preserves AMEX invariants", () => {
     expect(validateStaticCatalog(predefinedCardsData)).toEqual({
-      cards: 37,
-      benefits: 134,
+      cards: 44,
+      benefits: 156,
       amexCards: 12,
       amexBenefits: 56,
       amexWritableBenefits: 47,
@@ -26,7 +26,7 @@ describe("global static catalog validation", () => {
     card.benefits[0].description = "Rewritten current benefit terms";
     card.benefits = [...card.benefits].reverse();
 
-    expect(validateStaticCatalog(catalog)).toEqual(expect.objectContaining({ cards: 37, benefits: 134 }));
+    expect(validateStaticCatalog(catalog)).toEqual(expect.objectContaining({ cards: 44, benefits: 156 }));
     expect(card.catalogKey).toBe(originalCardKey);
     expect(card.benefits.map((benefit) => benefit.catalogKey).sort()).toEqual(originalBenefitKeys);
   });
