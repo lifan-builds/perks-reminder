@@ -8,7 +8,19 @@ Reviewed 2026-09-20 for the public static catalog. Issuer pages are the authorit
 | Sapphire Reserve for Business | https://creditcards.chase.com/business-credit-cards/sapphire/reserve | Travel, hotel, security-screening, business-service, rideshare, delivery, and gift-card credits with their stated windows |
 | American Airlines AAdvantage cards | https://www.citi.com/credit-cards/credit-card-miles/which-aadvantage-credit-card-should-you-get | Citi MileUp, Platinum Select, Executive, Business, and Globe products; recurring credits and certificates only where listed |
 
-Card art for these additions is `null` until a card-specific image has an attributable source. Existing artwork must not be reused for a different product.
+Card art for these additions is stored locally with issuer-hosted source receipts:
+
+| Card | Local asset | Image source |
+| --- | --- | --- |
+| Southwest Rapid Rewards Performance Business Card | `/images/cards/southwest-rapid-rewards-performance-business-card.png` | https://creditcards.chase.com/content/dam/jpmc-ecm/cccswa/2026/a600-0059/cards/business.png |
+| Sapphire Reserve for Business | `/images/cards/sapphire-reserve-for-business.png` | https://creditcards.chase.com/content/dam/jpmc-marketplace/card-art/sapphire_reserve_biz_card.png |
+| American Airlines AAdvantage MileUp Card | `/images/cards/american-airlines-aadvantage-mileup-card.webp` | https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/aadvantage-mile-up-credit-card/aadvantage-mile-up-credit-card_306x192.webp |
+| Citi / AAdvantage Platinum Select World Elite Mastercard | `/images/cards/citi-aadvantage-platinum-select-world-elite-mastercard.webp` | https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/citi-aadvantage-platinum-elite-credit-card/citi-aadvantage-platinum-elite-credit-card_306x192.webp |
+| Citi / AAdvantage Executive World Elite Mastercard | `/images/cards/citi-aadvantage-executive-world-elite-mastercard.webp` | https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/citi-aadvantage-executive-world-legend-mastercard/citi-aadvantage-executive-world-legend-mastercard_306x192.webp |
+| Citi / AAdvantage Business World Elite Mastercard | `/images/cards/citi-aadvantage-business-world-elite-mastercard.webp` | https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/citi-aadvantage-business-credit-card/AA-Business.webp |
+| Citi / AAdvantage Globe Mastercard | `/images/cards/citi-aadvantage-globe-mastercard.webp` | https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/citi-aadvantage-globe-mastercard/citi-aadvantage-globe-mastercard_306x192.webp |
+
+The manifest records dimensions, byte sizes, and SHA-256 hashes for each asset. Existing artwork is not reused for a different product.
 
 The checked-in source is not a database rollout. The guarded global-catalog workflow must produce and review a non-destructive plan before any separately authorized synchronization; existing user cards and benefit statuses require their own propagation review.
 
