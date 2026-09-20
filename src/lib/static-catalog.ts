@@ -1119,7 +1119,7 @@ export const predefinedCardsData = [
         {
           catalogKey: 'benefit:sapphire-reserve-business:50-curated-gift-card-credit-jan-jun',
           parentCatalogKey: 'card:sapphire-reserve-business',
-          description: '$50 Curated Gift Card Credit (giftcards.com/reservebusiness; Jan-Jun)',
+          description: '$50 Curated Gift Card Credit (direct purchases at giftcards.com/reservebusiness; Jan-Jun; through 10/31/2028)',
           category: 'Shopping',
           maxAmount: 50,
           frequency: 'YEARLY',
@@ -1131,7 +1131,7 @@ export const predefinedCardsData = [
         {
           catalogKey: 'benefit:sapphire-reserve-business:50-curated-gift-card-credit-jul-dec',
           parentCatalogKey: 'card:sapphire-reserve-business',
-          description: '$50 Curated Gift Card Credit (giftcards.com/reservebusiness; Jul-Dec)',
+          description: '$50 Curated Gift Card Credit (direct purchases at giftcards.com/reservebusiness; Jul-Dec; through 10/31/2028)',
           category: 'Shopping',
           maxAmount: 50,
           frequency: 'YEARLY',
