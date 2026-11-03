@@ -17,7 +17,7 @@ export default function PrivacyPage() {
         Privacy Policy
       </h1>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
-        Last updated: August 2026
+        Last updated: November 2026
       </p>
 
       <div className="prose prose-gray dark:prose-invert max-w-none space-y-6 text-gray-700 dark:text-gray-300">
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
               <strong>Notification preferences:</strong> Email notification settings you choose in Settings.
             </li>
             <li>
-              <strong>Browser reader observations:</strong> If you install the Perks Reminder AMEX reader, it reads only named first-party benefit endpoints after you manually start a scan from a signed-in American Express page. It does not inspect passwords, cookies, MFA values, authorization headers, or opaque provider tokens, and it does not save raw provider responses.
+              <strong>Browser reader observations:</strong> If you install the Perks Reminder AMEX reader, it refreshes benefits automatically after you sign in on an American Express account page and whenever you choose Refresh. A new account-page load refreshes again. The reader uses your existing signed-in session to request your card and benefit information from American Express. It uses provider account tokens temporarily to read each card and create a local fingerprint; it does not save these tokens or raw provider responses. It does not read your password, cookies, or MFA codes.
             </li>
           </ul>
         </section>
@@ -59,7 +59,7 @@ export default function PrivacyPage() {
             Your data is used only to run the app: to show your benefits dashboard, send optional email reminders, and support import/export. We do not sell, rent, or share your data with third parties for marketing or advertising.
           </p>
           <p>
-            The browser reader stores normalized benefit observations and a local installation fingerprint in browser extension or userscript storage. You can clear this local data from the reader panel; clearing removes the observations and identity secret. Choosing <strong>Sync reviewed</strong> sends only the validated normalized handoff to the Perks Reminder site for its separate preview/confirmation flow. No handoff occurs automatically, and no provider data is sold, used for ads, analytics, or shared with unrelated parties.
+            The browser reader saves card names and endings, benefit amounts, enrollment status, benefit periods, and local fingerprints in browser extension or userscript storage. You can clear this local data from the reader panel; clearing removes the observations and identity secret. Choosing <strong>Sync to Perks Reminder</strong> sends those card and benefit observations to the Perks Reminder site for preview and confirmation. This transfer does not happen automatically. Provider account tokens are never included, and provider data is not sold, used for ads or analytics, or shared with unrelated parties.
           </p>
         </section>
 
