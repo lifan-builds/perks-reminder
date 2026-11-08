@@ -15,28 +15,16 @@ import {
 } from '@heroicons/react/24/outline';
 import SupportedCreditCards from '@/components/SupportedCreditCards';
 import DashboardBenefitRow from '@/components/DashboardBenefitRow';
-import HowItWorks from '@/components/HowItWorks';
-import PricingSection from '@/components/PricingSection';
 import FAQ from '@/components/FAQ';
 import { PRIMARY_SITE_URL, SITE_NAME } from '@/lib/site';
 import { buildFaqJsonLd } from '@/lib/faq-data';
 import { getPublicStaticCards } from '@/lib/static-catalog';
 
-function LandingMetric({ value, label, detail }: { value: string; label: string; detail: string }) {
-  return (
-    <div className="border-l border-border pl-5 first:border-l-0 first:pl-0 max-sm:border-l-0 max-sm:border-t max-sm:pl-0 max-sm:pt-5 max-sm:first:border-t-0 max-sm:first:pt-0">
-      <p className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{value}</p>
-      <p className="mt-1 text-sm font-medium text-foreground">{label}</p>
-      <p className="mt-1 text-sm leading-5 text-muted-foreground">{detail}</p>
-    </div>
-  );
-}
-
 function Differentiator({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-card p-6 shadow-sm shadow-black/[0.03]">
+    <div className="rounded-xl border border-border bg-card p-5">
       <h3 className="text-base font-semibold text-foreground">{title}</h3>
-      <p className="mt-3 text-sm leading-6 text-muted-foreground">{children}</p>
+      <p className="mt-2 text-sm leading-6 text-muted-foreground">{children}</p>
     </div>
   );
 }
@@ -55,7 +43,7 @@ function DashboardMetric({
   href?: string;
 }) {
   const content = (
-    <div className="rounded-xl border border-border bg-card p-5 shadow-sm shadow-black/[0.03] transition-colors hover:bg-accent/40">
+    <div className="rounded-xl border border-border bg-card p-5 transition-colors hover:bg-accent/40">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-muted-foreground">{label}</p>
@@ -130,127 +118,107 @@ export default async function Home() {
         />
 
         <section className="border-b border-border bg-background">
-          <div className="mx-auto grid min-h-[calc(82dvh-4rem)] max-w-7xl items-center gap-12 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-16">
+          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-16">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-sm font-medium text-muted-foreground shadow-sm shadow-black/[0.03]">
-                <ShieldCheckIcon className="h-4 w-4" aria-hidden="true" />
-                Free, open source, no bank login
-              </div>
-
-              <h1 className="mt-6 max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-foreground md:text-5xl xl:text-6xl">
+              <h1 className="max-w-2xl text-4xl font-semibold leading-tight tracking-tight text-foreground md:text-5xl">
                 Replace your credit-card benefits spreadsheet.
               </h1>
-              <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
+              <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
                 Track recurring credits, reset windows, free-night certificates, loyalty expirations, and annual-fee ROI without connecting bank accounts.
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-7 flex flex-wrap gap-3">
                 <Link
                   href="/auth/signup?callbackUrl=%2Fcards%2Fnew"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm shadow-black/5 transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:ring-offset-2 focus:ring-offset-background active:translate-y-px"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:ring-offset-2 focus:ring-offset-background"
                 >
-                  Get started
+                  Get started free
                   <ArrowRightIcon className="ml-2 h-4 w-4" aria-hidden="true" />
+                </Link>
+                <Link
+                  href="/benefits/how-to-use"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+                >
+                  Benefit usage guides
                 </Link>
                 <a
                   href="https://github.com/lifan-builds/perks-reminder"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold text-foreground shadow-sm shadow-black/[0.03] transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring/30 focus:ring-offset-2 focus:ring-offset-background active:translate-y-px"
+                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
                 >
-                  View source
+                  GitHub ↗
                 </a>
               </div>
-            </div>
 
-            <div className="relative">
-              <div className="overflow-hidden rounded-2xl border border-border bg-card p-3 shadow-xl shadow-black/[0.06] dark:shadow-black/20">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
-                  <Image
-                    src="/hero-image.jpg"
-                    alt={`${SITE_NAME} benefit tracking overview`}
-                    fill
-                    sizes="(min-width: 1024px) 44rem, 100vw"
-                    className="object-contain p-4"
-                    priority
-                  />
-                </div>
-              </div>
-              <div className="absolute -bottom-6 left-6 right-6 rounded-2xl border border-border bg-card/95 p-4 shadow-lg shadow-black/[0.06] backdrop-blur dark:shadow-black/20">
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <p className="text-lg font-semibold tabular-nums text-foreground">12</p>
-                    <p className="text-xs text-muted-foreground">Credits tracked</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-semibold tabular-nums text-foreground">4</p>
-                    <p className="text-xs text-muted-foreground">Due soon</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-semibold tabular-nums text-foreground">$0</p>
-                    <p className="text-xs text-muted-foreground">Subscription</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="border-b border-border bg-card py-10">
-          <div className="mx-auto grid max-w-7xl gap-6 px-4 sm:grid-cols-3 sm:px-6 lg:px-8">
-            <LandingMetric value={`${publicCards.length}+`} label="Popular cards" detail="Static public catalog entries ready for manual tracking." />
-            <LandingMetric value={`${publicBenefitCount}+`} label="Tracked benefits" detail="Recurring credits, certificates, and card benefits with reset logic." />
-            <LandingMetric value="$0" label="Subscription" detail="Use tracking, reminders, import/export, and ROI summaries for free." />
-          </div>
-        </section>
-
-        <section className="border-b border-border bg-background py-16">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl">
-              <h2 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-                Built for serious card stacks
-              </h2>
-              <p className="mt-4 text-base leading-7 text-muted-foreground">
-                Perks Reminder keeps the control of a manual spreadsheet, then adds the pieces spreadsheets are bad at: reset logic, reminders, usage notes, and annual-fee value tracking.
+              <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-muted-foreground tabular-nums">
+                <span className="inline-flex items-center gap-1.5 text-foreground">
+                  <ShieldCheckIcon className="h-4 w-4 text-primary" aria-hidden="true" />
+                  No Plaid or bank login
+                </span>
+                <span aria-hidden="true">·</span>
+                <span>{publicCards.length} popular cards</span>
+                <span aria-hidden="true">·</span>
+                <span>{publicBenefitCount}+ tracked benefits</span>
+                <span aria-hidden="true">·</span>
+                <Link href="/pricing" className="underline underline-offset-4 hover:text-foreground">
+                  $0 forever (open source)
+                </Link>
               </p>
             </div>
-            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+
+            <div className="overflow-hidden rounded-2xl border border-border bg-card p-3">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
+                <Image
+                  src="/hero-image.jpg"
+                  alt={`${SITE_NAME} benefit tracking overview`}
+                  fill
+                  sizes="(min-width: 1024px) 44rem, 100vw"
+                  className="object-contain p-3"
+                  priority
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-border bg-background py-14">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div className="max-w-2xl">
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+                  Built for serious card stacks
+                </h2>
+                <p className="mt-2 text-base leading-7 text-muted-foreground">
+                  Keep the privacy of a manual spreadsheet while automating reset windows, reminders, and annual-fee ROI.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-4 text-sm font-semibold">
+                <Link href="/benefits/how-to-use" className="underline underline-offset-4 hover:text-primary">
+                  Read usage guides →
+                </Link>
+                <Link href="/integrations/amex-sync/setup" className="underline underline-offset-4 hover:text-primary">
+                  Local Amex reader →
+                </Link>
+              </div>
+            </div>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Differentiator title="Reset dates handled">
-                Monthly, quarterly, annual, and card-anniversary benefits without spreadsheet formulas.
+                Monthly, quarterly, annual, and card-anniversary cycles calculated automatically.
               </Differentiator>
               <Differentiator title="No bank connection">
-                No card numbers, bank credentials, Plaid, or transaction history.
+                Never asks for bank credentials, Plaid links, card numbers, or transaction feeds.
               </Differentiator>
               <Differentiator title="Usage guides included">
-                Practical trigger notes, timing caveats, and correction paths.
+                Practical trigger notes, enrollment reminders, and timing caveats for each credit.
               </Differentiator>
-              <Differentiator title="Multiple copies work">
-                Duplicate physical cards, display labels, custom benefits, annual-fee dates, and import/export.
+              <Differentiator title="Multiple copies & export">
+                Supports duplicate physical cards, custom labels, annual-fee ROI, and full JSON/CSV export.
               </Differentiator>
             </div>
           </div>
         </section>
 
-        <HowItWorks />
         <SupportedCreditCards />
-        <PricingSection />
         <FAQ />
-
-        <section className="border-y border-border bg-card py-20">
-          <div className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-            <h2 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-              Stop losing credits to reset dates.
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground">
-              Build a card checklist, record claimed value, and know when each benefit needs attention.
-            </p>
-            <Link
-              href="/auth/signup?callbackUrl=%2Fcards%2Fnew"
-              className="mt-8 inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-sm shadow-black/5 transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:ring-offset-2 focus:ring-offset-background active:translate-y-px"
-            >
-              Get started
-              <ArrowRightIcon className="ml-2 h-4 w-4" aria-hidden="true" />
-            </Link>
-          </div>
-        </section>
       </div>
     );
   }
