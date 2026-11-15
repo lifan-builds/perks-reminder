@@ -91,15 +91,6 @@ async function main() {
   // --- Seed Loyalty Programs (with and without expiration) ---
   console.log('Seeding loyalty programs...');
 
-  // Ensure expirationBasis column exists (migration 20260228000000 adds it; handles dev/prod drift)
-  try {
-    await prisma.$executeRawUnsafe(
-      `ALTER TABLE "LoyaltyProgram" ADD COLUMN IF NOT EXISTS "expirationBasis" TEXT DEFAULT 'ACTIVITY'`
-    );
-  } catch {
-    // Ignore if column already exists or migration handles it
-  }
-
   const loyaltyPrograms = [
     // Airlines (with expiration)
     {

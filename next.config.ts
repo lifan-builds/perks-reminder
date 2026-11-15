@@ -9,16 +9,6 @@ const nextConfig: NextConfig = {
   // Lock workspace root so Vercel/Next doesn't pick a parent lockfile (avoids deploy failures)
   outputFileTracingRoot: path.join(__dirname),
   /* config options here */
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
-  },
-  typescript: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has type errors.
-    ignoreBuildErrors: true,
-  },
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.plugins = [...config.plugins, new PrismaPlugin()];
