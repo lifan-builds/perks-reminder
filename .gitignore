@@ -55,26 +55,19 @@ prisma/dev.db
 prisma/dev.db-journal # SQLite journal file
 src/generated/prisma/
 
-# Local environment variables
-.env*.local
-.env
-
 # Log files
 *.log
-announcement-state/
 
 # Editor directories and files
 .idea
+.cursor/
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
-# Cursor local state is not part of the Claude + Codex Trellis integration
-.cursor/
-
-# Playwright MCP debug screenshots
+# Playwright debug screenshots
 .playwright-mcp/
 screenshots/
 *.suo

@@ -1,25 +1,7 @@
-<!-- TRELLIS:START -->
-# Trellis Instructions
+# Repository Invariants
 
-These instructions are for AI assistants working in this project.
-
-This project is managed by Trellis. The working knowledge you need lives under `.trellis/`:
-
-- `.trellis/workflow.md` — development phases, when to create tasks, skill routing
-- `.trellis/spec/` — package- and layer-scoped coding guidelines (read before writing code in a given layer)
-- `.trellis/workspace/` — per-developer journals and session traces
-- `.trellis/tasks/` — active and archived tasks (PRDs, research, jsonl context)
-
-If a Trellis command is available on your platform (e.g. `/trellis:finish-work`, `/trellis:continue`), prefer it over manual steps. Not every platform exposes every command.
-
-If you're using Codex or another agent-capable tool, additional project-scoped helpers may live in:
-- `.agents/skills/` — reusable Trellis skills
-- `.codex/agents/` — optional custom subagents
-
-Managed by Trellis. Edits outside this block are preserved; edits inside may be overwritten by a future `trellis update`.
-
-<!-- TRELLIS:END -->
-
-## Perks Reminder Safety Boundary
-
-Before changing application code or running project commands, read `.trellis/spec/perks-reminder/index.md` and the linked topic specifications. Do not access `.env` by default. Two explicit exceptions are documented in the database safety spec: repair of named database connection values, and creation/management of one disposable testing account using the dedicated test keys and exact-user database scope defined there. Never display, log, copy, or commit secret values. Never run database, build, deployment, cron, email, or notification operations without satisfying the target-verification and authorization rules in those specs.
+- **Deployment & Neon targets:** GitHub `main` auto-deploys to Vercel project `coupon-cycle` (`prj_x0VAgiuO3PAem4IUmeVo9dsRMCsx`, distinct from local `.vercel/project.json`) without running Prisma migrations (`docs/vercel-domains-and-deploy.md`, `docs/supabase-fallback.md`). Never merge schema-dependent request paths before `npm run db:prod:migrate`, and never run `prisma migrate reset` or `--force-reset` against Neon (`DATABASE_URL` pooler, `DIRECT_URL` direct, `DATABASE_URL_DEV` dev).
+- **Cron & email boundaries:** `vercel.json` schedules `/api/cron/check-benefits` (`0 5 * * *`) and `/api/cron/send-notifications` (`30 5 * * *`, `maxDuration = 10`) authenticated by `Bearer <CRON_SECRET>`; never trigger production notification routes during testing (`mockDate` still sends Resend emails).
+- **Public DB-free surface:** Anonymous catalog, usage-guide, and search routes must stay free of top-level Prisma/auth imports (`npm run check:public-db`).
+- **Catalog & card identity:** Every `PredefinedCard` and `PredefinedBenefit` carries an immutable `catalogKey` in `src/lib/static-catalog.ts` (`npm run card-template:validate`); physical cards remain distinct by `CreditCard.id`.
+- **Amex reader editions:** Chrome extension (`release/chrome-extension`, Web Store item `idpcieaeladegdoelljadhcggjndclpk`) and Tampermonkey userscript (`release/perks-reminder-amex-reader.user.js`, Greasy Fork `591349`) share `src/lib/amex-benefit-reader/`. WXT local dev binds `127.0.0.1:8731` (`docs/reader-development.md`); enable only one reader edition at a time and preserve existing storage/profiles.
