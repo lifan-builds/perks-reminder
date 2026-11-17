@@ -15,10 +15,6 @@ jest.mock('@/app/benefits/actions', () => ({
   setBenefitTrackingModeAction: jest.fn().mockResolvedValue(undefined),
 }));
 
-jest.mock('@/lib/partial-completion', () => ({
-  calculateCompletionPercentage: jest.fn((used: number, max: number) => (max > 0 ? (used / max) * 100 : 0)),
-}));
-
 function createMockStatus(overrides: Partial<DisplayBenefitStatus> = {}): DisplayBenefitStatus {
   return {
     id: 'status-1',

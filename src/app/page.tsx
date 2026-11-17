@@ -226,7 +226,7 @@ export default async function Home() {
   const userId = session.user.id;
 
   try {
-    const { loadHomeDashboardSummaryForUser } = await import('@/lib/benefit-dashboard-server');
+    const { loadHomeDashboardSummaryForUser } = await import('@/lib/benefit-dashboard');
     const {
       cardCount,
       totalAnnualFees,

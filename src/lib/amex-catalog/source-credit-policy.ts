@@ -87,3 +87,19 @@ export function evidenceSatisfiesAmexPolicy(
   }
   return true;
 }
+
+export function selectMatchingAmexPolicy<T extends AmexSourceCreditPolicy>(
+  policies: readonly T[],
+  title: string,
+  evidence: AmexSourceCreditEvidence = {},
+): T | null {
+  const candidates = policies.filter(
+    (policy) => titleSatisfiesAmexPolicy(policy, title) && evidenceSatisfiesAmexPolicy(policy, evidence),
+  );
+  const normalizedTitle = normalizeAmexSelectionText(title);
+  const exact = candidates.filter((policy) =>
+    policy.exactAliases.some((alias) => normalizeAmexSelectionText(alias) === normalizedTitle),
+  );
+  if (exact.length === 1) return exact[0];
+  return exact.length > 1 || candidates.length !== 1 ? null : candidates[0];
+}

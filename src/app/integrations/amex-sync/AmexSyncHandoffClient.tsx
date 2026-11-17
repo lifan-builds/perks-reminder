@@ -203,7 +203,7 @@ function reasonText(reason: string, disposition?: SyncRowResult["disposition"]):
     persistence_failed: "This row could not be saved",
   };
   if (reason === "proposed_update" && disposition === "updated") return "Updated";
-  return labels[reason] ?? "Skipped safely";
+  return labels[reason] ?? "Not synced";
 }
 
 function familyLabel(key: string): string {
@@ -232,8 +232,8 @@ function exclusionText(reason: AmexSyncEnvelope["exclusions"][number]["reason"])
     not_attempted_successfully: "Card was not completed in the latest scan",
     no_structured_period: "Exact source period was not exposed",
     prerequisite_only: "Enrollment or linking is still required",
-    status_unavailable: "Usable source status was not exposed",
-    source_mapping_ambiguous: "More than one source row mapped to the same reviewed benefit",
+    status_unavailable: "Not a usage tracker, or Amex did not provide usage",
+    source_mapping_ambiguous: "No unique matching credit; see the reader for benefit details",
     source_last_five_required: "The source card did not expose exactly five ending digits",
   };
   return labels[reason];
@@ -371,8 +371,50 @@ async function postJson(path: string, body: unknown): Promise<{ ok: boolean; sta
 }
 
 function rowsBelongToEnvelope(envelope: AmexSyncEnvelope, rows: SyncRowResult[]): boolean {
-  const cardIds = new Set(envelope.cards.map((card) => card.sourceLocalCardId));
-  return rows.every((row) => cardIds.has(row.sourceLocalCardId));
+  if (new Set(rows.map((row) => row.sourceRowIdentity)).size !== rows.length) return false;
+  const counts = new Map<string, number>();
+  const key = (cardId: string, family: string) => `${cardId}|${family}`;
+  for (const card of envelope.cards) {
+    for (const source of card.rows) {
+      const identity = key(card.sourceLocalCardId, source.creditFamilyKey);
+      counts.set(identity, (counts.get(identity) ?? 0) + 1);
+    }
+  }
+  for (const row of rows) {
+    const card = envelope.cards.find((candidate) => candidate.sourceLocalCardId === row.sourceLocalCardId);
+    if (!card || card.productKey !== row.productKey) return false;
+    if (row.creditFamilyKey === PLATINUM_UBER_DECEMBER_BONUS_FAMILY) {
+      const decemberSources = card.rows.filter((source) => source.creditFamilyKey === PLATINUM_UBER_FAMILY
+        && /^\d{4}-12-01$/.test(source.sourcePeriod?.startDate ?? "")
+        && source.sourcePeriod?.endDate === `${source.sourcePeriod?.startDate.slice(0, 4)}-12-31`);
+      const partners = rows.filter((candidate) => candidate.sourceLocalCardId === row.sourceLocalCardId
+        && candidate.creditFamilyKey === PLATINUM_UBER_FAMILY
+        && candidate.atomicGroupIdentity === row.atomicGroupIdentity);
+      const bonuses = rows.filter((candidate) => candidate.atomicGroupIdentity === row.atomicGroupIdentity
+        && candidate.creditFamilyKey === PLATINUM_UBER_DECEMBER_BONUS_FAMILY);
+      if (!decemberSources.length || partners.length !== 1 || bonuses.length !== 1) return false;
+      continue;
+    }
+    const identity = key(row.sourceLocalCardId, row.creditFamilyKey);
+    const remaining = counts.get(identity) ?? 0;
+    if (remaining === 0) return false;
+    counts.set(identity, remaining - 1);
+  }
+  return Array.from(counts.values()).every((count) => count === 0);
+}
+
+function receiptMatchesPreview(preview: PreviewResponse, rows: SyncRowResult[]): boolean {
+  if (rows.length !== preview.rows.length) return false;
+  const byIdentity = new Map(rows.map((row) => [row.sourceRowIdentity, row]));
+  if (byIdentity.size !== rows.length) return false;
+  return preview.rows.every((expected) => {
+    const result = byIdentity.get(expected.sourceRowIdentity);
+    return result && result.atomicGroupIdentity === expected.atomicGroupIdentity
+      && result.sourceLocalCardId === expected.sourceLocalCardId
+      && result.productKey === expected.productKey
+      && result.creditFamilyKey === expected.creditFamilyKey
+      && result.destinationCardId === expected.destinationCardId;
+  });
 }
 
 export function AmexSyncHandoffClient({
@@ -396,7 +438,7 @@ export function AmexSyncHandoffClient({
     actionInFlight.current = true;
     setResult(null);
     setState("previewing");
-    setMessage("Checking exact card, benefit, period, and last-five matches…");
+    setMessage("Matching your cards and benefits…");
     try {
       const response = await postJson("/api/integrations/amex-sync/preview", { envelope: nextEnvelope });
       const parsed = previewResponseSchema.safeParse(response.value);
@@ -404,16 +446,16 @@ export function AmexSyncHandoffClient({
         setState("invalid");
         setMessage(response.status === 503
           ? "Amex sync is currently turned off. No data was changed."
-          : "The reviewed handoff could not be previewed. Return to Amex, run a fresh scan, then choose Sync reviewed again.");
+          : "We couldn’t verify every benefit in the preview. Return to Amex, refresh, and choose Sync to Perks Reminder again.");
         return false;
       }
       setPreview(parsed.data);
       setState("preview");
-      setMessage("Review every row and card prerequisite below. Nothing has been written.");
+      setMessage("Review the updates and any benefits that need attention.");
       return true;
     } catch {
       setState("invalid");
-      setMessage("The reviewed handoff could not be previewed. Return to Amex, run a fresh scan, then choose Sync reviewed again.");
+      setMessage("We couldn’t verify every benefit in the preview. Return to Amex, refresh, and choose Sync to Perks Reminder again.");
       return false;
     } finally {
       actionInFlight.current = false;
@@ -508,7 +550,7 @@ export function AmexSyncHandoffClient({
     ) return;
     actionInFlight.current = true;
     setState("confirming");
-    setMessage("Applying each approved row independently…");
+    setMessage("Updating your benefits…");
     try {
       const response = await postJson("/api/integrations/amex-sync/confirm", {
         envelope,
@@ -521,9 +563,9 @@ export function AmexSyncHandoffClient({
         return;
       }
       const parsed = confirmationResponseSchema.safeParse(response.value);
-      if (!response.ok || !parsed.success || !rowsBelongToEnvelope(envelope, parsed.data.rows)) {
+      if (!response.ok || !parsed.success || !receiptMatchesPreview(preview, parsed.data.rows)) {
         setState("preview");
-        setMessage("Confirmation failed safely. No unreported row is assumed to be updated. Retry only while this preview remains valid, or return to Amex and run a fresh scan.");
+        setMessage("We couldn’t verify every result. Some updates may have saved. Retry to retrieve the recorded results, or refresh the preview.");
         return;
       }
       setResult(parsed.data);
@@ -533,7 +575,7 @@ export function AmexSyncHandoffClient({
         : `Sync finished. ${parsed.data.updatedCount} row${parsed.data.updatedCount === 1 ? "" : "s"} updated.`);
     } catch {
       setState("preview");
-      setMessage("Confirmation failed safely. No unreported row is assumed to be updated. Retry only while this preview remains valid, or return to Amex and run a fresh scan.");
+      setMessage("We couldn’t verify every result. Some updates may have saved. Retry to retrieve the recorded results, or refresh the preview.");
     } finally {
       actionInFlight.current = false;
     }
@@ -555,7 +597,7 @@ export function AmexSyncHandoffClient({
   const freshness = preview ? proposalFreshness(preview.proposalExpiresAt, clock) : null;
   const exclusionCount = envelope?.exclusions.reduce((sum, exclusion) => sum + exclusion.count, 0) ?? 0;
   const heading = state === "result"
-    ? failedRows.length > 0 ? "Sync finished with items to review" : "Benefit sync complete"
+    ? (failedRows.length + skippedRows.length + exclusionCount + (preview?.cardSkips.length ?? 0)) > 0 ? "Sync finished with items to review" : "Benefit sync complete"
     : state === "preview" || state === "confirming"
       ? proposedRows.length > 0
         ? `Review ${proposedRows.length} benefit update${proposedRows.length === 1 ? "" : "s"}`
@@ -576,7 +618,7 @@ export function AmexSyncHandoffClient({
               <p className={styles.product}>American Express integration</p>
               <h1 className={styles.title}>{heading}</h1>
               <p className={styles.privacy}>
-                Only reviewed, normalized observations arrive here. Your Amex login, cookies, account token, and raw responses stay out of Perks Reminder.
+                Review your Amex benefits and update Perks Reminder.
               </p>
             </div>
           </div>
@@ -592,7 +634,7 @@ export function AmexSyncHandoffClient({
             <div className={styles.metric}><dt>Needs attention</dt><dd>{failedRows.length + (preview?.cardSkips.length ?? 0)}</dd></div>
             <div className={styles.metric}><dt>Already current</dt><dd>{unchangedRows.length}</dd></div>
             <div className={styles.metric}><dt>Skipped</dt><dd>{skippedRows.length}</dd></div>
-            <div className={styles.metric}><dt>Local exclusions</dt><dd>{exclusionCount}</dd></div>
+            <div className={styles.metric}><dt>Not included</dt><dd>{exclusionCount}</dd></div>
           </dl>
         )}
 
@@ -633,7 +675,7 @@ export function AmexSyncHandoffClient({
                 </>
               ) : preview.mode === "write" ? (
                 <>
-                  <h2>Confirm separately</h2>
+                  <h2>Save benefit updates</h2>
                   <p>Only the {proposedRows.length} proposed {proposedRows.length === 1 ? "row" : "rows"} can change. Unchanged and skipped benefits stay untouched.</p>
                   <Button
                     className={styles.confirm}
@@ -647,7 +689,7 @@ export function AmexSyncHandoffClient({
               ) : (
                 <>
                   <h2>Preview only</h2>
-                  <p>Confirmation is disabled by the server. No writes can occur from this review.</p>
+                  <p>Sync is in preview mode. You can review the matches here.</p>
                 </>
               )}
             </aside>
@@ -660,7 +702,7 @@ export function AmexSyncHandoffClient({
                   <ExclamationTriangleIcon aria-hidden="true" />
                   <div>
                     <h2 className={styles.sectionHeading} id="card-prerequisites-heading">Card details needed</h2>
-                    <p className={styles.sectionCopy}>Add exactly five ending digits to each card. Names and manual selections cannot bypass this identity check.</p>
+                    <p className={styles.sectionCopy}>Add the last five digits to match each Amex card.</p>
                   </div>
                 </div>
                 <p id="card-edit-guidance" className={styles.sectionCopy}>
@@ -704,7 +746,7 @@ export function AmexSyncHandoffClient({
                 )}
                 {skippedRows.length > 0 && (
                   <details className={styles.details} open={primaryRows.length === 0}>
-                    <summary>Skipped safely <span>{skippedRows.length}</span></summary>
+                    <summary>Not synced <span>{skippedRows.length}</span></summary>
                     <div className={styles.detailsContent}><RowGroups rows={skippedRows} envelope={envelope} /></div>
                   </details>
                 )}
@@ -729,7 +771,7 @@ export function AmexSyncHandoffClient({
 
             {(state === "invalid" || freshness?.expired) && (
               <p className={styles.recovery}>
-                No benefit data was changed. Return to Amex, run a fresh scan, then choose <strong>Sync reviewed</strong> again.
+                No benefit data was changed. Return to Amex, run a fresh scan, then choose <strong>Sync to Perks Reminder</strong> again.
               </p>
             )}
           </section>

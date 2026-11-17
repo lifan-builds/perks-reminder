@@ -10,7 +10,7 @@ import sharp from "sharp";
 const root = process.cwd();
 const execFileAsync = promisify(execFile);
 const chrome = resolve(root, "release/chrome-extension");
-const publicReleaseVersion = "1.0.1";
+const publicReleaseVersion = "1.5.0";
 const chromeZipPath = resolve(root, `release/perks-reminder-amex-reader-chrome-${publicReleaseVersion}.zip`);
 const manifest = JSON.parse(await readFile(resolve(chrome, "manifest.json"), "utf8"));
 assert.equal(manifest.manifest_version, 3);
@@ -48,8 +48,8 @@ assert.deepEqual(metadataValues("namespace"), ["https://perks-reminder.com/"]);
 assert.deepEqual(metadataValues("version"), [publicReleaseVersion]);
 assert.deepEqual(metadataValues("match"), ["https://global.americanexpress.com/*"]);
 assert.deepEqual(metadataValues("include"), ["https://www.perks-reminder.com/integrations/amex-sync?transfer=*"]);
-assert.deepEqual(metadataValues("description"), ["Manually reads normalized benefit progress from your signed-in American Express session. Nothing scans automatically."]);
-assert.deepEqual(metadataValues("run-at"), ["document-idle"]);
+assert.deepEqual(metadataValues("description"), ["Track your Amex benefits across cards. See what’s remaining, what’s used, and sync to Perks Reminder."]);
+assert.deepEqual(metadataValues("run-at"), ["document-end"]);
 assert.equal((userscriptMetadata.match(/^\/\/ @noframes$/gm) ?? []).length, 1);
 assert.deepEqual(metadataValues("grant"), ["GM.getValue", "GM.setValue", "GM.deleteValue", "unsafeWindow"]);
 assert.deepEqual(metadataValues("connect"), []);
@@ -101,7 +101,7 @@ const rebuiltUserscript = await readFile(resolve(root, "release/perks-reminder-a
 assert.equal(createHash("sha256").update(rebuiltUserscript).digest("hex"), createHash("sha256").update(userscript).digest("hex"), "Greasy artifact is not reproducible");
 const { stdout: zipListing } = await execFileAsync("unzip", ["-Z1", chromeZipPath]);
 const packageFiles = zipListing.trim().split("\n");
-assert.deepEqual(packageFiles.filter((file) => file).sort(), ["manifest.json", "content.js", "popup.html", "popup.css", "LICENSE", "icons/icon-16.png", "icons/icon-48.png", "icons/icon-128.png", "icons/icon-32.png"].sort(), "store media must stay outside runtime ZIP");
+assert.deepEqual(packageFiles.filter((file) => file).sort(), ["assets/benefits-orbit.webp", "manifest.json", "content.js", "popup.html", "popup.css", "LICENSE", "icons/icon-16.png", "icons/icon-48.png", "icons/icon-128.png", "icons/icon-32.png"].sort(), "store media must stay outside runtime ZIP");
 assert.equal(packageFiles.some((file) => /(?:promo|screenshot|listing-icon)/.test(file)), false, "store media leaked into runtime ZIP");
 await writeFile(resolve(root, "release/hashes.json"), `${JSON.stringify({
   chromeZipSha256: createHash("sha256").update(zip).digest("hex"),

@@ -1,0 +1,12 @@
+{
+  "name": "perks-reader-development",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "build": "wxt build"
+  },
+  "devDependencies": {
+    "wxt": "0.21.5"
+  }
+}

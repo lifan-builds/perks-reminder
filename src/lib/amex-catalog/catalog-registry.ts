@@ -79,7 +79,7 @@ export const AMEX_CATALOG_IDENTITY_REGISTRY = {
     catalogKey: "card:american-express-platinum-card",
     productKey: "american-express-platinum-card",
     exactAliases: ["American Express Platinum Card", "The Platinum Card from American Express", "Platinum Card®"],
-    affiliationAliases: ["Morgan Stanley Platinum", "The Platinum Card from American Express Exclusively for Morgan Stanley"],
+    affiliationAliases: ["Morgan Stanley Platinum", "Morgan Stanley Platinum Card®", "The Platinum Card from American Express Exclusively for Morgan Stanley"],
     benefits: [
       usage("benefit:american-express-platinum-card:airline-fee:calendar-year", "card:american-express-platinum-card", "american-express-platinum-card:airline-fee", "calendar-year"),
       usage("benefit:american-express-platinum-card:uber-cash:calendar-month", "card:american-express-platinum-card", "american-express-platinum-card:uber-cash", "calendar-month"),
@@ -100,6 +100,8 @@ export const AMEX_CATALOG_IDENTITY_REGISTRY = {
       usage("benefit:american-express-platinum-card:uber-one:calendar-year", "card:american-express-platinum-card", "american-express-platinum-card:uber-one", "calendar-year"),
       usage("benefit:american-express-platinum-card:oura:calendar-year", "card:american-express-platinum-card", "american-express-platinum-card:oura", "calendar-year"),
       usage("benefit:american-express-platinum-card:walmart-plus:calendar-month", "card:american-express-platinum-card", "american-express-platinum-card:walmart-plus", "calendar-month"),
+      usage("benefit:american-express-platinum-card:clear-plus:calendar-year", "card:american-express-platinum-card", "american-express-platinum-card:clear-plus", "calendar-year"),
+      usage("benefit:american-express-platinum-card:equinox:calendar-year", "card:american-express-platinum-card", "american-express-platinum-card:equinox", "calendar-year"),
     ],
   },
   "American Express Business Platinum Card": {
@@ -117,6 +119,7 @@ export const AMEX_CATALOG_IDENTITY_REGISTRY = {
       usage("benefit:american-express-business-platinum-card:hilton:card-anniversary-quarter", "card:american-express-business-platinum-card", "american-express-business-platinum-card:hilton", "card-anniversary-quarter"),
       usage("benefit:american-express-business-platinum-card:indeed:calendar-quarter", "card:american-express-business-platinum-card", "american-express-business-platinum-card:indeed", "calendar-quarter"),
       usage("benefit:american-express-business-platinum-card:wireless:calendar-month", "card:american-express-business-platinum-card", "american-express-business-platinum-card:wireless", "calendar-month"),
+      usage("benefit:american-express-business-platinum-card:chatgpt-business:calendar-year", "card:american-express-business-platinum-card", "american-express-business-platinum-card:chatgpt-business", "calendar-year"),
     ],
   },
   "American Express Business Gold Card": {

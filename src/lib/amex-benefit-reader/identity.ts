@@ -52,10 +52,6 @@ export async function fingerprintCardToken(
   return bytesToHex(new Uint8Array(signature));
 }
 
-export function createLocalCardId(cryptoApi: Crypto = crypto): string {
-  return cryptoApi.randomUUID();
-}
-
 function normalizeIdentityText(value: string): string {
   return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
 }
@@ -108,7 +104,7 @@ export function reconcileCardIdentity(input: {
       record: displayMatches[0],
     };
   }
-  return { kind: "new", localCardId: createLocalCardId(input.cryptoApi) };
+  return { kind: "new", localCardId: (input.cryptoApi ?? crypto).randomUUID() };
 }
 
 // A deterministic non-secret key for already-approved semantic fields. It is not

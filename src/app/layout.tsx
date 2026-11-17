@@ -11,7 +11,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { ErrorBoundary } from "@/lib/monitoring/errorBoundary";
 import { PRIMARY_SITE_URL, SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
-import DomainMigrationBanner from "@/components/DomainMigrationBanner";
 import IosInstallPrompt from "@/components/IosInstallPrompt";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
@@ -159,7 +158,6 @@ export default async function RootLayout({
             <SkipLink />
             <div className="app-shell flex min-h-full flex-col bg-gray-50 dark:bg-gray-950">
               <Navbar />
-              <DomainMigrationBanner />
               <main 
                 id="main-content" 
                 className="container mx-auto flex-grow px-4 py-8"

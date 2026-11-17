@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import { useState, useMemo, useEffect } from 'react';
 import { Bars3Icon, XMarkIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import ThemeToggle from '@/components/ui/ThemeToggle';
+import { getLoyaltySwitchUrl } from '@/lib/site';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -28,20 +29,6 @@ const loyaltyNavigation: NavItem[] = [
   { name: 'Settings', href: '/settings' },
   { name: 'Contact', href: '/contact' },
 ];
-
-function getSwitchUrl(isLoyaltyContext: boolean): string {
-  if (!isLoyaltyContext) {
-    return '/loyalty';
-  }
-  if (typeof window === 'undefined') return '/';
-  const host = window.location.hostname;
-  const port = window.location.port;
-  const proto = window.location.protocol;
-  const isLocalhost = host.includes('localhost');
-  return isLocalhost
-    ? `${proto}//${host.replace(/^loyalty\./, '')}${port ? `:${port}` : ''}`
-    : `${proto}//${host.replace(/^loyalty\./, 'www.')}`;
-}
 
 function getSignOutCallbackUrl(isLoyaltyContext: boolean): string {
   if (!isLoyaltyContext || typeof window === 'undefined') return '/';
@@ -83,7 +70,7 @@ const Navbar = () => {
   }, [session, baseNavigation]);
 
   const switchLabel = isLoyaltyContext ? 'Credit Card Benefits' : 'Loyalty Points';
-  const switchHref = getSwitchUrl(isLoyaltyContext ?? false);
+  const switchHref = getLoyaltySwitchUrl(isLoyaltyContext ?? false);
   const signOutHref = getSignOutHref(isLoyaltyContext ?? false);
 
   return (

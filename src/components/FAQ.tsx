@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
 import { faqs } from '@/lib/faq-data';
 

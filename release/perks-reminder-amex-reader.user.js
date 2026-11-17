@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         Perks Reminder — Amex Benefit Reader
 // @namespace    https://perks-reminder.com/
-// @version      1.0.1
-// @description  Manually reads normalized benefit progress from your signed-in American Express session. Nothing scans automatically.
+// @version      1.5.0
+// @description  Track your Amex benefits across cards. See what’s remaining, what’s used, and sync to Perks Reminder.
 // @match        https://global.americanexpress.com/*
 // @include      https://www.perks-reminder.com/integrations/amex-sync?transfer=*
-// @run-at       document-idle
+// @run-at       document-end
 // @noframes
 // @grant        GM.getValue
 // @grant        GM.setValue
@@ -4176,6 +4176,7 @@
       PARSER_VERSION = "amex-api-us/3.0.0";
       issueCodeSchema = z.enum([
         "unknown_account_variant",
+        "account_canceled",
         "duplicate_card_entry",
         "identity_unavailable",
         "identity_ambiguous",
@@ -4337,7 +4338,7 @@
       });
       scanCardDispositionSchema = z.object({
         localCardId: z.string().uuid().nullable(),
-        result: z.enum(["complete", "partial", "failed"]),
+        result: z.enum(["complete", "partial", "failed", "skipped"]),
         issueCode: issueCodeSchema.nullable()
       }).strict();
       scanSummarySchema = z.object({
@@ -4410,7 +4411,7 @@
           catalogKey: "card:american-express-platinum-card",
           productKey: "american-express-platinum-card",
           exactAliases: ["American Express Platinum Card", "The Platinum Card from American Express", "Platinum Card®"],
-          affiliationAliases: ["Morgan Stanley Platinum", "The Platinum Card from American Express Exclusively for Morgan Stanley"],
+          affiliationAliases: ["Morgan Stanley Platinum", "Morgan Stanley Platinum Card®", "The Platinum Card from American Express Exclusively for Morgan Stanley"],
           benefits: [
             usage("benefit:american-express-platinum-card:airline-fee:calendar-year", "card:american-express-platinum-card", "american-express-platinum-card:airline-fee", "calendar-year"),
             usage("benefit:american-express-platinum-card:uber-cash:calendar-month", "card:american-express-platinum-card", "american-express-platinum-card:uber-cash", "calendar-month"),
@@ -4430,7 +4431,9 @@
             usage("benefit:american-express-platinum-card:digital-entertainment:calendar-month", "card:american-express-platinum-card", "american-express-platinum-card:digital-entertainment", "calendar-month"),
             usage("benefit:american-express-platinum-card:uber-one:calendar-year", "card:american-express-platinum-card", "american-express-platinum-card:uber-one", "calendar-year"),
             usage("benefit:american-express-platinum-card:oura:calendar-year", "card:american-express-platinum-card", "american-express-platinum-card:oura", "calendar-year"),
-            usage("benefit:american-express-platinum-card:walmart-plus:calendar-month", "card:american-express-platinum-card", "american-express-platinum-card:walmart-plus", "calendar-month")
+            usage("benefit:american-express-platinum-card:walmart-plus:calendar-month", "card:american-express-platinum-card", "american-express-platinum-card:walmart-plus", "calendar-month"),
+            usage("benefit:american-express-platinum-card:clear-plus:calendar-year", "card:american-express-platinum-card", "american-express-platinum-card:clear-plus", "calendar-year"),
+            usage("benefit:american-express-platinum-card:equinox:calendar-year", "card:american-express-platinum-card", "american-express-platinum-card:equinox", "calendar-year")
           ]
         },
         "American Express Business Platinum Card": {
@@ -4447,7 +4450,8 @@
             excluded("benefit:american-express-business-platinum-card:one-ap:calendar-year", "card:american-express-business-platinum-card", "american-express-business-platinum-card:one-ap", "calendar-year", "spend"),
             usage("benefit:american-express-business-platinum-card:hilton:card-anniversary-quarter", "card:american-express-business-platinum-card", "american-express-business-platinum-card:hilton", "card-anniversary-quarter"),
             usage("benefit:american-express-business-platinum-card:indeed:calendar-quarter", "card:american-express-business-platinum-card", "american-express-business-platinum-card:indeed", "calendar-quarter"),
-            usage("benefit:american-express-business-platinum-card:wireless:calendar-month", "card:american-express-business-platinum-card", "american-express-business-platinum-card:wireless", "calendar-month")
+            usage("benefit:american-express-business-platinum-card:wireless:calendar-month", "card:american-express-business-platinum-card", "american-express-business-platinum-card:wireless", "calendar-month"),
+            usage("benefit:american-express-business-platinum-card:chatgpt-business:calendar-year", "card:american-express-business-platinum-card", "american-express-business-platinum-card:chatgpt-business", "calendar-year")
           ]
         },
         "American Express Business Gold Card": {
@@ -4891,6 +4895,30 @@
               maxAmount: 12.95,
               frequency: "MONTHLY",
               percentage: 0
+            },
+            {
+              catalogKey: "benefit:american-express-platinum-card:clear-plus:calendar-year",
+              parentCatalogKey: "card:american-express-platinum-card",
+              description: "$219 Annual CLEAR+ Membership Credit",
+              category: "Membership",
+              maxAmount: 219,
+              frequency: "YEARLY",
+              percentage: 0,
+              cycleAlignment: "CALENDAR_FIXED",
+              fixedCycleStartMonth: 1,
+              fixedCycleDurationMonths: 12
+            },
+            {
+              catalogKey: "benefit:american-express-platinum-card:equinox:calendar-year",
+              parentCatalogKey: "card:american-express-platinum-card",
+              description: "$300 Annual Equinox Credit",
+              category: "Wellness",
+              maxAmount: 300,
+              frequency: "YEARLY",
+              percentage: 0,
+              cycleAlignment: "CALENDAR_FIXED",
+              fixedCycleStartMonth: 1,
+              fixedCycleDurationMonths: 12
             }
           ]
         },
@@ -5034,6 +5062,18 @@
               maxAmount: 10,
               frequency: "MONTHLY",
               percentage: 0
+            },
+            {
+              catalogKey: "benefit:american-express-business-platinum-card:chatgpt-business:calendar-year",
+              parentCatalogKey: "card:american-express-business-platinum-card",
+              description: "$300 Annual ChatGPT Business Credit",
+              category: "Business Services",
+              maxAmount: 300,
+              frequency: "YEARLY",
+              percentage: 0,
+              cycleAlignment: "CALENDAR_FIXED",
+              fixedCycleStartMonth: 1,
+              fixedCycleDurationMonths: 12
             }
           ]
         },
@@ -5382,9 +5422,135 @@
   function normalizeAmexSelectionText(value) {
     return value.normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/&/g, " and ").replace(/\+/g, " plus ").replace(/\bamex\b/gi, " american express ").replace(/[^a-zA-Z0-9]+/g, " ").trim().toLocaleLowerCase("en-US").replace(/\s+/g, " ");
   }
+  function evaluateAmexProductScores(bestScore, runnerUpScore) {
+    if (bestScore < AMEX_PRODUCT_MATCH_MIN_SCORE) return "low_confidence";
+    if (bestScore - runnerUpScore + Number.EPSILON < AMEX_PRODUCT_MATCH_MIN_MARGIN) return "ambiguous";
+    return "accepted";
+  }
+  function productTokenSet(value, noise = PRODUCT_NOISE) {
+    return new Set(normalizeAmexSelectionText(value).split(" ").filter((token) => token && !noise.has(token)));
+  }
+  function weightedAmexProductTokenScore(left, right) {
+    const a = productTokenSet(left);
+    const b = productTokenSet(right);
+    const union = /* @__PURE__ */ new Set([...Array.from(a), ...Array.from(b)]);
+    if (!union.size) return 0;
+    let shared = 0;
+    union.forEach((token) => {
+      if (a.has(token) && b.has(token)) shared += 1;
+    });
+    return shared / union.size;
+  }
+  function hasHardAmexProductConflict(source, candidate) {
+    const sourceTokens = productTokenSet(source, /* @__PURE__ */ new Set());
+    const candidateTokens = productTokenSet(candidate, /* @__PURE__ */ new Set());
+    if (sourceTokens.has("business") !== candidateTokens.has("business")) return true;
+    const sourceCobrand = COBRANDS.find((token) => sourceTokens.has(token));
+    const candidateCobrand = COBRANDS.find((token) => candidateTokens.has(token));
+    if (sourceCobrand !== candidateCobrand) return true;
+    const sourceTier = TIERS.find((token) => sourceTokens.has(token));
+    const candidateTier = TIERS.find((token) => candidateTokens.has(token));
+    return Boolean(sourceTier && candidateTier && sourceTier !== candidateTier);
+  }
+  var AMEX_PRODUCT_MATCH_MIN_SCORE, AMEX_PRODUCT_MATCH_MIN_MARGIN, PRODUCT_NOISE, COBRANDS, TIERS;
   var init_normalization = __esm({
     "src/lib/amex-catalog/normalization.ts"() {
       "use strict";
+      AMEX_PRODUCT_MATCH_MIN_SCORE = 0.88;
+      AMEX_PRODUCT_MATCH_MIN_MARGIN = 0.1;
+      PRODUCT_NOISE = /* @__PURE__ */ new Set(["american", "express", "card", "the", "from"]);
+      COBRANDS = ["hilton", "delta", "marriott"];
+      TIERS = ["gold", "platinum", "reserve", "aspire", "surpass", "brilliant"];
+    }
+  });
+
+  // src/lib/amex-benefit-reader/presentation.ts
+  function isUnicodeScalarValue(value) {
+    return Number.isInteger(value) && value > 0 && value <= 1114111 && (value < 55296 || value > 57343);
+  }
+  function decodeNumericCharacterReferences(value) {
+    return value.replace(
+      NUMERIC_CHARACTER_REFERENCE,
+      (reference, decimalDigits, hexadecimalDigits) => {
+        const digits = decimalDigits ?? hexadecimalDigits;
+        if (!digits) return reference;
+        const codePoint = Number.parseInt(digits, decimalDigits ? 10 : 16);
+        return isUnicodeScalarValue(codePoint) ? String.fromCodePoint(codePoint) : reference;
+      }
+    );
+  }
+  function formatAmexBenefitTitle(value) {
+    const decoded = decodeNumericCharacterReferences(value).trimEnd();
+    for (const marker of AMEX_SUPERSCRIPT_FOOTNOTE_MARKERS) {
+      const markerBeforeStatementCredit = `${marker}${STATEMENT_CREDIT_SUFFIX}`;
+      if (decoded.endsWith(markerBeforeStatementCredit)) {
+        const prefix = decoded.slice(0, -markerBeforeStatementCredit.length).trimEnd();
+        return prefix ? `${prefix}${STATEMENT_CREDIT_SUFFIX}` : STATEMENT_CREDIT_SUFFIX.trimStart();
+      }
+    }
+    for (const marker of AMEX_SUPERSCRIPT_FOOTNOTE_MARKERS) {
+      if (decoded.endsWith(marker)) {
+        const withoutTerminalFootnote = decoded.slice(0, -marker.length).trimEnd();
+        return withoutTerminalFootnote || decoded;
+      }
+    }
+    if (decoded.endsWith("‡")) {
+      const withoutStandaloneDagger = decoded.slice(0, -1).trimEnd();
+      return withoutStandaloneDagger || decoded;
+    }
+    return decoded;
+  }
+  function calendarDateParts(value) {
+    const [year, month, day] = value.split("-").map(Number);
+    return { year, month, day };
+  }
+  function lastDayOfMonth(year, month) {
+    return new Date(Date.UTC(year, month, 0)).getUTCDate();
+  }
+  function compactExplicitDateRange(start, end) {
+    const startMonth = COMPACT_MONTHS[start.month - 1];
+    const endMonth = COMPACT_MONTHS[end.month - 1];
+    if (start.year === end.year && start.month === end.month) {
+      return `${startMonth} ${start.day}–${end.day}, ${start.year}`;
+    }
+    if (start.year === end.year) {
+      return `${startMonth} ${start.day}–${endMonth} ${end.day}, ${start.year}`;
+    }
+    return `${startMonth} ${start.day}, ${start.year}–${endMonth} ${end.day}, ${end.year}`;
+  }
+  function formatAmexSourcePeriod(period) {
+    const start = calendarDateParts(period.startDate);
+    const end = calendarDateParts(period.endDate);
+    const startsOnMonthBoundary = start.day === 1;
+    const endsOnMonthBoundary = end.day === lastDayOfMonth(end.year, end.month);
+    if (startsOnMonthBoundary && endsOnMonthBoundary && start.year === end.year) {
+      if (start.month === 1 && end.month === 12) return String(start.year);
+      if (start.month === end.month) return `${COMPACT_MONTHS[start.month - 1]} ${start.year}`;
+      return `${COMPACT_MONTHS[start.month - 1]}–${COMPACT_MONTHS[end.month - 1]} ${start.year}`;
+    }
+    return compactExplicitDateRange(start, end);
+  }
+  var NUMERIC_CHARACTER_REFERENCE, AMEX_SUPERSCRIPT_FOOTNOTE_MARKERS, STATEMENT_CREDIT_SUFFIX, COMPACT_MONTHS;
+  var init_presentation = __esm({
+    "src/lib/amex-benefit-reader/presentation.ts"() {
+      "use strict";
+      NUMERIC_CHARACTER_REFERENCE = /&#(?:([0-9]+)|[xX]([0-9a-fA-F]+));/g;
+      AMEX_SUPERSCRIPT_FOOTNOTE_MARKERS = ["<sup>‡</sup>", "<sup>®</sup>"];
+      STATEMENT_CREDIT_SUFFIX = " Statement Credit";
+      COMPACT_MONTHS = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec"
+      ];
     }
   });
 
@@ -5433,10 +5599,10 @@
   }
   function titleSatisfiesAmexPolicy(policy, title) {
     const normalized = normalizeAmexSelectionText(title);
-    const tokens2 = normalizedTokens(title);
-    if (policy.forbiddenTokenGroups.some((group) => group.every((token) => tokens2.has(token)))) return false;
+    const tokens = normalizedTokens(title);
+    if (policy.forbiddenTokenGroups.some((group) => group.every((token) => tokens.has(token)))) return false;
     if (policy.exactAliases.some((alias) => normalizeAmexSelectionText(alias) === normalized)) return true;
-    return policy.requiredTokenGroups.every((group) => group.some((token) => tokens2.has(token)));
+    return policy.requiredTokenGroups.every((group) => group.some((token) => tokens.has(token)));
   }
   function parseUsd(quantity) {
     if (quantity.unit !== "USD" || quantity.currency !== "USD") return null;
@@ -5457,6 +5623,17 @@
       if (amount === null || amount < policy.amountConstraint.minimumUsd || policy.amountConstraint.maximumUsd !== void 0 && amount > policy.amountConstraint.maximumUsd) return false;
     }
     return true;
+  }
+  function selectMatchingAmexPolicy(policies, title, evidence = {}) {
+    const candidates = policies.filter(
+      (policy) => titleSatisfiesAmexPolicy(policy, title) && evidenceSatisfiesAmexPolicy(policy, evidence)
+    );
+    const normalizedTitle = normalizeAmexSelectionText(title);
+    const exact = candidates.filter(
+      (policy) => policy.exactAliases.some((alias) => normalizeAmexSelectionText(alias) === normalizedTitle)
+    );
+    if (exact.length === 1) return exact[0];
+    return exact.length > 1 || candidates.length !== 1 ? null : candidates[0];
   }
   var GENERIC_FORBIDDEN_AMEX_CREDIT_TOKEN_GROUPS;
   var init_source_credit_policy = __esm({
@@ -5484,45 +5661,14 @@
     return ` ${value} `.includes(` ${normalizeAmexSelectionText(phrase)} `);
   }
   function isIgnoredAmexCatalogBenefitTitle(title) {
-    return REVIEWED_IGNORED_CATALOG_TITLES.has(normalizeAmexSelectionText(title));
+    return REVIEWED_IGNORED_CATALOG_TITLES.has(normalizeAmexSelectionText(formatAmexBenefitTitle(title)));
   }
   function isExplicitlyUnsupportedTitle(normalizedTitle) {
     return REVIEWED_IGNORED_CATALOG_TITLES.has(normalizedTitle) || EXCLUDED_NON_CREDIT_TITLE_PHRASES.some((phrase) => containsPhrase(normalizedTitle, phrase));
   }
   function isEligibleLocalAmexUsageTitle(title) {
-    const normalized = normalizeAmexSelectionText(title);
+    const normalized = normalizeAmexSelectionText(formatAmexBenefitTitle(title));
     return normalized.length > 0 && !isExplicitlyUnsupportedTitle(normalized);
-  }
-  function evaluateAmexBrowserProductScores(bestScore, runnerUpScore) {
-    if (bestScore < AMEX_BROWSER_PRODUCT_MATCH_MIN_SCORE) return "low_confidence";
-    if (bestScore - runnerUpScore + Number.EPSILON < AMEX_BROWSER_PRODUCT_MATCH_MIN_MARGIN) return "ambiguous";
-    return "accepted";
-  }
-  function tokens(value, noise = PRODUCT_NOISE) {
-    return new Set(normalizeAmexSelectionText(value).split(" ").filter((token) => token && !noise.has(token)));
-  }
-  function weightedTokenScore(left, right) {
-    const a = tokens(left);
-    const b = tokens(right);
-    const union = /* @__PURE__ */ new Set([...Array.from(a), ...Array.from(b)]);
-    if (!union.size) return 0;
-    let shared = 0;
-    union.forEach((token) => {
-      if (a.has(token) && b.has(token)) shared += 1;
-    });
-    return shared / union.size;
-  }
-  function hasHardProductConflict(source, candidate, affiliation = false) {
-    if (affiliation) return false;
-    const sourceTokens = tokens(source, /* @__PURE__ */ new Set());
-    const candidateTokens = tokens(candidate, /* @__PURE__ */ new Set());
-    if (sourceTokens.has("business") !== candidateTokens.has("business")) return true;
-    const sourceCobrand = COBRANDS.find((token) => sourceTokens.has(token));
-    const candidateCobrand = COBRANDS.find((token) => candidateTokens.has(token));
-    if (sourceCobrand !== candidateCobrand) return true;
-    const sourceTier = TIERS.find((token) => sourceTokens.has(token));
-    const candidateTier = TIERS.find((token) => candidateTokens.has(token));
-    return Boolean(sourceTier && candidateTier && sourceTier !== candidateTier);
   }
   function resolveAmexBrowserProduct(productName) {
     const normalized = normalizeAmexSelectionText(productName);
@@ -5534,13 +5680,13 @@
       }
     }
     const candidates = products.flatMap(([name, descriptor]) => {
-      const hardConflict = hasHardProductConflict(productName, name);
-      return hardConflict ? [] : [{ productKey: descriptor.productKey, score: weightedTokenScore(productName, name) }];
+      const hardConflict = hasHardAmexProductConflict(productName, name);
+      return hardConflict ? [] : [{ productKey: descriptor.productKey, score: weightedAmexProductTokenScore(productName, name) }];
     }).sort((left, right) => right.score - left.score || left.productKey.localeCompare(right.productKey));
     if (!candidates.length) return { disposition: "hard_conflict", match: null };
     const best = candidates[0];
     const runnerUp = candidates[1]?.score ?? 0;
-    const scoreDisposition = evaluateAmexBrowserProductScores(best.score, runnerUp);
+    const scoreDisposition = evaluateAmexProductScores(best.score, runnerUp);
     if (scoreDisposition !== "accepted") return { disposition: scoreDisposition, match: null };
     return { disposition: "matched", match: { ...best, confidence: "fuzzy" } };
   }
@@ -5548,27 +5694,28 @@
     const family = sourceCreditKey.slice(sourceCreditKey.lastIndexOf(":") + 1);
     return family.split("-").map((token) => [token]);
   }
-  function matchAmexBrowserSyncCredit(productName, trackerTitle, evidence = {}) {
+  function createAmexBrowserCreditMatcher(productName) {
     const product = resolveAmexBrowserProduct(productName);
-    if (product.disposition !== "matched") return null;
-    const normalizedTitle = normalizeAmexSelectionText(trackerTitle);
-    const candidates = BROWSER_AMEX_SOURCE_CREDIT_DESCRIPTORS.filter((descriptor) => descriptor.productKey === product.match.productKey && titleSatisfiesAmexPolicy(descriptor, trackerTitle) && evidenceSatisfiesAmexPolicy(descriptor, evidence));
-    const exact = candidates.filter((descriptor) => descriptor.exactAliases.some((alias) => normalizeAmexSelectionText(alias) === normalizedTitle));
-    const resolved = exact.length === 1 ? exact[0] : exact.length > 1 || candidates.length !== 1 ? null : candidates[0];
-    if (!resolved) return null;
-    return {
-      productKey: product.match.productKey,
-      creditFamilyKey: resolved.creditFamilyKey,
-      sourceCreditKey: resolved.sourceCreditKey
+    const descriptors = product.disposition === "matched" ? BROWSER_AMEX_SOURCE_CREDIT_DESCRIPTORS.filter((descriptor) => descriptor.productKey === product.match.productKey) : [];
+    return (trackerTitle, evidence = {}) => {
+      if (product.disposition !== "matched") return null;
+      const resolved = selectMatchingAmexPolicy(descriptors, trackerTitle, evidence);
+      if (!resolved) return null;
+      return {
+        productKey: product.match.productKey,
+        creditFamilyKey: resolved.creditFamilyKey,
+        sourceCreditKey: resolved.sourceCreditKey
+      };
     };
   }
-  var EXCLUDED_NON_CREDIT_TITLE_PHRASES, REVIEWED_IGNORED_CATALOG_TITLES, AMEX_BROWSER_PRODUCT_MATCH_MIN_SCORE, AMEX_BROWSER_PRODUCT_MATCH_MIN_MARGIN, PRODUCT_NOISE, COBRANDS, TIERS, REVIEWED_SOURCE_ALIASES, SOURCE_REQUIRED_TOKEN_OVERRIDES, SOURCE_FORBIDDEN_TOKEN_OVERRIDES, BROWSER_AMEX_SOURCE_CREDIT_DESCRIPTORS;
+  var EXCLUDED_NON_CREDIT_TITLE_PHRASES, REVIEWED_IGNORED_CATALOG_TITLES, REVIEWED_SOURCE_ALIASES, SOURCE_REQUIRED_TOKEN_OVERRIDES, SOURCE_FORBIDDEN_TOKEN_OVERRIDES, BROWSER_AMEX_SOURCE_CREDIT_DESCRIPTORS;
   var init_supported_card_credits = __esm({
     "src/lib/amex-benefit-reader/supported-card-credits.ts"() {
       "use strict";
       init_american_express_card_catalog();
       init_catalog_registry();
       init_normalization();
+      init_presentation();
       init_source_credit_policy();
       EXCLUDED_NON_CREDIT_TITLE_PHRASES = [
         "access",
@@ -5586,11 +5733,6 @@
         normalizeAmexSelectionText("35% Airline Bonus"),
         normalizeAmexSelectionText("Link Your Resy Profile")
       ]);
-      AMEX_BROWSER_PRODUCT_MATCH_MIN_SCORE = 0.88;
-      AMEX_BROWSER_PRODUCT_MATCH_MIN_MARGIN = 0.1;
-      PRODUCT_NOISE = /* @__PURE__ */ new Set(["american", "express", "card", "the", "from"]);
-      COBRANDS = ["hilton", "delta", "marriott"];
-      TIERS = ["gold", "platinum", "reserve", "aspire", "surpass", "brilliant"];
       REVIEWED_SOURCE_ALIASES = {
         "american-express-platinum-card:resy": ["Resy Credit", "Resy Dining Credit", "$400 Resy Credit"],
         "american-express-platinum-card:lululemon": ["lululemon Credit", "$300 lululemon Credit"],
@@ -5604,6 +5746,7 @@
         "hilton-honors-american-express-aspire-card:hilton-resort": ["Hilton Resort Statement Credit"]
       };
       SOURCE_REQUIRED_TOKEN_OVERRIDES = {
+        "american-express-platinum-card:clear-plus": [["clear"]],
         "american-express-gold-card:dining": [["dining", "grubhub"]],
         "american-express-business-gold-card:flexible-business": [["flexible", "fedex", "grubhub", "office"], ["business", "credit"]],
         "american-express-platinum-card:hotel": [["hotel", "fhr", "thc"]],
@@ -5711,51 +5854,89 @@
   }
   function projectLatestV3SyncEnvelope(store) {
     const summary = store.lastScan;
-    if (!summary?.scanId || summary.status === "interrupted" || summary.status === "failed") {
-      return { envelope: null, reason: "fresh_v3_scan_required" };
-    }
-    const successfulCardIds = new Set(summary.cards.filter((card) => card.result === "complete" && card.localCardId).map((card) => card.localCardId));
+    const coverage = {
+      totalBenefits: 0,
+      readyBenefits: 0,
+      excludedBenefits: 0,
+      canceledCards: 0,
+      unavailableCards: 0,
+      issues: []
+    };
+    const needsRefresh = !summary?.scanId || summary.status === "interrupted" || summary.status === "failed";
+    const successfulCardIds = new Set((summary?.cards ?? []).filter((card) => card.result === "complete" && card.localCardId).map((card) => card.localCardId));
     const exclusions = /* @__PURE__ */ new Map();
     const exclude = (reason, count = 1) => {
+      if (!count) return;
       exclusions.set(reason, Math.min(AMEX_SYNC_MAX_ROWS, (exclusions.get(reason) ?? 0) + count));
     };
     const cards = [];
     for (const record of Object.values(store.cards)) {
+      if (record.error?.code === "account_canceled") {
+        coverage.canceledCards++;
+        continue;
+      }
       const latest = record.latest;
       if (!latest) {
-        exclude("failed");
+        coverage.unavailableCards++;
+        continue;
+      }
+      coverage.totalBenefits += latest.benefits.length;
+      const report = (reason, benefits = latest.benefits) => {
+        coverage.excludedBenefits += benefits.length;
+        for (const benefit of benefits) coverage.issues.push({
+          cardLabel: `${record.identity.productName} ••••• ${record.identity.endingDigits}`,
+          benefitTitle: benefit.title,
+          reason
+        });
+        if (reason === "unmapped") exclude("source_mapping_ambiguous", benefits.length);
+        else if (reason === "not_usage") exclude("status_unavailable", benefits.length);
+        else exclude(reason, benefits.length);
+      };
+      if (needsRefresh) {
+        report("not_attempted_successfully");
+        coverage.unavailableCards++;
         continue;
       }
       if (latest.contractVersion !== OBSERVATION_CONTRACT_VERSION_V3 || latest.parserVersion !== PARSER_VERSION) {
-        exclude("v1_only", latest.benefits.length || 1);
+        report("v1_only");
+        coverage.unavailableCards++;
         continue;
       }
-      if (latest.scanId !== summary.scanId) {
-        exclude("older_scan", latest.benefits.length || 1);
+      if (latest.scanId !== summary?.scanId) {
+        report("older_scan");
+        coverage.unavailableCards++;
         continue;
       }
       if (record.freshness !== "current") {
-        exclude(record.freshness === "stale_error" ? "stale" : "failed", latest.benefits.length || 1);
+        report(record.freshness === "stale_error" ? "stale" : "failed");
+        coverage.unavailableCards++;
         continue;
       }
       if (record.completeness !== "complete" || latest.completeness !== "complete") {
-        exclude("partial", latest.benefits.length || 1);
+        report("partial");
+        coverage.unavailableCards++;
         continue;
       }
       if (!successfulCardIds.has(record.localCardId)) {
-        exclude("not_attempted_successfully", latest.benefits.length || 1);
+        report("not_attempted_successfully");
+        coverage.unavailableCards++;
         continue;
       }
       if (!/^\d{5}$/.test(latest.endingDigits)) {
-        exclude("source_last_five_required", latest.benefits.length || 1);
+        report("source_last_five_required");
         continue;
       }
+      const matchCredit = createAmexBrowserCreditMatcher(latest.productName);
       const mapped = latest.benefits.flatMap((benefit) => {
-        if (benefit.category.state !== "observed" || benefit.category.value !== "usage") return [];
-        const match = matchAmexBrowserSyncCredit(latest.productName, benefit.title, {
+        if (benefit.category.state !== "observed" || benefit.category.value !== "usage") {
+          report("not_usage", [benefit]);
+          return [];
+        }
+        const match = matchCredit(benefit.title, {
           sourcePeriod: benefit.sourcePeriod.state === "observed" ? benefit.sourcePeriod.value : null,
           earnedOrUsed: benefit.earnedOrUsed.state === "observed" ? benefit.earnedOrUsed.value : null
         });
+        if (!match) report("unmapped", [benefit]);
         return match ? [{ benefit, match }] : [];
       });
       const sourceMappingKey = ({
@@ -5771,8 +5952,9 @@
         sourceCounts.set(key, (sourceCounts.get(key) ?? 0) + 1);
       });
       const unambiguous = mapped.filter((candidate) => sourceCounts.get(sourceMappingKey(candidate)) === 1);
-      const ambiguousCount = mapped.length - unambiguous.length;
-      if (ambiguousCount > 0) exclude("source_mapping_ambiguous", ambiguousCount);
+      const ambiguous = mapped.filter((candidate) => sourceCounts.get(sourceMappingKey(candidate)) !== 1);
+      if (ambiguous.length) report("source_mapping_ambiguous", ambiguous.map(({ benefit }) => benefit));
+      coverage.readyBenefits += unambiguous.length;
       if (!unambiguous.length) continue;
       cards.push({
         sourceLocalCardId: latest.localCardId,
@@ -5784,9 +5966,11 @@
         rows: unambiguous.map(({ benefit, match }) => projectRow(benefit, match))
       });
     }
-    if (!cards.length) return { envelope: null, reason: "no_complete_cards" };
+    if (needsRefresh || !summary?.scanId) return { envelope: null, reason: "fresh_v3_scan_required", coverage };
+    if (!cards.length) return { envelope: null, reason: "no_complete_cards", coverage };
     return {
       reason: "ready",
+      coverage,
       envelope: parseAmexSyncEnvelope({
         envelopeVersion: AMEX_SYNC_ENVELOPE_VERSION,
         observationContractVersion: OBSERVATION_CONTRACT_VERSION_V3,
@@ -5797,7 +5981,7 @@
       })
     };
   }
-  var AMEX_SYNC_ENVELOPE_VERSION, AMEX_SYNC_MAX_BYTES, AMEX_SYNC_MAX_CARDS, AMEX_SYNC_MAX_ROWS, AMEX_SYNC_MAX_SCAN_AGE_MS, transportQuantitySchema, syncExclusionReasonSchema, amexSyncRowSchema, amexSyncCardSchema, amexSyncEnvelopeSchema, SYNC_FORBIDDEN_FIELD_PATTERN;
+  var AMEX_SYNC_ENVELOPE_VERSION, AMEX_SYNC_MAX_BYTES, AMEX_SYNC_MAX_CARDS, AMEX_SYNC_MAX_ROWS, AMEX_SYNC_MAX_SCAN_AGE_MS, transportQuantitySchema, syncExclusionReasonSchema, amexSyncRowSchema, amexSyncCardSchema, amexSyncEnvelopeSchema, SYNC_FORBIDDEN_FIELD_PATTERN, SYNC_COVERAGE_LABELS;
   var init_sync_contract = __esm({
     "src/lib/amex-benefit-reader/sync-contract.ts"() {
       "use strict";
@@ -5878,6 +6062,21 @@
         });
       });
       SYNC_FORBIDDEN_FIELD_PATTERN = /(?:sourcefingerprint|identitysecret|fullcard|cardnumber|accountnumber|accounttoken|opaquetoken|tokenvalue|password|passcode|mfa|cookie|authorization|requestheaders|requestbody|rawrequest|rawresponse|userid|email)/i;
+      SYNC_COVERAGE_LABELS = {
+        v1_only: "Refresh this card",
+        older_scan: "Not in the latest refresh",
+        stale: "Refresh failed; showing an older result",
+        partial: "Refresh did not finish for this card",
+        failed: "Couldn’t read this card",
+        not_attempted_successfully: "Refresh this card",
+        no_structured_period: "Amex did not provide the benefit dates",
+        prerequisite_only: "Enrollment or linking needed",
+        status_unavailable: "Amex did not provide usage",
+        source_mapping_ambiguous: "Multiple benefits match the same credit",
+        source_last_five_required: "Card ending is missing",
+        not_usage: "Not a usage tracker",
+        unmapped: "No matching credit in Perks Reminder"
+      };
     }
   });
 
@@ -5947,7 +6146,7 @@
   async function clearAmexSyncMailbox(storage2) {
     await storage2.deleteValue(AMEX_SYNC_MAILBOX_KEY);
   }
-  var LEGACY_AMEX_SYNC_MAILBOX_KEY, AMEX_SYNC_MAILBOX_KEY, AMEX_SYNC_MAILBOX_VERSION, AMEX_SYNC_HANDOFF_ORIGIN, AMEX_SYNC_MAILBOX_TTL_MS, opaqueIdSchema, amexSyncMailboxSchema, handoffReadyMessageSchema, handoffPayloadMessageSchema, handoffAcceptedMessageSchema;
+  var LEGACY_AMEX_SYNC_MAILBOX_KEY, AMEX_SYNC_MAILBOX_KEY, AMEX_SYNC_MAILBOX_VERSION, AMEX_SYNC_MAILBOX_TTL_MS, opaqueIdSchema, amexSyncMailboxSchema, handoffReadyMessageSchema, handoffPayloadMessageSchema, handoffAcceptedMessageSchema;
   var init_sync_mailbox = __esm({
     "src/lib/amex-benefit-reader/sync-mailbox.ts"() {
       "use strict";
@@ -5957,7 +6156,6 @@
       LEGACY_AMEX_SYNC_MAILBOX_KEY = "perksReminder.amexBenefitReader.syncMailbox.v1";
       AMEX_SYNC_MAILBOX_KEY = "perksReminder.amexBenefitReader.syncMailbox.v2";
       AMEX_SYNC_MAILBOX_VERSION = "amex-sync-mailbox/2";
-      AMEX_SYNC_HANDOFF_ORIGIN = PRODUCTION_AMEX_SYNC_HANDOFF_TARGET.origin;
       AMEX_SYNC_MAILBOX_TTL_MS = 10 * 60 * 1e3;
       opaqueIdSchema = z.string().regex(/^[a-f0-9]{32}$/);
       amexSyncMailboxSchema = z.object({
@@ -6041,9 +6239,6 @@
     );
     return bytesToHex(new Uint8Array(signature));
   }
-  function createLocalCardId(cryptoApi = crypto) {
-    return cryptoApi.randomUUID();
-  }
   function normalizeIdentityText(value) {
     return value.trim().replace(/\s+/g, " ").toLocaleLowerCase("en-US");
   }
@@ -6078,7 +6273,7 @@
         record: displayMatches[0]
       };
     }
-    return { kind: "new", localCardId: createLocalCardId(input.cryptoApi) };
+    return { kind: "new", localCardId: (input.cryptoApi ?? crypto).randomUUID() };
   }
   function createBenefitKey(input) {
     if (input.hashedDiscriminator && !/^[a-f0-9]{64}$/.test(input.hashedDiscriminator)) {
@@ -6215,6 +6410,7 @@
       STORE_KEY = "perksReminder.amexBenefitReader.store.v1";
       IDENTITY_SECRET_KEY = "perksReminder.amexBenefitReader.identitySecret.v1";
       ERROR_MESSAGES = {
+        account_canceled: "Amex reports this card as canceled. Saved observations are retained as history and are not refreshed.",
         unknown_account_variant: "An unrecognized account response variant was not scanned.",
         duplicate_card_entry: "A physical card identity appeared more than once in account discovery.",
         identity_unavailable: "A stable local card identity could not be created.",
@@ -6284,10 +6480,21 @@
           await this.storage.deleteValue(AMEX_SYNC_MAILBOX_KEY);
         }
         async load() {
+          if (this.pendingLoad) return this.pendingLoad;
+          this.pendingLoad = this.loadCurrent();
+          try {
+            return await this.pendingLoad;
+          } finally {
+            this.pendingLoad = void 0;
+          }
+        }
+        async loadCurrent() {
           const migratedAt = nowIso();
-          const primaryCompatibility = await this.storage.getValue(PRIMARY_ONLY_COMPATIBILITY_KEY, null);
-          const v3Compatibility = await this.storage.getValue(V3_SELECTION_COMPATIBILITY_KEY, null);
-          const rawStore = await this.storage.getValue(STORE_KEY, null);
+          const [primaryCompatibility, v3Compatibility, rawStore] = await Promise.all([
+            this.storage.getValue(PRIMARY_ONLY_COMPATIBILITY_KEY, null),
+            this.storage.getValue(V3_SELECTION_COMPATIBILITY_KEY, null),
+            this.storage.getValue(STORE_KEY, null)
+          ]);
           let loaded = loadStoreValue(rawStore, migratedAt);
           if (primaryCompatibility !== PRIMARY_ONLY_COMPATIBILITY_VALUE) {
             const invalidated = invalidateObservations(loaded, migratedAt);
@@ -6305,10 +6512,10 @@
           }
           return loaded;
         }
-        async commitCard(result) {
+        async commitCard(result, checkpoint) {
           const current = await this.load();
           const merged = mergeCardAttempt(current, result);
-          await this.storage.setValue(STORE_KEY, merged.store);
+          await this.storage.setValue(STORE_KEY, checkpoint ? mergeScanSummary(merged.store, checkpoint) : merged.store);
           return merged.record;
         }
         async recordScanSummary(summary) {
@@ -6324,10 +6531,6 @@
             this.storage.deleteValue(PRIMARY_ONLY_COMPATIBILITY_KEY),
             this.storage.deleteValue(V3_SELECTION_COMPATIBILITY_KEY)
           ]);
-        }
-        async initializeIfNeeded() {
-          const value = await this.storage.getValue(STORE_KEY, null);
-          if (value == null) await this.storage.setValue(STORE_KEY, createEmptyStore(nowIso()));
         }
       };
       BrowserMailboxStorage = class {
@@ -6445,6 +6648,7 @@
         account: supplementaryAccountDetailsSchema.optional()
       }).strip();
       memberAccountSchema = z.object({
+        status: z.object({ account_status: z.array(z.string().max(80)).optional() }).strip().optional(),
         account_token: responseText(4096),
         product: accountProductSchema.optional(),
         ...accountDisplayFields,
@@ -6718,7 +6922,8 @@
         addCard(rawAccountToken.state === "valid" && productName.state === "valid" && endingDigits ? {
           rawAccountToken: rawAccountToken.value,
           productName: productName.value,
-          endingDigits
+          endingDigits,
+          ...account.status?.account_status?.includes("Canceled") ? { canceled: true } : {}
         } : null);
       } else {
         unknownVariantCount += 1;
@@ -6984,11 +7189,14 @@
       for (const tracker of block.trackers) {
         const normalizedCategory = exactString(tracker.category)?.toLocaleLowerCase("en-US") ?? null;
         if (normalizedCategory !== "usage") continue;
-        const title = text(tracker.benefitName, 200);
+        let title = text(tracker.benefitName, 200);
         if (!title || !isEligibleLocalAmexUsageTitle(title)) continue;
         const itemIssues = /* @__PURE__ */ new Set();
         const issuerId = exactString(tracker.sorBenefitId);
         const catalogGroup = issuerId ? catalogsByIssuerId.get(issuerId) ?? [] : [];
+        if (title === "Congratulations!" && catalogGroup.length === 1) {
+          title = catalogTitle(catalogGroup[0]) ?? title;
+        }
         const ambiguousCatalog = catalogGroup.length > 1;
         if (ambiguousCatalog) {
           itemIssues.add("benefit_identity_conflict");
@@ -7223,6 +7431,7 @@
           let unknownAccountVariantCount = 0;
           let interrupted = false;
           let discoveryFailed = false;
+          let processingFailed = false;
           let retainedUnseenCard = false;
           let visibleContextResult = "unavailable";
           this.reporter.report({ type: "started" });
@@ -7260,12 +7469,57 @@
             });
             const claimed = /* @__PURE__ */ new Set();
             await this.recordInterruptionCheckpoint(scanId, startedAt, discovery, attemptedCardCount, dispositions);
-            for (let index = 0; index < discovery.cards.length; index += 1) {
+            const discovered = discovery;
+            let activeReads = 0;
+            const waitingReads = [];
+            const read = async (operation) => {
+              if (activeReads >= 4) await new Promise((resolve) => waitingReads.push(resolve));
+              else activeReads += 1;
+              try {
+                throwIfAborted(signal);
+                return await operation();
+              } finally {
+                const next = waitingReads.shift();
+                if (next) next();
+                else activeReads -= 1;
+              }
+            };
+            let writeTail = Promise.resolve();
+            const persist = (operation) => {
+              const pending = writeTail.then(operation);
+              writeTail = pending.then(() => void 0, () => void 0);
+              return pending;
+            };
+            const commitCard = (result) => persist(async () => {
               throwIfAborted(signal);
-              const transientCard = discovery.cards[index];
+              const disposition = {
+                localCardId: result.identity.localCardId,
+                result: result.disposition === "failed" && result.errorCode === "account_canceled" ? "skipped" : result.disposition,
+                issueCode: result.disposition === "failed" ? result.errorCode : result.observation.issueCodes[0] ?? null
+              };
+              const record = await this.store.commitCard(result, {
+                scanId,
+                startedAt,
+                finishedAt: this.clock.now().toISOString(),
+                status: "interrupted",
+                discoveredCardCount: discovered.cards.length,
+                attemptedCardCount,
+                unknownAccountVariantCount: discovered.unknownVariantCount,
+                cards: [...dispositions, disposition],
+                visibleContext: "unavailable"
+              });
+              dispositions.push(disposition);
+              return record;
+            });
+            const checkpoint = () => {
+              return persist(() => this.recordInterruptionCheckpoint(scanId, startedAt, discovered, attemptedCardCount, dispositions));
+            };
+            const processCard = async (index) => {
+              throwIfAborted(signal);
+              const transientCard = discovered.cards[index];
               let rawAccountToken = transientCard.rawAccountToken;
               transientCard.rawAccountToken = "";
-              attemptedCardCount += 1;
+              if (!transientCard.canceled) attemptedCardCount += 1;
               let prepared;
               try {
                 prepared = await this.identity.prepareCard({
@@ -7276,8 +7530,8 @@
               } catch {
                 rawAccountToken = "";
                 dispositions.push({ localCardId: null, result: "failed", issueCode: "identity_unavailable" });
-                await this.recordInterruptionCheckpoint(scanId, startedAt, discovery, attemptedCardCount, dispositions);
-                continue;
+                await checkpoint();
+                return;
               }
               const resolution = reconcileCardIdentity({
                 sourceFingerprint: prepared.sourceFingerprint,
@@ -7293,8 +7547,8 @@
                   result: "failed",
                   issueCode: resolution.kind === "ambiguous" ? "identity_ambiguous" : "identity_conflict"
                 });
-                await this.recordInterruptionCheckpoint(scanId, startedAt, discovery, attemptedCardCount, dispositions);
-                continue;
+                await checkpoint();
+                return;
               }
               const localCardId = resolution.localCardId;
               claimed.add(localCardId);
@@ -7304,6 +7558,17 @@
                 productName: prepared.productName,
                 endingDigits: prepared.endingDigits
               };
+              if (transientCard.canceled) {
+                rawAccountToken = "";
+                const record = await commitCard({
+                  disposition: "failed",
+                  identity,
+                  attemptedAt: this.clock.now().toISOString(),
+                  errorCode: "account_canceled"
+                });
+                this.reporter.report({ type: "card_committed", record, conflictDiagnostics: [], conflictDetails: { details: [], totalCount: 0, truncated: false } });
+                return;
+              }
               let trackerResponse = null;
               let catalogResponse = null;
               let catalogIssueCode = null;
@@ -7311,26 +7576,23 @@
                 this.reporter.report({
                   type: "card",
                   cardIndex: index + 1,
-                  cardCount: discovery.cards.length,
+                  cardCount: discovered.cards.length,
                   productName: prepared.productName,
                   endingDigits: prepared.endingDigits,
                   phase: "trackers"
                 });
-                trackerResponse = await this.client.readBenefitTrackers(rawAccountToken, signal);
+                const reads = await Promise.allSettled([
+                  read(() => this.client.readBenefitTrackers(rawAccountToken, signal)),
+                  read(() => this.client.readBenefitCatalog(rawAccountToken, signal))
+                ]);
                 throwIfAborted(signal);
-                this.reporter.report({
-                  type: "card",
-                  cardIndex: index + 1,
-                  cardCount: discovery.cards.length,
-                  productName: prepared.productName,
-                  endingDigits: prepared.endingDigits,
-                  phase: "catalog"
-                });
-                try {
-                  catalogResponse = await this.client.readBenefitCatalog(rawAccountToken, signal);
-                } catch (error) {
-                  const code = issueFromError(error);
-                  if (!CATALOG_PARTIAL_ISSUES.has(code)) throw error;
+                if (reads[0].status === "rejected") throw reads[0].reason;
+                trackerResponse = reads[0].value;
+                if (reads[1].status === "fulfilled") {
+                  catalogResponse = reads[1].value;
+                } else {
+                  const code = issueFromError(reads[1].reason);
+                  if (!CATALOG_PARTIAL_ISSUES.has(code)) throw reads[1].reason;
                   catalogIssueCode = code;
                   catalogResponse = { benefits: {} };
                 }
@@ -7338,7 +7600,7 @@
                 this.reporter.report({
                   type: "card",
                   cardIndex: index + 1,
-                  cardCount: discovery.cards.length,
+                  cardCount: discovered.cards.length,
                   productName: prepared.productName,
                   endingDigits: prepared.endingDigits,
                   phase: "normalizing"
@@ -7368,7 +7630,7 @@
                   issueCodes,
                   benefits: normalized.benefits
                 };
-                const record = await this.store.commitCard({
+                const record = await commitCard({
                   disposition,
                   identity,
                   attemptedAt: observedAt,
@@ -7380,31 +7642,33 @@
                   conflictDiagnostics: normalized.conflictDiagnostics,
                   conflictDetails: normalized.conflictDetails
                 });
-                dispositions.push({ localCardId, result: disposition, issueCode: issueCodes[0] ?? null });
               } catch (error) {
                 const code = issueFromError(error);
                 if (code === "scan_cancelled") {
                   interrupted = true;
+                  controller.abort();
                   throw error;
                 }
                 const attemptedAt = this.clock.now().toISOString();
-                const record = await this.store.commitCard({
+                const record = await commitCard({
                   disposition: "failed",
                   identity,
                   attemptedAt,
                   errorCode: code
                 });
                 this.reporter.report({ type: "card_committed", record, conflictDiagnostics: [], conflictDetails: { details: [], totalCount: 0, truncated: false } });
-                dispositions.push({ localCardId, result: "failed", issueCode: code });
               } finally {
                 trackerResponse = null;
                 catalogResponse = null;
                 rawAccountToken = "";
               }
-              await this.recordInterruptionCheckpoint(scanId, startedAt, discovery, attemptedCardCount, dispositions);
-            }
+            };
+            const workers = await Promise.allSettled(discovered.cards.map((_, index) => processCard(index)));
+            const rejected = workers.find((result) => result.status === "rejected");
+            if (rejected) throw rejected.reason;
             for (const record of Object.values(initialStore.cards)) {
               if (claimed.has(record.localCardId)) continue;
+              if (record.error?.code === "account_canceled") continue;
               retainedUnseenCard = true;
               const attemptedAt = this.clock.now().toISOString();
               const staleRecord = await this.store.commitCard({
@@ -7425,6 +7689,7 @@
             if (code === "scan_cancelled") interrupted = true;
             else {
               discoveryFailed = discovery === null;
+              processingFailed = discovery !== null;
               if (discoveryFailed) dispositions.push({ localCardId: null, result: "failed", issueCode: code });
             }
           } finally {
@@ -7443,8 +7708,8 @@
           }
           const hasFailure = dispositions.some((item) => item.result === "failed");
           const hasPartial = dispositions.some((item) => item.result === "partial");
-          const noSuccessfulCards = discoveredCardCount > 0 && !dispositions.some((item) => item.result === "complete" || item.result === "partial");
-          const status = interrupted ? "interrupted" : discoveryFailed || discoveredCardCount === 0 || noSuccessfulCards ? "failed" : hasFailure || hasPartial || retainedUnseenCard || unknownAccountVariantCount > 0 || visibleContextResult !== "unchanged" ? "partial" : "complete";
+          const noSuccessfulCards = discoveredCardCount > 0 && !dispositions.some((item) => item.result === "complete" || item.result === "partial" || item.result === "skipped");
+          const status = interrupted ? "interrupted" : discoveryFailed || discoveredCardCount === 0 || noSuccessfulCards ? "failed" : processingFailed || hasFailure || hasPartial || retainedUnseenCard || unknownAccountVariantCount > 0 || visibleContextResult !== "unchanged" ? "partial" : "complete";
           const summary = {
             scanId,
             startedAt,
@@ -7481,93 +7746,11 @@
     }
   });
 
-  // src/lib/amex-benefit-reader/presentation.ts
-  function isUnicodeScalarValue(value) {
-    return Number.isInteger(value) && value > 0 && value <= 1114111 && (value < 55296 || value > 57343);
-  }
-  function decodeNumericCharacterReferences(value) {
-    return value.replace(
-      NUMERIC_CHARACTER_REFERENCE,
-      (reference, decimalDigits, hexadecimalDigits) => {
-        const digits = decimalDigits ?? hexadecimalDigits;
-        if (!digits) return reference;
-        const codePoint = Number.parseInt(digits, decimalDigits ? 10 : 16);
-        return isUnicodeScalarValue(codePoint) ? String.fromCodePoint(codePoint) : reference;
-      }
-    );
-  }
-  function formatAmexBenefitTitle(value) {
-    const decoded = decodeNumericCharacterReferences(value).trimEnd();
-    for (const marker of AMEX_SUPERSCRIPT_FOOTNOTE_MARKERS) {
-      const markerBeforeStatementCredit = `${marker}${STATEMENT_CREDIT_SUFFIX}`;
-      if (decoded.endsWith(markerBeforeStatementCredit)) {
-        const prefix = decoded.slice(0, -markerBeforeStatementCredit.length).trimEnd();
-        return prefix ? `${prefix}${STATEMENT_CREDIT_SUFFIX}` : STATEMENT_CREDIT_SUFFIX.trimStart();
-      }
-    }
-    for (const marker of AMEX_SUPERSCRIPT_FOOTNOTE_MARKERS) {
-      if (decoded.endsWith(marker)) {
-        const withoutTerminalFootnote = decoded.slice(0, -marker.length).trimEnd();
-        return withoutTerminalFootnote || decoded;
-      }
-    }
-    if (decoded.endsWith("‡")) {
-      const withoutStandaloneDagger = decoded.slice(0, -1).trimEnd();
-      return withoutStandaloneDagger || decoded;
-    }
-    return decoded;
-  }
-  function calendarDateParts(value) {
-    const [year, month, day] = value.split("-").map(Number);
-    return { year, month, day };
-  }
-  function lastDayOfMonth(year, month) {
-    return new Date(Date.UTC(year, month, 0)).getUTCDate();
-  }
-  function compactExplicitDateRange(start, end) {
-    const startMonth = COMPACT_MONTHS[start.month - 1];
-    const endMonth = COMPACT_MONTHS[end.month - 1];
-    if (start.year === end.year && start.month === end.month) {
-      return `${startMonth} ${start.day}–${end.day}, ${start.year}`;
-    }
-    if (start.year === end.year) {
-      return `${startMonth} ${start.day}–${endMonth} ${end.day}, ${start.year}`;
-    }
-    return `${startMonth} ${start.day}, ${start.year}–${endMonth} ${end.day}, ${end.year}`;
-  }
-  function formatAmexSourcePeriod(period) {
-    const start = calendarDateParts(period.startDate);
-    const end = calendarDateParts(period.endDate);
-    const startsOnMonthBoundary = start.day === 1;
-    const endsOnMonthBoundary = end.day === lastDayOfMonth(end.year, end.month);
-    if (startsOnMonthBoundary && endsOnMonthBoundary && start.year === end.year) {
-      if (start.month === 1 && end.month === 12) return String(start.year);
-      if (start.month === end.month) return `${COMPACT_MONTHS[start.month - 1]} ${start.year}`;
-      return `${COMPACT_MONTHS[start.month - 1]}–${COMPACT_MONTHS[end.month - 1]} ${start.year}`;
-    }
-    return compactExplicitDateRange(start, end);
-  }
-  var NUMERIC_CHARACTER_REFERENCE, AMEX_SUPERSCRIPT_FOOTNOTE_MARKERS, STATEMENT_CREDIT_SUFFIX, COMPACT_MONTHS;
-  var init_presentation = __esm({
-    "src/lib/amex-benefit-reader/presentation.ts"() {
-      "use strict";
-      NUMERIC_CHARACTER_REFERENCE = /&#(?:([0-9]+)|[xX]([0-9a-fA-F]+));/g;
-      AMEX_SUPERSCRIPT_FOOTNOTE_MARKERS = ["<sup>‡</sup>", "<sup>®</sup>"];
-      STATEMENT_CREDIT_SUFFIX = " Statement Credit";
-      COMPACT_MONTHS = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec"
-      ];
+  // extension/assets/benefits-orbit.webp
+  var benefits_orbit_default;
+  var init_benefits_orbit = __esm({
+    "extension/assets/benefits-orbit.webp"() {
+      benefits_orbit_default = "data:image/webp;base64,UklGRpgfAABXRUJQVlA4IIwfAACwyACdASrQAmgBPm02mEkkIqgoorFY+RANiWdu//I5/5UVC6ITDvFfVS499+1XxnvK36PzFvjO+B/uPX15hXPq82vnVemH+977T6FfnS+s7/i8mBaD/qPtf3uvF39N4F/dPOn2f8Aj1p/nuFbAL9XP+L/f/ar+m81/8P1AP9F4U3g0ffv+j7Af81/tfrL/63mN+vvSBEZE78+1y7/51mLanYV7XNiAed+fa5d/87Dde1k2IdgHm2fp/2fEbXNP0EDi/wOatRnvnYfyJU/vbkaG3WAAMR0l5sTUckML6t0AfSAzZ1nZrv/nd7DubYPyZaB9UFPc08gqRCmwSelbkVcVQ2e2vKIsN+5tn+l5gsW3FHcT3Ha7WOu6MBQ2Z2fiDefgLZ4d3zrySzvBHQdf/zyUJnFzU1/t2rCW33LGUNvmokB10hoW8OB6Y4tnoVdTSOvryIeumwzCBKoztBZfleqJ3Yp8/iJUcf6WHb/pgiyEAbTurOAwT53cCtkQ8+AtF8fLHgyLhuca/Z+yUGHBj9q4EjSwUMJgSdzt4ixptkjz68wMaJ9lhoiTMYcXkow46uoi6mZNzEPQisQsp8Ab/ijUccTMEfiLDMGifxfn0DQ+rg7ecnmXnE+sm6NFMVUEMgnrUBKjyXMgBQ2gifsvAKCuUJ3wVxtzV5Ipl9D8/68GCSWc5qxa6i96Vabnzx5klL8EE3UVuFLA/lUJ7CvelkHzG9Qn5Ch+laeasclMPhSS09jlN6eRjzyDxKi0Ao4GIEkd/m5m8uAsFrvtvckCfgFTECeCxncJnvypzUNqRW324fXD2E2/v11UgNaNPo0aDscyXA1MrkRu/xiSKSM/tua/PA1t69Howezjz5BB4ooT0k2S6Vz8BhAZx8xtTnI7WLPmN1qZ0gBWuzPQWYFzIfQXSV20KCBlj810J53qkK5DPgjNq+ZU3zCzo1k7JY/cVq6xd2NLYt/lqmdmYXiJ+njevppTxE2s+XqrLMvFx8SKE6tYO/uKV+UdvfIG9LRwqS6ePtK+SgTsLaC9vYshic0823XLqSxmyb+/qj5Mm4LhAOvBbpMkj079S9FngEQcv9K+Xmgnw2Fa2TZS2J53+ktU1s+In9fAND8KyFpEnSz7FbdzxgCpg//60qfo748mqp7C0dFC5kCRlYoSQH/01i4TeBD//bqY//+2Okrd90ORL+BTyCeJ//lze6YMF/mqt+/J8Fle2DV3LpkWXhJFt3maBDBJ3i715GMse3uZeipJBlD2BZj/G3wxxKOgZ0HgHivADpsE7OdNyHlfuMnhXkQ5LUA/sltwlrrDDwQZ6zlVLZKgDI/d7d/8cYs7FCfid+X4G9ptcvHxTxSyVxQKJzki3UTevTdGgBeDSnaGmEY9hHoDRhDpkyYJHFmVLQRv4ueCI12TQgYVmVAx2evlUMQpRJN4F9/++fVRmjbyPzvSH//t3FBtL9P4EV1Nl9lZvffYeMkC9rjxgrLtdFcE8YVlhd4mWP2lFiNSA5kG++DkdL5zlM8PFVTJtvwDlcdjegSdiRmMXKy7EQ3sgwRBD8rBbV//uV99vewNgf9595In+75yj7PCbIFzJBrJBkjbwTWbrYX1EZ7BahFMsq/WWsVWxIZcbKLXIRFUcfVJFrzyQw88yrswXYmCtl/dAA2QFCJ9QdDKwfGzoJmIXsX6DrN6nQng5g77qWt21DLtBCSPA+oRzS+jutXD4NxNghpoaJhm/0vCFgz4ouI6oRtTELPl9VfysLeJfOm4yGz/kZchldbjeY4N/kHrvnFAeF256M6ZKmJ4aAIxSg337hxIalb24Tc76BJerFzH3PXLX2cDGaoPqoy4uAT4zcl9keTSpGKZdX2bcr1KKRTzipRC3qTWM8x/MUsvH53O03qUrO02QaSTwUTZfxSCd1Z/pvPWpryDQdr3R5ODlsMVCHtyh9y7/5NOmW8+FQwFVRH/TGQyg5eJz5RCrKsrIxJliG+sCy99uDdfwrWQHT024/8ttYvpSyDwlFPElo5aa2zPsadhexl11nvRj2/GVWMcy2W1y2Qejk67mftPqjMd2TbrY5eUPkJx55KPUaAPALGqmUGUw04KHsQEQiq2Eb1nAg8Yi8jD/ot1LlL5WQnBbNhyC86tzhCgWzolbhqCO65jegAA/vq3n6oCIjW6yyd2nUPfrBzmFhV9+QBBtaWn4glP8kyx/1OmSQgAAAAnJPSgABMEf2tjClmzEAIVw0apXYuqBY6aiMnCgNiZnMr4KGeH9ZBl6vbl2SPBsUNRbFMlUhJHqkGVMtwfmkjVugj+pEGNndVVuD7SGRy/mMrirjWUQnJfm15nS6J5c8RxomIUfqYpL2J55vUxuIIw6Qkjsp591nssyMhAxp9om/GVv4bhOP9+bNfymJlwM6GFGT8igAAYl/azzR5XYlGq3sgRq/87FhBqFCbPCDnNTRTmfI7S2H6pIqYzKCoRFChsiEpQ14N7qU7ZzycGWkF0i05osw/72UkWF5NHNsbaz1NPOPwcja8zZP3iNnmCjlyzuwM9nCqtCCc6YAePeNBVVnflDZAwJQLJzc8Ye14v2kQR4qt+SbxNtxOrXndRUyT0UKF5aP6utZgxpWovLV0v8OzZABLeRqqYReWkJD1W0NK2sJhRB1+CSAAHSQBzxJu4BVO7eJz9NMzzbLXjCE0HmsdZfntBytnX9wcmMa/lYXa8ETdUbohe/LcbT+3dPA2FsnOgKu+yPLGjfmdkURPpI4ALZYZ2gBaJODg6xMRmWAZlpgnxLcH/35KGOZ/d+CXO61/MhV/7DucFTuL4OWw0OXT9uhXzZqDR7Q/0GcoU/yyj0LhTKZl5b8llOssGVyxXfLJuPfELxYAiDyYAA0uuJ2adAWfwGernZ4X35KxpS57qrszFU7Cd/X+w5qmAAQk82YABA9r8jzYn3jVKIOSVw8Hx15wJBf2S9UJcXkQOZzX0K9+vRGL2jokiMepzYVaX7GqXc2OLzCbxVFyRO5NMG9f2Qu/yM6ey7tJKzI682i+CpklpHKiISKqWcyWuGuwMJ7Aq8mXKKwqSRhjUBX6fybyohvB+SeHdF4kf6ZO3QvNNG26nJ5PgYEZEVJT2M1SBD9GnGZ1ZuQClQ0x0cTELUfxcaOQ1tjAYjmdh3CM5SKZiy+ugY6cui5RFoCOqILtf6Oss4VVCNeYJZWtBJ/Z7n6JCuetlbE8EmcK0l4VuR4PXbi46y8ZB9WnaIH6zVlB8ij7V6TIscUBebFZGah/YHqO9dvt8pKhc1DaunBH54E4noNv1WI0v3iWwC2DEEBM77gguQpQnjrsXHOxdZ4NgLU5dQyOXajurx12vuKqZyRKPUKuZXnLtaPjR9E5YpbmZPGXfOKi3iEtsLFsbRv7WopE6/GqAZH3/nIAA7Y96611QaX5K/7z9CWBJt+DHG9idxe7/eSQ/he55/VpwoNTaH++OrLTJ6ZyoJ3o7akbz5vcMsRYzsIEIu/aug4fPku8/35iHwou99g/dmN/sAD6fAK4CzGQv1XQquX4rGHeNwDNkWzi6sLKNu6k71KPoK6Le6GenOxuznld0e/Cj1PY9q/oQvyXFDUTuKfnfRXlNBonV7iHRvtwp29YQJk9JV2poufWj/fDfduuHg6+OHPUKwVmtZRaDhrKsqdllj9GHH6RN/1HCO+YovPE7UhiKoNIoIqPgL75iDR1rBkxqfO5j1GNs+Dk0e/Vo/cMtcROT1421BXXO4W0zuN/W7QTkF/eWGjyo4q9KuNdD1GVBka2zHUSCtkQBJSy/KUlmzuwP3fOQL9MzXPRF/aGgAMCG6ZlWmLBdeLeKDpvrf7Cfo9EfOOYERH2cFZTPt5l9sIqz9oLa2JNpfAgAskh7EtJ9n3n4DAQcDjENUdOY1cDUMBU5y8bd1QcoKeraFyWAii9lB7mEx/arrEo0cv89lxbl12fVmVJ0OdubM/Ywmwm8MhsX1QJwJKnt+QCBjz7ekm8HGWCkZ6AdkinVUAqJJ1sagEEnwsOn/IGHOx5d+1s7+OCxKi/o8nNDE6F3RuxnvfA8t+prfHYGzeT6DdQmhsrZ14ci1vEMCaZ8Sh93NOgrH86xT/LtG21t+AkYxqGjZ5J/s6ehdWlBY6ui7XCYowGsEl1FdGqpxnjRZ6JuxFykz9SOVvnjCQHjnig0UXGF2WYQKcbveMwwBxBNGEPBe0Njuo4909n1ljhty+hkdzyd+jTHx3Tyw10RJ9XBQd15/EAtrk9OXOE72Q6gF/ZP97phcXHlOOUyWqC622NgyxCAAAHav7L+5vA7S9Ie8cA/CSdiejsg80Qk4EheU6Nuzt/EwAl1t2kT1rwP4nXV2PVSYf7xiXnOUsv+RJI99qN0hwAAspt2cTi22YllGZ8zYm1nOYqy5dCJ9Ht91TANEhzs4/2K11FlvaWToi9u/Y+vFSrDfJRypSqBUWPFMYjGTkBRMWXnL5E3atuiXYMAOPdE7tcsqXdI6OJFeaNcLnQ4f7KD1cLv65e7Xcer0Z/IJcwBbhASLjk8RSdm//CN3zBLamxQfuix3YlYXP4/DSeqd4o6BuiYDvbG1+cbiTM0FacLsEfay/hMXyklDRY6JUg9jVdFx2eLC8WSfXvf1dhtgGcbULvu/0D/oy0WFKxbo/euOdmnmcnWJ23Teo5MSNvygTTl4QtPcT0nVMFEK+vZ1lpWs4Rjy6ZT1AMDXV2Yg6DUBbZhS89U3VOYFO/hqH+jnyyoihUpJCy18JrgpMp2Ah4IfgECH9TPxILoPZcJjdB2qhO3Vu+SktNX3E7rO7OCcSG2CyNPnvuwEbPhzCJrLaAxCvzyW6OAH95R6dro7wT9a+2+auzpN1ZoJoDbZjAAsy2ZbkANbNv2cA4/5+Jy6zS0suHjrT3WVs3jCSyjKkPVGC5U9da4ugz7UdOyVSmbWcd+n/Jd6+qPjh+8yk+LWHggwq1GGMr0EViLTrPS3RlrScJh1QRKHuSO9zPs8iWM1FzOuakoQNBzQRzmXDIXs4vtS5os3dNpyoIUvd6QIcXGDoEq65/GLrmBU6qAh7t3LxsZf0Mh+KsQzseHjwAf2nnibAWgAh8pfO8qkjaoXkjyOfS+j96OjicbNdVQbf36c/e64TZrKfRTwQVAP/avbSYcbxnliDYW/Q865LWnAcp7fmy1CsSHT4RQN+2vW+KKqExqZDzBlQIJcbyvyuWxWxmnVe6FIlGV5Qn6TMTBEIROH//Es7VMAlXPe/PEYcofXB+tls+6w5gYTsR7ZE2tAVCx0ZKzM7cQIHKVqmFGKWSZGTxj0V2fam3jFqKOQYx5Dq2bpW1d4xFhoofSpVllC5D0vuNkOepozrqGHxELEGtbV7JAYQphwNlvAzeSZlHKhYG2HmBt+3NU/IWLkrt7gvZ9rOqrYQpCG8Vb+unmDZS930OrOcM7DJQxgbm4ebVzGQz406mDScU2R3RTREETLb1uMSDZHR27VogdbAyaM9XCGyE6p0fkMEYQ4xPUL0vSdldQPwvhLvwCkJLhKEH3n8LnPBDbV/WtDeNiL7pSe59R2yjMkBrIb+EEXooJNAZ6dofO+FBKCnmP28DqEA7chPfp6xH1VPPRe5Kjs13fqruRv4VNjZ15jAvrSCMn6EbYysjzoqCAMu3F5io9/gWtwarZT5pN8gEliNF5J1nWDhADYnZsLaDE2mN1FXfgql4EIDm++wnAHCjXhhgvBBSz5OB1Uh9FuTUuoBAmJ5Nfwn1QQ/bNYOyP7b1t3g3x3+/vpWG+bygSuvoGZ5FZhU3pjnWaDRXepn0Hk+srDm3QpEbSS2DiWxOfl/TrgBQNcikMKrCsoAeQaZawhALHSEzvkZCTbai8w1cmQqeX67zbweZ4AMxuFSM8Pg8lCxogQ21j+wwHz/0yiLbiQHI5rLh19OnA52EveYo4O2M2MVnnGvOVFBLSpJIjYh/n7yBnjsnp3PQvE/qKLOmp4PCjKckaJyVagmQ5DXQLumk+vzd1ksuFEWqwZxVZfT7a3s0Ur+7S8QJt1D5eV+ullIHQE3EqZ7YGuTXY5sYgt9Ux7lqLbsxAarYvx68qhlULL8vZzM3rT5wnqwZHRdwVHv8szuCWVHARP5HHV/05WD+ise9cfyFZ7CJNuDfGwSx7ffFy3fVP3VmyD8uBzt+PGIx1o+iEkxX15TI+jrSLzq5XQaI9sln5fhe0uO7p0wr8V2UkiMxXqwLkRuR1BeW/XGRrbtIXRw7VavbNe064/KVysRqNuVpnJ6TQUFe5vEe4JstWqVQiXN5JtUpeei5Nh5l58uLoUdiuUU52QfumHB3bHQfZy+cOpAkFelWaUFaXMZ5G6y56MEOhLu+xFiMZNwVUI7rLvQNDtAc743oIFRE7QmenSEn6nF16wiHahc67dl1QLsKJBvxotc+J3mzRt5OmggfVHrsR7snRToUqc4wuUph4fmyhSOpU0+U3qv+O4KA6BdMRdnWFylMkxaz+eKABRbppu+1ROakvdqks5CPFH5Z+cBESw5eAEFkObI9Zdj7Ps648atVbebcrugbNYSavHv7RrKkNukOoIv75pOV6CL1lLNKxpubudgATXESZk2dL4t7HE0Bh7/lLCHZk4sCkgxjQpB9/2TssXZCCFCp2bN6zNr6jSmCuy5uRc0944ZQnc5ygq45i4GUrvftp1uGHLPcaiUTC7balifUOebDprjd9ZZGSoWsGeKHyVK24riTLQdqvZd69Pm6gsX4nqD1r/4sZPGFJEP2n/EP9ak6mgGr8F8P1d5JdLIZFITl2WuHxo6b787410iEWuCwaU/HYEMkEMXY+16V9HLemHLqxUI4x6J9zcEAcoRTO1W6sGUw6cX9ZtRrvclggeG7wf+kQgXuk58elTM0Z4NS/DBwekse8i656Z8Uck6vMxh+CEEluZ3jobqigjtXgvKKgnTHJNZvsruF8fSuNmZC1YjXVvHHLmr1wcASG08pXAS5W1NFYZsFQ59k2SC7VyYWq+BRNT2B9y0BamE9hTP4XJ46BVLPNBXU36GgK1gumQKSgmqEXSKhUOHwlqblHcv74sqORy77DsxlmZ/m9fTtugRS8TBbpg1pbEV23/xM5FiQF12R/J7O3oG1jmbIey2yKRMeIxIFKOJiP4GuxRd6GlXsSOR6JXJb0pbncbfiEpjSld/QXrTh0LiNpqAgsNhkVyc77td/s7CE3W8n/LTQ9E3g1ATOgdCOwrFzdlq7FxvlAih+krUCLAQ9dcK+UX1o1A/e8gQgTHH/TUVQIxBKYIlUI5BYg4OXY18TcMftgB2jy26c+zxeUoI0eKzys8v8ctbANEIQ5+UTRXPZJP2T4M1mgKK9u5Dl81OTGMzlXo3ItXtoT6TvuKPg+abGCjcTyq+ZTTkQUgq4T83ZZH7G5+6p5VcoZqgqnWsXhptp4fqBA4RC/58DoJvw9I29jD2pYhrFueb9YNqJx1A1EfzcZ8DF++7JGe/ubjULMR/ztFXRpjWTf4D1zEVafyoCY691Y5w3wg+ualWZ/PBVch7AAs/WE/yb4/2sv/7pPK4E8CZlSAIyy4CF2eVH4MNIeY12tjKkXuLwdyf9moIiA2d/srPhkgf8Y15lqwbWqyu0y7IijdzVFxfp/EhD8BF61jkgmckmDorIqfSesqgR0/BEuIDeEuLnZLeFvuCPWC1lO5JhBKGfjzi0Ak/VhxRnd7qXUTmU9Piw42znJApncJd7uc04vvejk3ywh93HMJu8MewAbM0/ILSh71+6Ln4Dx8Z3FkAqiHtd1XWevG/OqEfIzSIe5/UxbwGK6rrq0MWu9+yedfdV3mVb7vWfPrawAh8xHkidKhWO5ysN8SVxXQ6mY04NnM59y4XUNTPUKdJ8+Z5NfZvYnfnufmjMHzyRqEL2AQxVynU7Qx0roy4Cs+xqS69p2Y6wzVkcVxmIY0F9jwRNSGjpcnis+jz6gu3CsnPWc2TXGRqPbLOZf5Toh4M4U9er3xmtSAawjRotP3UfdnqkEvo1zzjBv+8qA+BkJT2ZPGahSf4dCK5nqIICRptkh7pUNXJTAP6a9U8LyuPrgKKoILlVOaLy9kJQW7xKApNDc7B0tZL9V4OS0bJ8/HCfGtzQTYOVBpu96Ejv//cNQC2TnzSD7oX5Qrew81366D+xI1EBV6kIH0B9A9gvAOoBTJRabNq8nR5yOc8zcf9oHs/djEyc2DlMFE26pxF5SKngcZB5ZsZyOaVTg7Luod7qJouFbuliMYwxbnjWIzbfwUJzH1zCpUwD1pqxXvhwZXDQBS4JN588CtbBVYpSocM10N06hFfYn1ME380wIDWOOOW5XoikaQKktSl/aRvhgFbEApQOEN0np+KL6OHeptvsTVN2dweNksEjTJPNtKS4+cu7ClFvQqVgsAsLo+Q2I8HgC0YzTPyiwOuH2IKbQfUl+ZCD2dJ5bDXECpIVPLvBmf/zVmJXeE5ayXF+Xja//33QAeFb3mF+kezh8QlgsQ0rksW77PWetmCYvMQXjmwQyzm0nl4PMRX+srlO04uqwPrmtuHTBHQEcY8scQkYFpY1XJYh3eTBrScy/MVjhiFjUchYQdnwXEX+M+6f8wWgzJMSzOIg4gNcjV5ko7yUm9XjPmUno6iTUUx8c6ETVfjjVzYlVVA5D6JjsvoAq8cKYai3II9amiuvA2++FPYxq8qFap9hzKz6cSsDoCyWUeWwxYDhveKUr/MOgVl/7aQhRs2NhK8b6pK8U76bJvQh8qahfHRvO5526ljcIAALoNDs8aHwpMC4HdK10X7sHaFzMVgASZSo0KN/STR+PP/GUyqmpeA+h3ZazeY1Z904/HhVR6n4Ph6iNhgMsAx+57AQoKfVCnHG02HNXjoDXocn9PX9ertM0jOTtEYa0yYHD7tHfLUfErBYEBn9X+CM+abkEnpLb0hJ+Hi5UrMD1G/8Iyy76FZoUVKeHDFWWI6El7elRILzA9c0C98Gj1/Wr++ByK/WBM+U6bk/zLKOhjNu8rWSQl1M8jUsJsrnDweOyq2jjk7HsPORf3cyjUpfG/HgZxylZeH3eWuQ4AvcSPSatXFhorFB8IL282I/AGlGn+BNkOeSEYaK7X9v76/UXLOYEX2bK7tYojIQ4kogRRHAUKXb8jOolx1J20e3B2oVkIC3UzhL0jL4aMHYbFhuFTrw3c3NXMC9AXeSXwoctE1HcbeNcoXyojPOl+JVrw+fOZwnwpOU0eJno9IuJ31HwVWKKPTbeE+NWFcjBBNh5bV0o3+xC7BEiLi4uMAXr8NKSKTfKGGtzZoGPY0LA3S0rk0hoAuHXgVd/XDUCmaCy364a2ZXyBqQATNHwG0bSXaP5C54FRHn7nj4/njBIxeUCMN2pv720gNZ0Y5N//oPlbz/j2HgUdxUKoARWdgYA6WdtnHNyPAps+Pg9h/4Wspz5v8NKcXjET0DtnuCLo0Af+JYR8yGK8hSbnax9/VEUuYGfz2k2NWgx7UprXEig5WjcEqAsiXH+/MluubeIjPEYatvGoNaalcDSB5sgAYKikUxGkhcKa4PZbhJcXIcxcnLclwf6DXg0u7K1WD8ALFwq1PwonG6497qtp4w94dRbtOYQ9/vkvJeixVCIJsfVE2yU7QWZk+6ZvYm4wKciSveAe0+P6Tc83sOSDKnaGF2ISdkS9jK4DJ7QXef1q/iUI0vkVVSnrRsXdOv+g3mjYWx/LtcctNy3nMrHTfgU7/qonI12yLsXgQ5nmH0G8CBl7qNc8uYUrYkeshi6w8vs0sWmJMgtCrGp7ZexB349R1U556+FKHzFu5Pe8vzJEE0SHbwdeTl02pmzriTx2fFMwWJvsbWPDFSmSru0jYvK24JhYH2mEFiRkPy/RSLQ58sVUM2HPfiCVUt9gpn+dLl3YRq/0jX0Qql7jjyoOrv5LJtd0/MksK08JBptcuO2mYyEVbL4dZnczWjINrTApzEIN1o8y/mIOK+YurWn613h5ZJx2yOgqK/lGcUFyr+6DQI1JAUJQOO7fPXmQoCxwRNyv9GLgKohiBnggyy+FfcxSvlA3hAy53+YHA/lnFGTBnVykJFY7ltJRiqpc/Ilmxtgvg8aGkwTXAEluYlnytZ4jRkNzX7hvuI74b5Y82Jm+OgDk1+DXoPz8MppqLw6NbiQPcZEdvn3p7SV8n4HU8PvNow1GPYEIARtRxmuICmFimAKxoSRKw/DcoMwOcEzYKDTvhzP5GXE2e2GaGPqZdxwmqhd17z01FEA+YSl9LZgnX+isNLktvjIgS0qfM3pzXE8DyZtBpHkNm6EPoALEoNOVdeinjOgwg2dZQoZcruCG1b9VP+OB7HD0CP+JW6mqtkbV3UCE8XSFCNlj1dYoMhEwqwZzf1DDD5BC3rFWKaHPJ1Xh7WvxTT+Nwfo+IHZia6U4fIBWtBIDh82A2HS6b3k7TQt01p14XoOcFMe59L8fwdwphdJUPCrMUYkbYbT5EeU9Jll9Ms8+K3fzD0oFQJX49P5FvMQYMpjT8brq9X6jxYbn9a6lJE/vPPRE+7kQjQLpM/lt/eT/jtrfv1r3KRtwudRQi2EGDh1vBGXc3rlmSsas+2bzeN3r1ei/Fhx/YPf+ET4E/6BI40fJXyRz8FodFjm1tcHpcLqe6zoBPB30BBQYEozAiDuP3AA6d5/Qx4oOv6YwZID/OZ0LeyQSHfJAXS7Tnysa1akU94U/Vc09IqVBg7lqOAFeX4IPMdRdKlX0sWbZrga1Vu5ZXAl/GewyVtyCwvLEbno4S4PyQBBH8IL4wgMZJfnN4TzABKwA7liaUh/+ilgAAA=";
     }
   });
 
@@ -7578,10 +7761,10 @@
     return result;
   }
   function quantityText(quantity) {
-    if (quantity.unit === "USD") return `$${quantity.value}`;
+    if (quantity.unit === "USD") return `$${quantity.value.replace(/\.00$/, "")}`;
     if (quantity.unit === "percent") return `${quantity.value}%`;
     if (quantity.unit === "points") return `${quantity.value} points`;
-    if (quantity.unit === "count") return `${quantity.value} count`;
+    if (quantity.unit === "count") return quantity.value;
     return quantity.value;
   }
   function observedValue2(field) {
@@ -7657,7 +7840,7 @@
     const target = observedValue2(benefit.targetOrLimit);
     let amount = null;
     if (current && target && quantitiesAreCompatible(current, target)) {
-      amount = `${quantityText(current)} of ${quantityText(target)}`;
+      amount = `${quantityText(current)} of ${quantityText(target)} used`;
     } else if (current && !target && current.unit !== "unknown") {
       amount = `Used ${quantityText(current)}`;
     } else if (!current && target && target.unit !== "unknown") {
@@ -7683,6 +7866,7 @@
     const summary = store.lastScan;
     const latestCardIds = new Set(summary?.cards.flatMap((card) => card.localCardId ? [card.localCardId] : []) ?? []);
     return cards.map((record) => {
+      if (record.error?.code === "account_canceled") return { record, kind: "canceled" };
       if (!summary || !latestCardIds.has(record.localCardId)) return { record, kind: "older_retained" };
       if ((record.latest?.benefits.length ?? 0) > 0) return { record, kind: "benefit_bearing" };
       if (isConfirmedEmptyInLatestScan(record, summary, summary.cards)) return { record, kind: "confirmed_empty" };
@@ -7692,12 +7876,15 @@
   function filterLabel(filter) {
     return filter === "remaining" ? "Remaining" : "Used";
   }
-  var AMEX_READER_HOST_ID, PERKS_REMINDER_MARK_SVG, AmexBenefitReaderPanel;
+  var benefitsArtwork, AMEX_READER_HOST_ID, PERKS_REMINDER_MARK_SVG, AmexBenefitReaderPanel;
   var init_panel = __esm({
     "src/userscripts/amex-benefit-reader/panel.ts"() {
       "use strict";
+      init_benefits_orbit();
       init_presentation();
+      init_sync_contract();
       init_presentation();
+      benefitsArtwork = typeof benefits_orbit_default === "string" ? benefits_orbit_default : benefits_orbit_default.src;
       AMEX_READER_HOST_ID = "perks-reminder-amex-reader";
       PERKS_REMINDER_MARK_SVG = `<svg viewBox="0 0 40 40" role="img" aria-label="Perks Reminder" xmlns="http://www.w3.org/2000/svg"><rect width="40" height="40" rx="12" fill="#172033"/><path d="M11 20a9 9 0 0 1 15.2-6.5M29 20a9 9 0 0 1-15.2 6.5" fill="none" stroke="#8fe3c1" stroke-width="3" stroke-linecap="round"/><path d="m25 10 2 4-4 1M15 30l-2-4 4-1" fill="none" stroke="#ffcf70" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
       AmexBenefitReaderPanel = class _AmexBenefitReaderPanel {
@@ -7709,12 +7896,22 @@
           this.progressCardIndex = 0;
           this.errorMessage = null;
           this.benefitFilter = "remaining";
+          this.searchQuery = "";
+          this.syncMessage = null;
+          this.syncProjectionCache = null;
           this.store = initialStore;
           this.collapsed = options.initiallyCollapsed ?? false;
           this.requiresReloadAfterClear = options.requiresReloadAfterClear ?? false;
           this.host = document.createElement("div");
           this.host.id = AMEX_READER_HOST_ID;
           this.root = this.host.attachShadow({ mode: "open" });
+          this.root.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape" || this.collapsed) return;
+            event.preventDefault();
+            this.collapsed = true;
+            this.render();
+            this.root.querySelector(".launcher")?.focus();
+          });
           document.documentElement.append(this.host);
           this.render();
         }
@@ -7734,24 +7931,24 @@
         }
         report(progress) {
           if (progress.type === "started") {
-            this.collapsed = false;
             this.mode = "scanning";
             this.progressCardCount = null;
             this.progressCardIndex = 0;
-            this.progress = "Starting your read-only scan…";
+            this.progress = "Finding your cards…";
           } else if (progress.type === "discovered") {
             this.progressCardCount = progress.cardCount;
             this.progressCardIndex = 0;
-            this.progress = progress.cardCount === 0 ? "No eligible cards were found. Finishing the scan…" : `Preparing ${progress.cardCount} card${progress.cardCount === 1 ? "" : "s"} for a read-only scan…`;
+            this.progress = progress.cardCount === 0 ? "No cards found. Finishing up…" : `Checking ${progress.cardCount} card${progress.cardCount === 1 ? "" : "s"}…`;
           } else if (progress.type === "card") {
             this.progressCardCount = progress.cardCount;
-            this.progressCardIndex = progress.cardIndex;
-            this.progress = `Reading card ${progress.cardIndex} of ${progress.cardCount}…`;
+            this.progress = `Refreshing · ${this.progressCardIndex} of ${progress.cardCount} cards checked`;
           } else if (progress.type === "card_committed") {
+            this.progressCardIndex += 1;
+            this.progress = `Refreshing · ${this.progressCardIndex} of ${this.progressCardCount ?? this.progressCardIndex} cards checked`;
             this.store = { ...this.store, cards: { ...this.store.cards, [progress.record.localCardId]: progress.record } };
           } else if (progress.type === "verifying_context") {
             if (this.progressCardCount !== null) this.progressCardIndex = this.progressCardCount;
-            this.progress = "Finishing the scan…";
+            this.progress = "Finishing up…";
           } else {
             this.mode = "idle";
             this.progressCardCount = null;
@@ -7759,29 +7956,53 @@
             this.store = { ...this.store, lastScan: progress.summary };
             this.progress = "Ready to scan.";
           }
+          if (progress.type === "discovered" || progress.type === "card" || progress.type === "verifying_context" || this.collapsed && progress.type === "card_committed") {
+            this.updateProgress();
+            return;
+          }
           this.render();
         }
-        async start() {
+        updateProgress() {
+          const launcher = this.root.querySelector(".launcher");
+          if (launcher) launcher.title = this.progress;
+          const status = this.root.querySelector(".scan-status");
+          if (status && status.textContent !== this.progress) status.textContent = this.progress;
+          const progress = this.root.querySelector(".scan-progress");
+          if (!progress) return;
+          if (this.progressCardCount !== null && this.progressCardCount > 0) {
+            progress.max = this.progressCardCount;
+            progress.value = Math.min(this.progressCardIndex, this.progressCardCount);
+            progress.setAttribute("aria-valuetext", `${this.progressCardIndex} of ${this.progressCardCount} cards checked`);
+          } else {
+            progress.removeAttribute("value");
+            progress.removeAttribute("aria-valuetext");
+          }
+        }
+        get isBusy() {
+          return this.mode !== "idle";
+        }
+        async start(options = {}) {
           if (this.mode !== "idle") return;
-          this.collapsed = false;
+          if (options.reveal !== false) this.collapsed = false;
           this.mode = "scanning";
           this.progressCardCount = null;
           this.progressCardIndex = 0;
-          this.progress = "Starting your read-only scan…";
+          this.progress = "Finding your cards…";
           this.errorMessage = null;
+          this.syncMessage = null;
           this.render();
           try {
             await this.actions.startScan();
           } catch {
-            this.mode = "error";
-            this.errorMessage = "The scan could not finish safely. Existing local observations were preserved.";
+            this.mode = "idle";
+            this.errorMessage = "Couldn’t refresh. Try again.";
             this.render();
           }
         }
         cancel() {
           if (this.mode !== "scanning") return;
           this.mode = "cancelling";
-          this.progress = "Cancelling after the current safe step…";
+          this.progress = "Stopping refresh…";
           this.actions.cancelScan();
           this.render();
         }
@@ -7789,31 +8010,33 @@
           if (this.mode !== "idle" || !this.store.lastScan || !this.actions.syncReviewed) return;
           this.mode = "syncing";
           this.errorMessage = null;
-          this.progress = "Preparing a private one-time handoff…";
+          this.syncMessage = "Opening Perks Reminder…";
           this.render();
           try {
             await this.actions.syncReviewed();
-            this.progress = "Sync review opened in a new tab. Confirm separately there; nothing is written from Amex.";
+            this.syncMessage = "Continue in the Perks Reminder tab to choose what to add.";
           } catch (error) {
-            this.errorMessage = error instanceof Error ? error.message : "A sync handoff could not be prepared.";
-            this.progress = "No data was sent and no benefit was changed.";
+            this.errorMessage = error instanceof Error ? error.message : "Couldn’t open Perks Reminder. Try again.";
+            this.syncMessage = null;
           } finally {
             this.mode = "idle";
             this.render();
           }
         }
         async clear() {
-          if (!window.confirm("Clear all local Amex benefit observations and the local identity secret?")) return;
+          if (this.mode !== "idle" && this.mode !== "error") return;
+          if (!window.confirm("Delete saved benefits from this browser? You can refresh to load them again.")) return;
           try {
             await this.actions.clearData();
             this.store = { schemaVersion: 1, revision: 0, updatedAt: (/* @__PURE__ */ new Date()).toISOString(), cards: {}, lastScan: null };
             this.benefitFilter = "remaining";
+            this.searchQuery = "";
             this.mode = this.requiresReloadAfterClear ? "error" : "idle";
-            this.errorMessage = this.requiresReloadAfterClear ? "Local data was cleared. Reload this Amex page before scanning." : null;
+            this.errorMessage = this.requiresReloadAfterClear ? "Saved benefits cleared. Reload this page to start again." : null;
             this.progress = this.requiresReloadAfterClear ? "Local data cleared. Reload required." : "Local data cleared. Nothing is scanned until you start.";
           } catch {
-            this.mode = "error";
-            this.errorMessage = "Local data could not be cleared. No scan was started.";
+            this.mode = this.requiresReloadAfterClear ? "error" : "idle";
+            this.errorMessage = "Couldn’t clear saved benefits. Try again.";
           }
           this.render();
         }
@@ -7844,11 +8067,16 @@
           if (essentials.childElementCount) item.append(essentials);
           return item;
         }
-        renderCardGroup(record) {
+        matchesSearch(record, benefit) {
+          const terms = this.searchQuery.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+          const label = `${record.identity.productName} ${record.identity.endingDigits} ${formatAmexBenefitTitle(benefit.title)}`.toLocaleLowerCase();
+          return terms.every((term) => label.includes(term));
+        }
+        renderCardGroup(record, historical = false) {
           const section = element("section");
           const headingId = `pr-card-${record.localCardId}`;
           const benefits = record.latest?.benefits ?? [];
-          const filtered = benefits.filter((benefit) => benefitPresentation(benefit).filter === this.benefitFilter);
+          const filtered = historical ? benefits : benefits.filter((benefit) => benefitPresentation(benefit).filter === this.benefitFilter && this.matchesSearch(record, benefit));
           section.className = "card-group";
           section.dataset.amexReaderCardGroup = "true";
           section.dataset.cardProduct = record.identity.productName;
@@ -7863,13 +8091,16 @@
           const summaryId = `${headingId}-summary`;
           const summary = element(
             "p",
-            `${filtered.length} ${visibleLabel} benefit${filtered.length === 1 ? "" : "s"}`
+            historical ? "Saved benefits" : `${filtered.length} ${visibleLabel} benefit${filtered.length === 1 ? "" : "s"}`
           );
           summary.id = summaryId;
           summary.className = "card-summary";
           headingCopy.append(summary);
           section.setAttribute("aria-labelledby", `${headingId} ${summaryId}`);
-          headingRow.append(headingCopy);
+          const cardMark = element("span", "◇");
+          cardMark.className = "card-mark";
+          cardMark.setAttribute("aria-hidden", "true");
+          headingRow.append(cardMark, headingCopy);
           section.append(headingRow);
           const list = element("ul");
           list.className = "benefit-list";
@@ -7878,80 +8109,91 @@
           return section;
         }
         render() {
+          const active = this.root.activeElement;
+          const focusKey = active?.dataset.focusKey;
+          const selection = active instanceof HTMLInputElement ? active.selectionStart : null;
+          const scroll = this.root.querySelector(".content")?.scrollTop ?? 0;
+          this.renderContents();
+          const content = this.root.querySelector(".content");
+          if (content) content.scrollTop = scroll;
+          if (focusKey) {
+            const next = this.root.querySelector(`[data-focus-key="${focusKey}"]`);
+            next?.focus({ preventScroll: true });
+            if (next instanceof HTMLInputElement && selection !== null) next.setSelectionRange(selection, selection);
+          }
+        }
+        renderContents() {
           this.root.replaceChildren();
           const style = element("style");
           style.textContent = `
-      :host { all: initial; --pr-ink:#172033; --pr-paper:#f7f8f6; --pr-white:#fff; --pr-text:#172033; --pr-muted:#667085; --pr-rule:#dfe3e8; --pr-mint:#8fe3c1; --pr-mint-soft:#eafaf4; --pr-gold:#ffcf70; --pr-gold-soft:#fff8e7; --pr-blue:#2563eb; --pr-blue-soft:#eff6ff; --pr-red:#b42318; --pr-red-soft:#fff1f0; }
-      * { box-sizing: border-box; }
+      :host { all:initial; --pr-text:#172033; --pr-muted:#667085; --pr-paper:#f6f8fa; --pr-white:#fff; --pr-rule:#dfe5eb; --pr-accent:#166b56; --pr-soft:#e9f6f0; --pr-warning:#875416; }
+      * { box-sizing:border-box; } h2,h3,h4,p { margin:0; } ul { margin:0; }
       .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-      .launcher { position:fixed; z-index:2147483647; top:16px; right:16px; display:grid; width:56px; min-height:56px; padding:8px; place-items:center; border:1px solid #354157; border-radius:18px; background:var(--pr-ink); color:#fff; box-shadow:0 14px 36px rgba(23,32,51,.24); cursor:pointer; transition:transform .18s ease, box-shadow .18s ease; }
-      .launcher:hover { transform:translateY(-1px); box-shadow:0 18px 42px rgba(23,32,51,.28); }
-      .launcher svg { width:38px; height:38px; }
-      .panel { position:fixed; z-index:2147483647; top:16px; right:16px; width:min(468px, calc(100vw - 32px)); max-height:calc(100vh - 32px); overflow:auto; border:1px solid var(--pr-rule); border-radius:22px; background:var(--pr-paper); color:var(--pr-text); box-shadow:0 24px 70px rgba(23,32,51,.2); font:14px/1.5 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
-      h2,h3,h4,p { margin:0; } h2 { font-size:20px; line-height:1.15; letter-spacing:-.02em; } h3 { font-size:15px; line-height:1.35; } h4 { font-size:14px; line-height:1.4; } ul { margin:0; }
-      .top { position:relative; padding:20px; border-bottom:1px solid var(--pr-rule); background:var(--pr-white); border-radius:21px 21px 0 0; }
-      .top::before { position:absolute; inset:0 auto 0 0; width:4px; border-radius:21px 0 0 0; background:var(--pr-mint); content:""; }
-      .brand-row { display:flex; align-items:center; gap:11px; }
-      .brand-mark { display:grid; width:40px; height:40px; flex:0 0 auto; place-items:center; border-radius:13px; background:var(--pr-ink); color:#fff; overflow:hidden; }
-      .brand-mark svg { width:36px; height:36px; }
-      .collapse-button { min-height:44px; margin-left:auto; padding:8px 11px; color:var(--pr-muted); font-size:12px; }
-      .eyebrow { margin-top:2px; color:var(--pr-muted); font-size:12px; }
-      .privacy-banner { margin-top:14px; padding:10px 0 0; border-top:1px solid var(--pr-rule); color:var(--pr-muted); font-size:12px; }
-      .privacy-banner strong { display:block; margin-bottom:2px; color:var(--pr-text); font-size:12px; }
-      .controls { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px; margin-top:16px; }
-      button { min-height:44px; border:1px solid var(--pr-rule); border-radius:10px; background:var(--pr-white); color:var(--pr-text); font:inherit; font-weight:680; cursor:pointer; transition:background-color .15s ease,border-color .15s ease,color .15s ease,transform .15s ease; }
-      button:active { transform:translateY(1px); }
-      button.primary { border-color:var(--pr-ink); background:var(--pr-ink); color:#fff; box-shadow:0 3px 8px rgba(23,32,51,.14); }
-      button.primary:hover { background:#26334c; }
-      button:focus-visible,summary:focus-visible { outline:3px solid var(--pr-mint); outline-offset:2px; }
-      button:disabled { opacity:.52; cursor:default; transform:none; }
-      .scan-workspace { display:grid; gap:16px; padding:24px 20px; }
-      .scan-status { padding:12px; border-left:3px solid var(--pr-mint); background:var(--pr-white); color:var(--pr-muted); font-size:13px; }
-      .scan-progress { width:100%; height:10px; accent-color:#277f68; }
-      .scan-cancel { width:100%; }
-      .notice { margin-top:12px; padding:11px 12px; border-left:3px solid var(--pr-gold); background:var(--pr-gold-soft); font-size:13px; }
-      .notice-warning { color:#684000; }
-      .content { padding:18px 20px; }
-      .filters { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; border:1px solid var(--pr-rule); border-radius:11px; overflow:hidden; }
-      .filter-button { min-height:44px; border:0; border-radius:0; padding:8px 10px; color:var(--pr-muted); font-size:13px; }
-      .filter-button + .filter-button { border-left:1px solid var(--pr-rule); }
-      .filter-button[aria-pressed="true"] { background:var(--pr-ink); color:#fff; }
-      .card-groups { display:grid; gap:24px; margin-top:20px; }
-      .card-group { min-width:0; }
-      .card-heading { padding-bottom:9px; border-bottom:1px solid var(--pr-ink); }
-      .card-summary { margin-top:3px; color:var(--pr-muted); font-size:12px; }
-      .benefit-list { padding:0; list-style:none; }
-      .benefit-card { position:relative; padding:14px 0 14px 14px; border-bottom:1px solid var(--pr-rule); }
-      .benefit-card::before { position:absolute; inset:14px auto 14px 0; width:3px; border-radius:3px; background:#98a2b3; content:""; }
-      .benefit-card.tone-amber::before { background:var(--pr-gold); } .benefit-card.tone-blue::before { background:#72a8ff; } .benefit-card.tone-green::before { background:var(--pr-mint); }
-      .benefit-top { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
-      .status-pill { display:inline-flex; min-height:24px; align-items:center; flex:0 0 auto; border-radius:999px; padding:2px 8px; font-size:11px; font-weight:750; white-space:nowrap; }
-      .status-pill.tone-amber { background:var(--pr-gold-soft); color:#704500; } .status-pill.tone-blue { background:var(--pr-blue-soft); color:#1d4ed8; } .status-pill.tone-green { background:var(--pr-mint-soft); color:#16664f; } .status-pill.tone-muted { background:#edf0f3; color:#475467; }
-      .benefit-essentials { display:flex; flex-wrap:wrap; align-items:center; gap:4px 10px; margin-top:7px; }
-      .amount { color:var(--pr-text); font-size:13px; font-weight:720; font-variant-numeric:tabular-nums; }
-      .period { color:var(--pr-muted); font-size:12px; }
-      details { margin-top:0; }
-      summary { min-height:44px; color:var(--pr-muted); font-size:12px; font-weight:680; cursor:pointer; }
-      .empty-state { margin-top:16px; padding:22px 12px; border-block:1px solid var(--pr-rule); color:var(--pr-muted); text-align:center; }
-      .footer { padding:0 20px 18px; }
-      .privacy-details { border-top:1px solid var(--pr-rule); }
-      .privacy-details summary { display:flex; align-items:center; }
-      .privacy-details p { margin-top:8px; color:var(--pr-muted); font-size:12px; }
-      .clear-button { width:100%; margin-top:10px; padding:8px 10px; border-color:#f3b7b2; color:var(--pr-red); }
-      @media (prefers-color-scheme:dark) { :host { --pr-ink:#f4f7fb; --pr-paper:#111827; --pr-white:#172033; --pr-text:#f4f7fb; --pr-muted:#b5c0cf; --pr-rule:#354157; --pr-mint-soft:#153e35; --pr-gold-soft:#3b2d13; --pr-blue-soft:#172554; --pr-red:#ffb4ab; --pr-red-soft:#401e1c; } .launcher,.brand-mark,button.primary,.filter-button[aria-pressed="true"] { background:#0e1524; border-color:#526078; } button.primary:hover { background:#26334c; } .notice-warning { color:#ffe5ad; } .status-pill.tone-amber { color:#ffe5ad; } .status-pill.tone-blue { color:#bfdbfe; } .status-pill.tone-green { color:#a9edd4; } .status-pill.tone-muted { background:#28344a; color:#d5dceb; } .clear-button { border-color:#7a3a35; } }
-      @media (max-width:520px) { .panel { top:8px; right:8px; width:calc(100vw - 16px); max-height:calc(100vh - 16px); border-radius:17px; } .top { padding:17px; } .content { padding:16px 17px; } .footer { padding:0 17px 16px; } .controls { grid-template-columns:1fr; } .benefit-top { display:grid; } .status-pill { justify-self:start; } }
+      button,input { font:inherit; } button { min-height:40px; border:1px solid var(--pr-rule); border-radius:10px; background:var(--pr-white); color:var(--pr-text); font-weight:600; padding:8px 12px; cursor:pointer; }
+      button:hover { background:var(--pr-paper); } button:disabled { opacity:.5; cursor:default; }
+      button:focus-visible,input:focus-visible,summary:focus-visible { outline:3px solid #2ca380; outline-offset:2px; }
+      button.primary { color:#fff; background:var(--pr-accent); border-color:var(--pr-accent); } button.primary:hover { filter:brightness(1.1); }
+      .launcher { position:fixed; z-index:2147483647; top:16px; right:16px; display:flex; align-items:center; gap:8px; padding:7px 13px 7px 7px; background:#172033; color:#fff; border:1px solid #354157; border-radius:16px; box-shadow:0 8px 28px #17203330; font:600 13px/1.4 system-ui,sans-serif; }
+      .launcher:hover { background:#26334c; } .launcher svg { width:34px; height:34px; } .launcher-busy { width:8px; height:8px; border-radius:50%; background:#8fe3c1; }
+      .panel { position:fixed; z-index:2147483647; top:16px; right:16px; display:flex; flex-direction:column; width:min(440px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); overflow:hidden; border:1px solid var(--pr-rule); border-radius:18px; background:var(--pr-paper); color:var(--pr-text); box-shadow:0 18px 60px #17203326; font:14px/1.5 ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+      .top { flex-shrink:0; padding:16px 18px 12px; background:var(--pr-white); border-bottom:1px solid var(--pr-rule); }
+      .brand-row,.scan-heading { display:flex; align-items:center; gap:10px; } .brand-mark { width:32px; height:32px; flex-shrink:0; } .brand-mark svg { width:32px; height:32px; }
+      h2 { font-size:18px; line-height:1.3; letter-spacing:-.02em; } .eyebrow { color:var(--pr-muted); font-size:11px; }
+      .collapse-button { margin-left:auto; min-width:40px; padding:6px; border:0; font-size:20px; color:var(--pr-muted); background:transparent; }
+      .controls { display:flex; gap:8px; margin-top:12px; } .controls .primary { flex:1; } .controls button { font-size:12px; }
+      .top > .scan-status { margin-top: 10px; }
+      .sync-coverage { margin: 8px 0; font-size: 12px; color: var(--pr-muted); }
+.sync-coverage summary { cursor: pointer; font-weight: 600; }
+.sync-coverage[open] { max-height: 220px; overflow-y: auto; }
+.sync-coverage p { margin: 8px 0; }
+.sync-coverage ul { padding-left: 18px; }
+.sync-coverage li { margin: 8px 0; }
+.sync-coverage li span { display: block; font-size: 11px; }
+.refresh-status { margin-top:9px; color:var(--pr-muted); font-size:11px; } .refresh-warning { color:var(--pr-warning); }
+      .notice { margin-top:10px; color:var(--pr-muted); font-size:12px; } .notice-warning { color:var(--pr-warning); }
+      .content { min-height:0; overflow:auto; overscroll-behavior:contain; padding:0 18px 16px; scrollbar-width:thin; }
+      .browse-tools { position:sticky; top:0; z-index:1; background:var(--pr-paper); padding:14px 0 12px; }
+      .search-row { display:flex; align-items:center; gap:6px; margin-bottom:10px; }
+      .search { width:100%; min-width:0; height:40px; padding:9px 12px; border:1px solid var(--pr-rule); border-radius:10px; background:var(--pr-white); color:var(--pr-text); font-size:13px; } .search::placeholder { color:var(--pr-muted); }
+      .clear-search { padding:4px 8px; font-size:12px; }
+      .filters { display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; border:1px solid var(--pr-rule); border-radius:12px; background:var(--pr-white); }
+      .filter-button { min-height:36px; border:0; padding:7px 10px; font-size:12px; color:var(--pr-muted); }
+      .filter-button[aria-pressed="true"] { color:var(--pr-accent); background:var(--pr-soft); }
+      .card-groups { display:grid; gap:22px; padding-top:6px; } .card-group { min-width:0; }
+      .card-heading { display:flex; align-items:center; gap:9px; padding:0 0 10px; } h3 { font-size:13px; line-height:1.4; } .card-summary { margin-top:2px; color:var(--pr-muted); font-size:11px; }
+      .card-mark { display:grid; flex-shrink:0; place-items:center; width:31px; height:24px; border:1px solid var(--pr-rule); border-radius:6px; color:var(--pr-accent); background:var(--pr-soft); }
+      .benefit-list { display:grid; gap:8px; list-style:none; padding:0; }
+      .benefit-card { padding:12px; border:1px solid var(--pr-rule); border-radius:12px; background:var(--pr-white); }
+      .benefit-top { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; } h4 { font-size:13px; line-height:1.45; font-weight:600; overflow-wrap:anywhere; }
+      .status-pill { display:inline-block; flex-shrink:0; padding:3px 7px; border-radius:6px; white-space:nowrap; font-size:10px; font-weight:600; background:var(--pr-paper); color:var(--pr-muted); }
+      .status-pill.tone-green { color:var(--pr-accent); background:var(--pr-soft); } .status-pill.tone-blue { color:#2459a6; background:#edf4ff; } .status-pill.tone-amber { color:var(--pr-warning); background:#fff5df; }
+      .benefit-essentials { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:4px 10px; margin-top:8px; font-variant-numeric:tabular-nums; }
+      .amount { font-size:12px; font-weight:600; } .period { color:var(--pr-muted); font-size:11px; }
+      .empty-state { padding:24px 8px; color:var(--pr-muted); text-align:center; font-size:13px; } .empty-art { display:block; width:180px; height:105px; object-fit:cover; border-radius:14px; margin:16px auto 0; } .empty-state strong { display:block; color:var(--pr-text); font-size:16px; margin-bottom:6px; }
+      details { border-top:1px solid var(--pr-rule); margin-top:16px; } summary { display:list-item; min-height:40px; padding:10px 0; color:var(--pr-muted); font-size:12px; cursor:pointer; } details p { color:var(--pr-muted); font-size:12px; margin:4px 0 12px; } .canceled-cards .card-group { margin:12px 0; }
+      .footer { flex-shrink:0; padding:0 18px; background:var(--pr-white); border-top:1px solid var(--pr-rule); } .footer details { margin:0; border:0; } .clear-button { width:100%; margin-bottom:12px; color:#a33831; }
+      .scan-workspace { padding:18px; display:grid; gap:18px; } .scan-workspace > p { margin-top:8px; font-size:17px; font-weight:600; } .scan-status { color:var(--pr-muted); font-size:13px; } .scan-progress { width:100%; height:8px; accent-color:var(--pr-accent); } .scan-cancel { justify-self:start; }
+      @media (prefers-color-scheme:dark) { :host { --pr-text:#f1f5f9; --pr-muted:#a7b3c4; --pr-paper:#111827; --pr-white:#1b2535; --pr-rule:#344154; --pr-accent:#8fe3c1; --pr-soft:#173e35; --pr-warning:#efd09c; } button.primary { color:#122b24; } .status-pill.tone-blue { background:#1c3555; color:#b8d3ff; } .status-pill.tone-amber { background:#3b3021; } .clear-button { color:#ffb4ab; } }
+      @media (max-width:520px) { .panel { top:8px; right:8px; width:calc(100vw - 16px); max-height:calc(100dvh - 16px); border-radius:15px; } .top { padding:12px 14px; } .content { padding:0 14px 14px; } .footer { padding:0 14px; } .benefit-top { flex-wrap:wrap; } .controls { flex-wrap:wrap; } .controls button { flex:1 1 auto; } }
       @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto!important; transition:none!important; } }
     `;
           if (this.collapsed) {
             const launcher = element("button");
             launcher.type = "button";
+            launcher.dataset.focusKey = "visibility";
             launcher.className = "launcher";
             launcher.setAttribute("aria-label", "Open Perks Reminder Amex benefit reader");
             launcher.setAttribute("aria-expanded", "false");
             launcher.setAttribute("aria-controls", "pr-reader-panel");
+            launcher.title = this.mode === "scanning" ? this.progress : "Your Amex benefits";
             launcher.innerHTML = PERKS_REMINDER_MARK_SVG;
-            launcher.append(element("span", "PR"));
-            launcher.lastElementChild.className = "sr-only";
+            launcher.append(element("span", "Benefits"));
+            if (this.mode === "scanning" || this.mode === "cancelling") {
+              const dot = element("span");
+              dot.className = "launcher-busy";
+              dot.setAttribute("aria-hidden", "true");
+              launcher.append(dot);
+            }
             launcher.addEventListener("click", () => {
               this.collapsed = false;
               this.render();
@@ -7963,12 +8205,27 @@
           panel.id = "pr-reader-panel";
           panel.className = "panel";
           panel.setAttribute("aria-labelledby", "pr-reader-title");
-          if (this.mode === "scanning" || this.mode === "cancelling") {
+          const refreshing = this.mode === "scanning" || this.mode === "cancelling";
+          const hasBenefits = Object.values(this.store.cards).some((record) => (record.latest?.benefits.length ?? 0) > 0);
+          if (refreshing && !hasBenefits) {
             const workspace = element("section");
             workspace.className = "scan-workspace";
             const title2 = element("h2", "Amex benefits");
             title2.id = "pr-reader-title";
-            workspace.append(title2);
+            const scanHeading = element("div");
+            scanHeading.className = "scan-heading";
+            const collapse = element("button", "−");
+            collapse.className = "collapse-button";
+            collapse.type = "button";
+            collapse.dataset.focusKey = "visibility";
+            collapse.setAttribute("aria-label", "Collapse Perks Reminder Amex benefit reader");
+            collapse.addEventListener("click", () => {
+              this.collapsed = true;
+              this.render();
+            });
+            scanHeading.append(title2, collapse);
+            workspace.append(scanHeading);
+            workspace.append(element("p", "Refreshing your benefits"));
             const status = element("p", this.progress);
             status.className = "scan-status";
             status.setAttribute("role", "status");
@@ -7980,11 +8237,12 @@
             if (this.progressCardCount !== null && this.progressCardCount > 0) {
               progress.max = this.progressCardCount;
               progress.value = Math.min(this.progressCardIndex, this.progressCardCount);
-              progress.setAttribute("aria-valuetext", `Card ${this.progressCardIndex} of ${this.progressCardCount}`);
+              progress.setAttribute("aria-valuetext", `${this.progressCardIndex} of ${this.progressCardCount} cards checked`);
             }
             workspace.append(progress);
             const cancel = element("button", this.mode === "cancelling" ? "Cancelling…" : "Cancel");
             cancel.type = "button";
+            cancel.dataset.focusKey = "refresh";
             cancel.className = "scan-cancel";
             cancel.disabled = this.mode === "cancelling";
             cancel.addEventListener("click", () => this.cancel());
@@ -8005,12 +8263,13 @@
           const brandText = element("div");
           const title = element("h2", "Amex benefits");
           title.id = "pr-reader-title";
-          brandText.append(title, element("p", "Perks Reminder local reader"));
+          brandText.append(title, element("p", "Perks Reminder"));
           brandText.lastElementChild.className = "eyebrow";
           brand.append(brandText);
-          if (this.mode === "idle" || this.mode === "syncing" || this.mode === "error") {
-            const collapse = element("button", "Collapse");
+          if (this.mode === "idle" || this.mode === "syncing" || this.mode === "error" || refreshing) {
+            const collapse = element("button", "−");
             collapse.type = "button";
+            collapse.dataset.focusKey = "visibility";
             collapse.className = "collapse-button";
             collapse.setAttribute("aria-label", "Collapse Perks Reminder Amex benefit reader");
             collapse.setAttribute("aria-expanded", "true");
@@ -8022,30 +8281,81 @@
             brand.append(collapse);
           }
           top.append(brand);
-          const disclosure = element("div");
-          disclosure.className = "privacy-banner";
-          disclosure.append(
-            element("strong", "Local unless you choose Sync reviewed"),
-            element("span", "A manual scan uses your signed-in Amex session for first-party read requests. Raw responses are not saved. Sync sends only the reviewed normalized handoff.")
-          );
-          top.append(disclosure);
           const controls = element("div");
           controls.className = "controls";
-          const scan = element("button", "Scan all cards");
+          const scan = element("button", refreshing ? this.mode === "cancelling" ? "Stopping…" : "Cancel" : "Refresh");
           scan.type = "button";
           scan.className = "primary";
-          scan.disabled = this.mode !== "idle";
-          scan.addEventListener("click", () => void this.start());
+          scan.dataset.focusKey = "refresh";
+          scan.disabled = this.mode !== "idle" && this.mode !== "scanning";
+          scan.addEventListener("click", () => refreshing ? this.cancel() : void this.start());
           controls.append(scan);
           if (this.store.lastScan && this.actions.syncReviewed) {
-            const sync = element("button", "Sync reviewed");
+            const sync = element("button", this.mode === "syncing" ? "Opening…" : "Sync to Perks Reminder");
             sync.type = "button";
             sync.dataset.amexSyncAction = "true";
+            sync.dataset.focusKey = "sync";
+            sync.title = "Choose benefits to add in a new tab";
             sync.disabled = this.mode !== "idle";
             sync.addEventListener("click", () => void this.syncReviewed());
             controls.append(sync);
           }
           top.append(controls);
+          if (refreshing) {
+            const status = element("p", this.progress);
+            status.className = "scan-status";
+            status.setAttribute("role", "status");
+            status.setAttribute("aria-live", "polite");
+            const progress = element("progress");
+            progress.className = "scan-progress";
+            progress.setAttribute("aria-label", "Scan progress");
+            if (this.progressCardCount !== null && this.progressCardCount > 0) {
+              progress.max = this.progressCardCount;
+              progress.value = Math.min(this.progressCardIndex, this.progressCardCount);
+              progress.setAttribute("aria-valuetext", `${this.progressCardIndex} of ${this.progressCardCount} cards checked`);
+            }
+            top.append(status, progress);
+          }
+          if (this.store.lastScan) {
+            const lastScan = this.store.lastScan;
+            const stamp = new Date(lastScan.finishedAt).toLocaleString(void 0, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+            const status = element("p", lastScan.status === "complete" ? `Updated ${stamp} · ${lastScan.attemptedCardCount} card${lastScan.attemptedCardCount === 1 ? "" : "s"}` : lastScan.status === "interrupted" ? "Refresh stopped. Showing saved benefits." : lastScan.status === "failed" ? "Couldn’t refresh. Sign in to Amex, then try again." : "Some benefits couldn’t update. Refresh to try again.");
+            status.className = `refresh-status ${lastScan.status === "complete" ? "" : "refresh-warning"}`;
+            top.append(status);
+          }
+          if (!refreshing && this.store.lastScan && this.actions.syncReviewed) {
+            if (this.syncProjectionCache?.store !== this.store) {
+              this.syncProjectionCache = { store: this.store, projection: projectLatestV3SyncEnvelope(this.store) };
+            }
+            const { coverage: coverage2 } = this.syncProjectionCache.projection;
+            const details = element("details");
+            details.className = "sync-coverage";
+            const summary = element("summary", `${coverage2.readyBenefits} of ${coverage2.totalBenefits} benefits included for sync`);
+            details.append(summary);
+            const copy = element("p", "Perks Reminder checks these benefits and shows what was updated, already current, or skipped.");
+            details.append(copy);
+            if (coverage2.unavailableCards) details.append(element("p", `${coverage2.unavailableCards} card${coverage2.unavailableCards === 1 ? " needs" : "s need"} another refresh.`));
+            if (coverage2.canceledCards) details.append(element("p", `${coverage2.canceledCards} canceled card${coverage2.canceledCards === 1 ? " is" : "s are"} kept in history.`));
+            if (coverage2.issues.length) {
+              const list = element("ul");
+              for (const issue of coverage2.issues) {
+                const item = element("li");
+                item.append(
+                  element("strong", formatAmexBenefitTitle(issue.benefitTitle)),
+                  element("span", `${issue.cardLabel} · ${SYNC_COVERAGE_LABELS[issue.reason]}`)
+                );
+                list.append(item);
+              }
+              details.append(list);
+            }
+            top.append(details);
+          }
+          if (this.syncMessage) {
+            const message = element("p", this.syncMessage);
+            message.className = "notice sync-message";
+            message.setAttribute("aria-live", "polite");
+            top.append(message);
+          }
           if (this.errorMessage) {
             const error = element("p", this.errorMessage);
             error.className = "notice notice-warning";
@@ -8054,22 +8364,52 @@
           }
           panel.append(top);
           const coverage = projectCardCoverage(this.store);
-          const cards = coverage.map(({ record }) => record);
+          const canceledCards = coverage.filter(({ kind }) => kind === "canceled");
+          const activeCoverage = coverage.filter(({ kind }) => kind !== "canceled");
+          const cards = activeCoverage.map(({ record }) => record);
           const benefitCards = cards.filter((record) => (record.latest?.benefits.length ?? 0) > 0);
           const confirmedEmptyCards = coverage.filter(({ kind }) => kind === "confirmed_empty");
-          const reviewEntries = coverage.filter(({ kind }) => kind !== "confirmed_empty");
+          const reviewEntries = activeCoverage.filter(({ kind }) => kind !== "confirmed_empty");
           const filterCounts = { remaining: 0, used: 0 };
           benefitCards.forEach((record) => {
             record.latest?.benefits.forEach((benefit) => {
-              filterCounts[benefitPresentation(benefit).filter] += 1;
+              if (this.matchesSearch(record, benefit)) filterCounts[benefitPresentation(benefit).filter] += 1;
             });
           });
-          const renderedEntries = reviewEntries.filter(({ record }) => record.latest?.benefits.some((benefit) => benefitPresentation(benefit).filter === this.benefitFilter));
+          const renderedEntries = reviewEntries.filter(({ record }) => record.latest?.benefits.some((benefit) => benefitPresentation(benefit).filter === this.benefitFilter && this.matchesSearch(record, benefit)));
           const content = element("div");
           content.className = "content";
           if (cards.length) {
             const totalBenefits = filterCounts.remaining + filterCounts.used;
             if (benefitCards.length) {
+              const tools = element("div");
+              tools.className = "browse-tools";
+              const searchRow = element("div");
+              searchRow.className = "search-row";
+              const search = element("input");
+              search.type = "text";
+              search.className = "search";
+              search.placeholder = "Find a card or benefit";
+              search.setAttribute("aria-label", "Find a card or benefit");
+              search.dataset.focusKey = "search";
+              search.value = this.searchQuery;
+              search.addEventListener("input", () => {
+                this.searchQuery = search.value;
+                this.render();
+              });
+              searchRow.append(search);
+              if (this.searchQuery) {
+                const clearSearch = element("button", "Clear");
+                clearSearch.className = "clear-search";
+                clearSearch.setAttribute("aria-label", "Clear search");
+                clearSearch.addEventListener("click", () => {
+                  this.searchQuery = "";
+                  this.render();
+                  this.root.querySelector(".search")?.focus();
+                });
+                searchRow.append(clearSearch);
+              }
+              tools.append(searchRow);
               const filters = element("div");
               filters.className = "filters";
               filters.setAttribute("role", "group");
@@ -8079,6 +8419,7 @@
                 control.type = "button";
                 control.className = "filter-button";
                 control.dataset.filter = filter;
+                control.dataset.focusKey = filter;
                 control.setAttribute("aria-pressed", String(this.benefitFilter === filter));
                 control.addEventListener("click", () => {
                   this.benefitFilter = filter;
@@ -8086,7 +8427,8 @@
                 });
                 filters.append(control);
               });
-              content.append(filters);
+              tools.append(filters);
+              content.append(tools);
             }
             if (renderedEntries.length) {
               const groups = element("div");
@@ -8096,35 +8438,54 @@
             } else {
               let message;
               const allCardsConclusivelyEmpty = totalBenefits === 0 && confirmedEmptyCards.length === cards.length && this.store.lastScan?.status === "complete";
-              if (allCardsConclusivelyEmpty) {
-                message = "No trackable benefits are available in the reviewed card observations.";
+              if (this.searchQuery.trim() && totalBenefits === 0) {
+                message = "No matches. Try a benefit name, card name, or the last digits of your card.";
+              } else if (allCardsConclusivelyEmpty) {
+                message = "No benefits to track on these cards.";
               } else if (totalBenefits === 0) {
-                message = "No benefit rows are available in the local observations.";
+                message = "No benefits loaded yet. Try refreshing.";
               } else {
                 const otherFilter = this.benefitFilter === "remaining" ? "used" : "remaining";
                 const otherCount = filterCounts[otherFilter];
-                message = `No ${filterLabel(this.benefitFilter).toLowerCase()} benefit rows are available. ${otherCount} ${filterLabel(otherFilter).toLowerCase()} benefit${otherCount === 1 ? " is" : "s are"} available under ${filterLabel(otherFilter)}.`;
+                message = `No ${filterLabel(this.benefitFilter).toLowerCase()} benefits${this.searchQuery.trim() ? " match your search" : ""}. See ${otherFilter === "used" ? "Used" : "Remaining"} for ${otherCount} ${otherCount === 1 ? "benefit" : "benefits"}.`;
               }
               const empty = element("p", message);
               empty.className = "empty-state account-empty-state";
               content.append(empty);
             }
           } else {
-            const empty = element("p", "No local card observations yet. Start a scan when you are ready.");
+            const art = element("img");
+            art.src = benefitsArtwork;
+            art.alt = "";
+            art.className = "empty-art";
+            content.append(art);
+            const empty = element("div");
+            empty.append(element("strong", canceledCards.length ? "No active cards" : "Your benefits will appear here"));
+            empty.append(element("p", canceledCards.length ? "You can find your canceled cards below." : "Sign in to Amex. Your cards update automatically, or you can choose Refresh."));
             empty.className = "empty-state";
             content.append(empty);
+          }
+          if (canceledCards.length) {
+            const history = element("details");
+            history.className = "secondary-panel canceled-cards";
+            history.append(element("summary", `Canceled cards (${canceledCards.length})`));
+            history.append(element("p", "These cards no longer update. Any previous benefits are saved here."));
+            canceledCards.forEach(({ record }) => {
+              if (record.latest?.benefits.length) history.append(this.renderCardGroup(record, true));
+              else history.append(element("p", `${record.identity.productName} •••• ${record.identity.endingDigits}`));
+            });
+            content.append(history);
           }
           panel.append(content);
           const footer = element("div");
           footer.className = "footer";
           const privacy = element("details");
           privacy.className = "secondary-panel privacy-details";
-          privacy.append(element("summary", "Data and privacy"));
-          privacy.append(element("p", "Only normalized observations and a local identity fingerprint are stored in Tampermonkey. Clearing data also removes the local identity secret."));
-          const clear = element("button", "Clear local data");
+          privacy.append(element("summary", "Settings"));
+          const clear = element("button", "Clear saved benefits");
           clear.type = "button";
           clear.className = "clear-button";
-          clear.disabled = this.mode === "syncing";
+          clear.disabled = this.mode !== "idle" && this.mode !== "error";
           clear.addEventListener("click", () => void this.clear());
           privacy.append(clear);
           footer.append(privacy);
@@ -8183,6 +8544,53 @@
     }
   });
 
+  // src/userscripts/amex-benefit-reader/login-scan.ts
+  function watchAmexLogin(options) {
+    const root = options.root ?? document;
+    const location = options.location ?? window.location;
+    let scanned = false;
+    let stopped = false;
+    let pending;
+    const check = () => {
+      if (stopped || !isSupportedAmexOrigin(location)) return;
+      if (/(?:^|\/)(?:log-?in|logon|log-?out|sign-?in|sign-?out)(?:\/|$)/i.test(location.pathname)) {
+        if (scanned) options.cancel();
+        scanned = false;
+        return;
+      }
+      if (scanned || !root.querySelector(SELECTED_CARD_DISPLAY)) return;
+      scanned = true;
+      if (options.isBusy()) return;
+      void options.scan().catch(() => void 0);
+    };
+    const schedule = () => {
+      if (!stopped && pending === void 0) pending = setTimeout(() => {
+        pending = void 0;
+        check();
+      }, 100);
+    };
+    const observer = new MutationObserver(schedule);
+    observer.observe(root.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-testid", "role"] });
+    const timer = setInterval(check, 1e3);
+    window.addEventListener("pageshow", schedule);
+    window.addEventListener("focus", schedule);
+    check();
+    return () => {
+      stopped = true;
+      observer.disconnect();
+      clearInterval(timer);
+      clearTimeout(pending);
+      window.removeEventListener("pageshow", schedule);
+      window.removeEventListener("focus", schedule);
+    };
+  }
+  var init_login_scan = __esm({
+    "src/userscripts/amex-benefit-reader/login-scan.ts"() {
+      "use strict";
+      init_visible_context();
+    }
+  });
+
   // src/userscripts/amex-benefit-reader/reader-runtime.ts
   var reader_runtime_exports = {};
   __export(reader_runtime_exports, {
@@ -8208,18 +8616,18 @@
       const reporter = { report: (progress) => panel?.report(progress) };
       panel = new AmexBenefitReaderPanel(initialStore, {
         startScan: async () => {
-          if (!engine) throw new Error("The local scanner is not ready.");
+          if (!engine) throw new Error("Still getting ready. Try again in a moment.");
           await engine.scanAllCards();
         },
         cancelScan: () => engine?.cancel(),
         syncReviewed: async () => {
           const popup = window.open("about:blank", "_blank");
-          if (!popup) throw new Error("Allow pop-ups for Amex, then choose Sync reviewed again.");
+          if (!popup) throw new Error("Allow pop-ups for Amex, then choose Sync to Perks Reminder again.");
           popup.opener = null;
           try {
             const projection = projectLatestV3SyncEnvelope(await store.load());
             if (!projection.envelope) {
-              throw new Error(projection.reason === "fresh_v3_scan_required" ? "Run and review a fresh complete scan before syncing." : "No complete reviewed card observations are available to sync.");
+              throw new Error(projection.reason === "fresh_v3_scan_required" ? "Refresh your benefits before syncing." : "No benefits are ready to sync. Try refreshing.");
             }
             const mailbox = await createAmexSyncMailbox(projection.envelope);
             await storeAmexSyncMailbox(adapters.mailboxStorage, mailbox);
@@ -8239,11 +8647,19 @@
         adapters.identity,
         reporter
       );
-      window.addEventListener("beforeunload", () => engine?.cancel(), { once: true });
+      const stopWatching = watchAmexLogin({
+        scan: () => panel.start({ reveal: false }),
+        cancel: () => engine?.cancel(),
+        isBusy: () => panel.isBusy
+      });
+      window.addEventListener("beforeunload", () => {
+        stopWatching();
+        engine?.cancel();
+      }, { once: true });
     } catch {
       if (document.getElementById(AMEX_READER_HOST_ID)) return;
       AmexBenefitReaderPanel.mountError(
-        "Local reader data is malformed or from an unsupported version. Clear local data to recover.",
+        "Couldn’t load saved benefits. Open Settings and clear them, then reload this page.",
         () => store.clear(),
         { initiallyCollapsed }
       );
@@ -8258,6 +8674,7 @@
       init_sync_mailbox();
       init_sync_contract();
       init_panel();
+      init_login_scan();
       init_tampermonkey_storage();
       init_visible_context();
     }
@@ -8328,7 +8745,7 @@
     }
     if (window.location.origin !== AMEX_READER_ORIGIN) return;
     const { mountAmexBenefitReader: mountAmexBenefitReader2 } = await Promise.resolve().then(() => (init_reader_runtime(), reader_runtime_exports));
-    await mountAmexBenefitReader2("1.0.1", AMEX_SYNC_HANDOFF_TARGET.name);
+    await mountAmexBenefitReader2("1.5.0", AMEX_SYNC_HANDOFF_TARGET.name);
   }
   void main();
 })();

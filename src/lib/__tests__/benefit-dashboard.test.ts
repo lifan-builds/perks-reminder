@@ -2,6 +2,7 @@ import {
   applyBenefitDashboardFilters,
   buildBenefitDashboardProjection,
   calculateBenefitGroupSummary,
+  calculateCompletionPercentage,
   CUSTOM_BENEFITS_CARD_NAME,
   deduplicateBenefitStatusesForDashboard,
   isFreeNightOrCertificateBenefit,
@@ -409,5 +410,18 @@ describe('calculateBenefitGroupSummary', () => {
       partialCount: 1,
       soonestDueDate: date('2026-05-10'),
     });
+  });
+});
+
+describe('calculateCompletionPercentage', () => {
+  it('calculates clamped completion percentages across null, zero, partial, and over-max amounts', () => {
+    expect(calculateCompletionPercentage(0, 100)).toBe(0);
+    expect(calculateCompletionPercentage(null, 100)).toBe(0);
+    expect(calculateCompletionPercentage(25, 100)).toBe(25);
+    expect(calculateCompletionPercentage(100, 100)).toBe(100);
+    expect(calculateCompletionPercentage(150, 100)).toBe(100);
+    expect(calculateCompletionPercentage(0, null)).toBe(0);
+    expect(calculateCompletionPercentage(50, null)).toBe(100);
+    expect(calculateCompletionPercentage(1, 3)).toBeCloseTo(33.33, 2);
   });
 });

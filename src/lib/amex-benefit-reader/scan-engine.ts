@@ -37,7 +37,7 @@ export interface AmexReadClient {
 
 export interface ResultStore {
   load(): Promise<StoreEnvelopeV1>;
-  commitCard(result: CardAttemptResult): Promise<StoredCardRecordV1>;
+  commitCard(result: CardAttemptResult, checkpoint?: ScanSummaryV1): Promise<StoredCardRecordV1>;
   recordScanSummary(summary: ScanSummaryV1): Promise<void>;
   clear(): Promise<void>;
 }
@@ -138,6 +138,7 @@ export class AmexBenefitScanEngine {
     let unknownAccountVariantCount = 0;
     let interrupted = false;
     let discoveryFailed = false;
+    let processingFailed = false;
     let retainedUnseenCard = false;
     let visibleContextResult: ScanSummaryV1["visibleContext"] = "unavailable";
 
@@ -179,14 +180,57 @@ export class AmexBenefitScanEngine {
 
       await this.recordInterruptionCheckpoint(scanId, startedAt, discovery, attemptedCardCount, dispositions);
 
-      for (let index = 0; index < discovery.cards.length; index += 1) {
+      const discovered = discovery;
+      // Refill each network slot independently of a card's slower sibling read
+      // or storage commit. Queued work checks cancellation before sending.
+      let activeReads = 0;
+      const waitingReads: Array<() => void> = [];
+      const read = async <T,>(operation: () => Promise<T>): Promise<T> => {
+        if (activeReads >= 4) await new Promise<void>((resolve) => waitingReads.push(resolve));
+        else activeReads += 1;
+        try {
+          throwIfAborted(signal);
+          return await operation();
+        } finally {
+          const next = waitingReads.shift();
+          if (next) next(); // Transfer this slot without opening a fifth one.
+          else activeReads -= 1;
+        }
+      };
+      // Storage read/merge/write cycles still run one at a time.
+      let writeTail = Promise.resolve();
+      const persist = <T,>(operation: () => Promise<T>): Promise<T> => {
+        const pending = writeTail.then(operation);
+        writeTail = pending.then(() => undefined, () => undefined);
+        return pending;
+      };
+      const commitCard = (result: CardAttemptResult) => persist(async () => {
         throwIfAborted(signal);
-        const transientCard = discovery.cards[index];
+        const disposition: ScanSummaryV1["cards"][number] = {
+          localCardId: result.identity.localCardId,
+          result: result.disposition === "failed" && result.errorCode === "account_canceled" ? "skipped" : result.disposition,
+          issueCode: result.disposition === "failed" ? result.errorCode : result.observation.issueCodes[0] ?? null,
+        };
+        const record = await this.store.commitCard(result, {
+          scanId, startedAt, finishedAt: this.clock.now().toISOString(), status: "interrupted",
+          discoveredCardCount: discovered.cards.length, attemptedCardCount,
+          unknownAccountVariantCount: discovered.unknownVariantCount,
+          cards: [...dispositions, disposition], visibleContext: "unavailable",
+        });
+        dispositions.push(disposition);
+        return record;
+      });
+      const checkpoint = () => {
+        return persist(() => this.recordInterruptionCheckpoint(scanId, startedAt, discovered, attemptedCardCount, dispositions));
+      };
+      const processCard = async (index: number): Promise<void> => {
+        throwIfAborted(signal);
+        const transientCard = discovered.cards[index];
         let rawAccountToken = transientCard.rawAccountToken;
         // Remove the token from the scan-wide discovery collection immediately;
         // only this card attempt retains a reference from this point onward.
         transientCard.rawAccountToken = "";
-        attemptedCardCount += 1;
+        if (!transientCard.canceled) attemptedCardCount += 1;
         let prepared: PreparedCardIdentity;
         try {
           prepared = await this.identity.prepareCard({
@@ -197,8 +241,8 @@ export class AmexBenefitScanEngine {
         } catch {
           rawAccountToken = "";
           dispositions.push({ localCardId: null, result: "failed", issueCode: "identity_unavailable" });
-          await this.recordInterruptionCheckpoint(scanId, startedAt, discovery, attemptedCardCount, dispositions);
-          continue;
+          await checkpoint();
+          return;
         }
 
         const resolution = reconcileCardIdentity({
@@ -215,8 +259,8 @@ export class AmexBenefitScanEngine {
             result: "failed",
             issueCode: resolution.kind === "ambiguous" ? "identity_ambiguous" : "identity_conflict",
           });
-          await this.recordInterruptionCheckpoint(scanId, startedAt, discovery, attemptedCardCount, dispositions);
-          continue;
+          await checkpoint();
+          return;
         }
 
         const localCardId = resolution.localCardId;
@@ -227,6 +271,19 @@ export class AmexBenefitScanEngine {
           productName: prepared.productName,
           endingDigits: prepared.endingDigits,
         };
+        if (transientCard.canceled) {
+          // Member status is authoritative. Keep the identity and any saved
+          // observation, but never request benefits for a canceled account.
+          rawAccountToken = "";
+          const record = await commitCard({
+            disposition: "failed",
+            identity,
+            attemptedAt: this.clock.now().toISOString(),
+            errorCode: "account_canceled",
+          });
+          this.reporter.report({ type: "card_committed", record, conflictDiagnostics: [], conflictDetails: { details: [], totalCount: 0, truncated: false } });
+          return;
+        }
         let trackerResponse: TrackerResponse | null = null;
         let catalogResponse: CatalogResponse | null = null;
         let catalogIssueCode: IssueCode | null = null;
@@ -234,26 +291,24 @@ export class AmexBenefitScanEngine {
           this.reporter.report({
             type: "card",
             cardIndex: index + 1,
-            cardCount: discovery.cards.length,
+            cardCount: discovered.cards.length,
             productName: prepared.productName,
             endingDigits: prepared.endingDigits,
             phase: "trackers",
           });
-          trackerResponse = await this.client.readBenefitTrackers(rawAccountToken, signal);
+          // Independent reads for this card share the scan's four-request budget.
+          const reads = await Promise.allSettled([
+            read(() => this.client.readBenefitTrackers(rawAccountToken, signal)),
+            read(() => this.client.readBenefitCatalog(rawAccountToken, signal)),
+          ]);
           throwIfAborted(signal);
-          this.reporter.report({
-            type: "card",
-            cardIndex: index + 1,
-            cardCount: discovery.cards.length,
-            productName: prepared.productName,
-            endingDigits: prepared.endingDigits,
-            phase: "catalog",
-          });
-          try {
-            catalogResponse = await this.client.readBenefitCatalog(rawAccountToken, signal);
-          } catch (error) {
-            const code = issueFromError(error);
-            if (!CATALOG_PARTIAL_ISSUES.has(code)) throw error;
+          if (reads[0].status === "rejected") throw reads[0].reason;
+          trackerResponse = reads[0].value;
+          if (reads[1].status === "fulfilled") {
+            catalogResponse = reads[1].value;
+          } else {
+            const code = issueFromError(reads[1].reason);
+            if (!CATALOG_PARTIAL_ISSUES.has(code)) throw reads[1].reason;
             catalogIssueCode = code;
             catalogResponse = { benefits: {} };
           }
@@ -261,7 +316,7 @@ export class AmexBenefitScanEngine {
           this.reporter.report({
             type: "card",
             cardIndex: index + 1,
-            cardCount: discovery.cards.length,
+            cardCount: discovered.cards.length,
             productName: prepared.productName,
             endingDigits: prepared.endingDigits,
             phase: "normalizing",
@@ -291,7 +346,7 @@ export class AmexBenefitScanEngine {
             issueCodes,
             benefits: normalized.benefits,
           };
-          const record = await this.store.commitCard({
+          const record = await commitCard({
             disposition,
             identity,
             attemptedAt: observedAt,
@@ -303,32 +358,37 @@ export class AmexBenefitScanEngine {
             conflictDiagnostics: normalized.conflictDiagnostics,
             conflictDetails: normalized.conflictDetails,
           });
-          dispositions.push({ localCardId, result: disposition, issueCode: issueCodes[0] ?? null });
         } catch (error) {
           const code = issueFromError(error);
           if (code === "scan_cancelled") {
             interrupted = true;
+            controller.abort();
             throw error;
           }
           const attemptedAt = this.clock.now().toISOString();
-          const record = await this.store.commitCard({
+          const record = await commitCard({
             disposition: "failed",
             identity,
             attemptedAt,
             errorCode: code,
           });
           this.reporter.report({ type: "card_committed", record, conflictDiagnostics: [], conflictDetails: { details: [], totalCount: 0, truncated: false } });
-          dispositions.push({ localCardId, result: "failed", issueCode: code });
         } finally {
           trackerResponse = null;
           catalogResponse = null;
           rawAccountToken = "";
         }
-        await this.recordInterruptionCheckpoint(scanId, startedAt, discovery, attemptedCardCount, dispositions);
-      }
+      };
+      // Drain active and queued reads before another scan can start.
+      const workers = await Promise.allSettled(discovered.cards.map((_, index) => processCard(index)));
+      const rejected = workers.find((result): result is PromiseRejectedResult => result.status === "rejected");
+      if (rejected) throw rejected.reason;
 
       for (const record of Object.values(initialStore.cards)) {
         if (claimed.has(record.localCardId)) continue;
+        // Amex can later omit closed accounts entirely. Keep their explicit
+        // canceled history until a future discovery identifies them as active.
+        if (record.error?.code === "account_canceled") continue;
         retainedUnseenCard = true;
         const attemptedAt = this.clock.now().toISOString();
         const staleRecord = await this.store.commitCard({
@@ -349,6 +409,7 @@ export class AmexBenefitScanEngine {
       if (code === "scan_cancelled") interrupted = true;
       else {
         discoveryFailed = discovery === null;
+        processingFailed = discovery !== null;
         if (discoveryFailed) dispositions.push({ localCardId: null, result: "failed", issueCode: code });
       }
     } finally {
@@ -369,12 +430,12 @@ export class AmexBenefitScanEngine {
     const hasFailure = dispositions.some((item) => item.result === "failed");
     const hasPartial = dispositions.some((item) => item.result === "partial");
     const noSuccessfulCards = discoveredCardCount > 0
-      && !dispositions.some((item) => item.result === "complete" || item.result === "partial");
+      && !dispositions.some((item) => item.result === "complete" || item.result === "partial" || item.result === "skipped");
     const status: ScanSummaryV1["status"] = interrupted
       ? "interrupted"
       : discoveryFailed || discoveredCardCount === 0 || noSuccessfulCards
         ? "failed"
-        : hasFailure || hasPartial || retainedUnseenCard || unknownAccountVariantCount > 0 || visibleContextResult !== "unchanged"
+        : processingFailed || hasFailure || hasPartial || retainedUnseenCard || unknownAccountVariantCount > 0 || visibleContextResult !== "unchanged"
           ? "partial"
           : "complete";
     const summary: ScanSummaryV1 = {

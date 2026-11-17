@@ -12,8 +12,6 @@ Perks Reminder is a free, open-source credit card benefit tracker. It tracks rec
 - Benefit Status stores usage state for one Benefit Cycle.
 - Every account receives unlimited cards, reminders, custom reminder timing, loyalty tracking, and import/export.
 
-See [CONTEXT.md](CONTEXT.md) for the project vocabulary.
-
 ## Features
 
 - Monthly, quarterly, yearly, anniversary, and multi-year Benefit Cycles
@@ -44,13 +42,6 @@ npm install
 npm run dev
 ```
 
-Secrets and runtime configuration are intentionally not documented in tracked project files. Do not create or copy `.env` files from repository instructions. Project operators manage configuration through approved local state and provider dashboards.
-
-Before any database command, read:
-
-- [.trellis/spec/perks-reminder/database-and-data-safety.md](.trellis/spec/perks-reminder/database-and-data-safety.md)
-- [.trellis/spec/perks-reminder/deployment-and-external-effects.md](.trellis/spec/perks-reminder/deployment-and-external-effects.md)
-
 ## Safe verification
 
 These checks do not require a database or production access:
@@ -61,9 +52,8 @@ npx tsc --noEmit --pretty false --incremental false
 npm run check:public-db
 npm run card-template:validate
 npm run check:amex-userscripts
+npm run check:amex-reader-extension
 ```
-
-Do not use `npm run build` as a routine verification command. Follow [.trellis/spec/perks-reminder/verification.md](.trellis/spec/perks-reminder/verification.md) when selecting checks.
 
 ## Catalog contributions
 
@@ -77,16 +67,14 @@ A Catalog change is not complete until immutable keys, global synchronization, e
 
 Read:
 
-- [.trellis/spec/perks-reminder/catalog-and-benefit-updates.md](.trellis/spec/perks-reminder/catalog-and-benefit-updates.md)
+- `AGENTS.md` — catalog and benefit update boundaries
 - [card-templates/README.md](card-templates/README.md)
 - [docs/community-data-quality-loop.md](docs/community-data-quality-loop.md)
 
 ## Project guidance
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — contribution workflow
-- [AGENTS.md](AGENTS.md) — Trellis entry point and safety boundary
-- [.trellis/spec/perks-reminder/index.md](.trellis/spec/perks-reminder/index.md) — domain, database, catalog, AMEX, and deployment contracts
-- [.trellis/spec/frontend/index.md](.trellis/spec/frontend/index.md) — frontend engineering contracts
+- [AGENTS.md](AGENTS.md) — project entry point and safety boundary
 - [docs/version-history.md](docs/version-history.md) — user-facing release history
 
 ## License

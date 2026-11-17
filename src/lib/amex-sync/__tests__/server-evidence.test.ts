@@ -1,9 +1,11 @@
 import { BROWSER_AMEX_SOURCE_CREDIT_DESCRIPTORS } from "@/lib/amex-benefit-reader/supported-card-credits";
 import { AMEX_WRITABLE_DESTINATIONS } from "@/lib/amex-catalog/catalog-registry";
 import {
-  AMEX_SERVER_PRODUCT_MATCH_MIN_MARGIN,
-  AMEX_SERVER_PRODUCT_MATCH_MIN_SCORE,
-  evaluateServerAmexProductScores,
+  AMEX_PRODUCT_MATCH_MIN_MARGIN,
+  AMEX_PRODUCT_MATCH_MIN_SCORE,
+  evaluateAmexProductScores,
+} from "@/lib/amex-catalog/normalization";
+import {
   resolveServerAmexCredit,
   resolveServerAmexProduct,
   SERVER_AMEX_PRODUCTS,
@@ -11,11 +13,22 @@ import {
 } from "../server-evidence";
 
 describe("independent server AMEX evidence authority", () => {
+  it.each([
+    ["american-express-platinum-card", "$219 CLEAR+ Credit", "clear-plus"],
+    ["american-express-platinum-card", "$300 Equinox Credit", "equinox"],
+    ["american-express-business-platinum-card", "$300 ChatGPT Business Credit", "chatgpt-business"],
+  ])("resolves the observed annual credit %s %s", (product, title, family) => {
+    expect(resolveServerAmexCredit(product, title, {
+      sourcePeriod: { kind: "calendar_date_range", startDate: "2026-01-01", endDate: "2026-12-31", timeZone: "UTC" },
+      earnedOrUsed: { value: "0", unit: "USD", currency: "USD" },
+    })).toMatchObject({ creditFamilyKey: `${product}:${family}` });
+  });
+
   it("accepts exact server score and margin boundaries but rejects values immediately below", () => {
-    expect(evaluateServerAmexProductScores(AMEX_SERVER_PRODUCT_MATCH_MIN_SCORE, 0)).toBe("accepted");
-    expect(evaluateServerAmexProductScores(AMEX_SERVER_PRODUCT_MATCH_MIN_SCORE - 0.000001, 0)).toBe("low_confidence");
-    expect(evaluateServerAmexProductScores(0.88, 0.88 - AMEX_SERVER_PRODUCT_MATCH_MIN_MARGIN)).toBe("accepted");
-    expect(evaluateServerAmexProductScores(0.88, 0.88 - AMEX_SERVER_PRODUCT_MATCH_MIN_MARGIN + 0.000001)).toBe("ambiguous");
+    expect(evaluateAmexProductScores(AMEX_PRODUCT_MATCH_MIN_SCORE, 0)).toBe("accepted");
+    expect(evaluateAmexProductScores(AMEX_PRODUCT_MATCH_MIN_SCORE - 0.000001, 0)).toBe("low_confidence");
+    expect(evaluateAmexProductScores(0.88, 0.88 - AMEX_PRODUCT_MATCH_MIN_MARGIN)).toBe("accepted");
+    expect(evaluateAmexProductScores(0.88, 0.88 - AMEX_PRODUCT_MATCH_MIN_MARGIN + 0.000001)).toBe("ambiguous");
   });
 
   it("enumerates and resolves all 12 reviewed products independently", () => {
@@ -23,7 +36,7 @@ describe("independent server AMEX evidence authority", () => {
     for (const product of SERVER_AMEX_PRODUCTS) {
       expect(resolveServerAmexProduct(product.aliases[0])).toBe(product.productKey);
     }
-    expect(resolveServerAmexProduct("Morgan Stanley Platinum")).toBe("american-express-platinum-card");
+    expect(resolveServerAmexProduct("Morgan Stanley Platinum Card®")).toBe("american-express-platinum-card");
     expect(resolveServerAmexProduct("Delta SkyMiles Gold Business Card")).toBeNull();
     expect(resolveServerAmexProduct("Hilton Honors Card")).toBeNull();
   });

@@ -124,6 +124,18 @@ export function resolveBenefitClaimedValue(status: BenefitDashboardStatus): numb
   return usedAmount;
 }
 
+export function calculateCompletionPercentage(
+  usedAmount: number | null | undefined,
+  maxAmount: number | null | undefined
+): number {
+  const used = usedAmount ?? 0;
+  const max = maxAmount ?? 0;
+  if (max <= 0) {
+    return used > 0 ? 100 : 0;
+  }
+  return Math.min(100, Math.max(0, (used / max) * 100));
+}
+
 export function calculateBenefitGroupSummary(
   benefits: BenefitDashboardStatus[]
 ): BenefitGroupSummary {

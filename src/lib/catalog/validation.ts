@@ -141,7 +141,7 @@ export function validateStaticCatalog(
   if (seenRegistryProducts.size !== registryProducts.size) {
     throw new Error("AMEX registry contains products missing from the static catalog.");
   }
-  if (amexCards !== 12 || amexBenefits !== 56 || amexWritableBenefits !== 47) {
+  if (amexCards !== 12 || amexBenefits !== 59 || amexWritableBenefits !== 50) {
     throw new Error(`AMEX catalog invariant failed: ${amexCards} products, ${amexBenefits} benefits, ${amexWritableBenefits} writable.`);
   }
 

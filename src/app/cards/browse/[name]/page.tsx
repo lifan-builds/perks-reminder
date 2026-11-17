@@ -74,7 +74,7 @@ export default async function CardDetailPage({ params }: PageProps) {
 
   // Calculate total annual value
   const totalAnnualValue = card.benefits.reduce((total, benefit) => {
-    return total + calculateAnnualBenefitValue(benefit.maxAmount, benefit.frequency);
+    return total + calculateAnnualBenefitValue(benefit.maxAmount, benefit.frequency, benefit.fixedCycleDurationMonths);
   }, 0);
 
   const netValue = totalAnnualValue - card.annualFee;
@@ -268,7 +268,7 @@ export default async function CardDetailPage({ params }: PageProps) {
                         </p>
                         {benefit.maxAmount && (
                           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                            Annual value: ${calculateAnnualBenefitValue(benefit.maxAmount, benefit.frequency).toLocaleString()}
+                            Annual value: ${calculateAnnualBenefitValue(benefit.maxAmount, benefit.frequency, benefit.fixedCycleDurationMonths).toLocaleString()}
                           </p>
                         )}
                         <div className="mt-2">

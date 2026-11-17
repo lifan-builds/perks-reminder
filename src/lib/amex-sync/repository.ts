@@ -408,7 +408,7 @@ export async function loadAmexSyncDestinationContext(
   // The optional client is a server-internal test/operator seam. Request DTOs and
   // service entry points never accept or forward a database selection.
   const db = injectedClient ?? client();
-  const rawCards = await db.creditCard.findMany({
+  const cardsRequest = db.creditCard.findMany({
       where: { userId },
       select: {
         id: true,
@@ -477,7 +477,7 @@ export async function loadAmexSyncDestinationContext(
         },
       },
     });
-  const authorityRows = await db.$queryRaw<RawLegacyAuthorityRow[]>(Prisma.sql`
+  const authorityRequest = db.$queryRaw<RawLegacyAuthorityRow[]>(Prisma.sql`
     SELECT
       bs."id" AS "statusId",
       bs."benefitId" AS "statusBenefitId",
@@ -544,6 +544,7 @@ export async function loadAmexSyncDestinationContext(
       AND bs."predefinedBenefitId" IS NOT NULL
     ORDER BY bs."id"
   `);
+  const [rawCards, authorityRows] = await Promise.all([cardsRequest, authorityRequest]);
   const authorityByStatus = new Map(authorityRows.map((row) => [row.statusId, row]));
   const cards = rawCards as unknown as RawDestinationCard[];
   for (const card of cards) {
@@ -648,23 +649,6 @@ export async function createAmexSyncAttempt(input: {
     },
     select: { id: true },
   }) as Promise<{ id: string }>;
-}
-
-export async function deactivateAmexCardMapping(input: {
-  userId: string;
-  sourceLocalCardId: string;
-  deactivatedAt?: Date;
-}): Promise<boolean> {
-  const result = await client().externalCardMapping.updateMany({
-    where: {
-      userId: input.userId,
-      source: "AMEX",
-      sourceLocalCardId: input.sourceLocalCardId,
-      inactiveAt: null,
-    },
-    data: { inactiveAt: input.deactivatedAt ?? new Date() },
-  });
-  return result.count === 1;
 }
 
 function auditSnapshot(prefix: "before" | "after", state: StatusStateProjection | null): Record<string, unknown> {
@@ -1274,8 +1258,8 @@ export async function completeAmexSyncAttempt(
   });
 }
 
-export const AMEX_SYNC_AUDIT_RETENTION_DAYS = 90;
-export const AMEX_SYNC_AUDIT_RETENTION_BATCH_SIZE = 500;
+const AMEX_SYNC_AUDIT_RETENTION_DAYS = 90;
+const AMEX_SYNC_AUDIT_RETENTION_BATCH_SIZE = 500;
 
 export function amexSyncAuditRetentionCutoff(now: Date): Date {
   return new Date(now.getTime() - AMEX_SYNC_AUDIT_RETENTION_DAYS * 24 * 60 * 60 * 1000);

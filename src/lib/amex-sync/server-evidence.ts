@@ -1,9 +1,13 @@
-import { normalizeAmexSelectionText } from "@/lib/amex-catalog/normalization";
+import {
+  evaluateAmexProductScores,
+  hasHardAmexProductConflict,
+  normalizeAmexSelectionText,
+  weightedAmexProductTokenScore,
+} from "@/lib/amex-catalog/normalization";
 import type { AmexPeriodKey } from "@/lib/amex-catalog/catalog-registry";
 import {
-  evidenceSatisfiesAmexPolicy,
   GENERIC_FORBIDDEN_AMEX_CREDIT_TOKEN_GROUPS,
-  titleSatisfiesAmexPolicy,
+  selectMatchingAmexPolicy,
   type AmexSourceCreditEvidence,
   type AmexSourceCreditPolicy,
 } from "@/lib/amex-catalog/source-credit-policy";
@@ -17,7 +21,7 @@ interface ServerProductDescriptor {
 // drift test compares outcomes; browser claims never expand this authority.
 export const SERVER_AMEX_PRODUCTS: readonly ServerProductDescriptor[] = [
   { productKey: "american-express-gold-card", aliases: ["American Express Gold Card", "American Express Gold Card®", "Amex Gold Card"] },
-  { productKey: "american-express-platinum-card", aliases: ["American Express Platinum Card", "The Platinum Card from American Express", "Platinum Card®", "Morgan Stanley Platinum", "The Platinum Card from American Express Exclusively for Morgan Stanley"] },
+  { productKey: "american-express-platinum-card", aliases: ["American Express Platinum Card", "The Platinum Card from American Express", "Platinum Card®", "Morgan Stanley Platinum", "Morgan Stanley Platinum Card®", "The Platinum Card from American Express Exclusively for Morgan Stanley"] },
   { productKey: "american-express-business-platinum-card", aliases: ["American Express Business Platinum Card", "Business Platinum Card from American Express", "Business Platinum Card®"] },
   { productKey: "american-express-business-gold-card", aliases: ["American Express Business Gold Card", "Business Gold Card from American Express", "Amex Business Gold Card"] },
   { productKey: "hilton-honors-american-express-aspire-card", aliases: ["Hilton Honors American Express Aspire Card", "Hilton Honors Aspire Card"] },
@@ -31,6 +35,9 @@ export const SERVER_AMEX_PRODUCTS: readonly ServerProductDescriptor[] = [
 ];
 
 const SERVER_COMPATIBLE_PERIODS: Readonly<Record<string, readonly AmexPeriodKey[]>> = {
+  "american-express-business-platinum-card:chatgpt-business": ["calendar-year"],
+  "american-express-platinum-card:equinox": ["calendar-year"],
+  "american-express-platinum-card:clear-plus": ["calendar-year"],
   "american-express-gold-card:uber-cash": ["calendar-month"],
   "american-express-gold-card:dining": ["calendar-month"],
   "american-express-gold-card:dunkin": ["calendar-month"],
@@ -110,6 +117,9 @@ const credit = (productKey: string, family: string, requiredTokens: readonly str
 };
 
 export const SERVER_AMEX_SOURCE_CREDITS: readonly ServerCreditDescriptor[] = [
+  credit("american-express-business-platinum-card", "chatgpt-business", ["chatgpt", "business"]),
+  credit("american-express-platinum-card", "equinox", ["equinox"]),
+  credit("american-express-platinum-card", "clear-plus", ["clear"]),
   credit("american-express-gold-card", "uber-cash", ["uber"]),
   credit("american-express-gold-card", "dining", ["dining"]),
   credit("american-express-gold-card", "dunkin", ["dunkin"]),
@@ -147,58 +157,16 @@ export const SERVER_AMEX_SOURCE_CREDITS: readonly ServerCreditDescriptor[] = [
   credit("marriott-bonvoy-brilliant-american-express-card", "dining", ["dining"]),
 ];
 
-export const AMEX_SERVER_PRODUCT_MATCH_MIN_SCORE = 0.88;
-export const AMEX_SERVER_PRODUCT_MATCH_MIN_MARGIN = 0.10;
-
-export function evaluateServerAmexProductScores(
-  bestScore: number,
-  runnerUpScore: number,
-): "accepted" | "low_confidence" | "ambiguous" {
-  if (bestScore < AMEX_SERVER_PRODUCT_MATCH_MIN_SCORE) return "low_confidence";
-  if (bestScore - runnerUpScore + Number.EPSILON < AMEX_SERVER_PRODUCT_MATCH_MIN_MARGIN) return "ambiguous";
-  return "accepted";
-}
-
-const PRODUCT_NOISE = new Set(["american", "express", "card", "the", "from"]);
-const COBRANDS = ["hilton", "delta", "marriott"] as const;
-const TIERS = ["gold", "platinum", "reserve", "aspire", "surpass", "brilliant"] as const;
-
-function tokenSet(value: string, noise: ReadonlySet<string> = PRODUCT_NOISE): Set<string> {
-  return new Set(normalizeAmexSelectionText(value).split(" ").filter((token) => token && !noise.has(token)));
-}
-
-function hardConflict(source: string, candidateAlias: string): boolean {
-  const sourceTokens = tokenSet(source, new Set());
-  const candidateTokens = tokenSet(candidateAlias, new Set());
-  if (sourceTokens.has("business") !== candidateTokens.has("business")) return true;
-  const sourceCobrand = COBRANDS.find((token) => sourceTokens.has(token));
-  const candidateCobrand = COBRANDS.find((token) => candidateTokens.has(token));
-  if (sourceCobrand !== candidateCobrand) return true;
-  const sourceTier = TIERS.find((token) => sourceTokens.has(token));
-  const candidateTier = TIERS.find((token) => candidateTokens.has(token));
-  return Boolean(sourceTier && candidateTier && sourceTier !== candidateTier);
-}
-
-function score(left: string, right: string): number {
-  const a = tokenSet(left);
-  const b = tokenSet(right);
-  const union = new Set([...Array.from(a), ...Array.from(b)]);
-  if (!union.size) return 0;
-  let shared = 0;
-  union.forEach((token) => { if (a.has(token) && b.has(token)) shared += 1; });
-  return shared / union.size;
-}
-
 export function resolveServerAmexProduct(productName: string): string | null {
   const normalized = normalizeAmexSelectionText(productName);
   const exact = SERVER_AMEX_PRODUCTS.find((product) => product.aliases.some((alias) => normalizeAmexSelectionText(alias) === normalized));
   if (exact) return exact.productKey;
   const candidates = SERVER_AMEX_PRODUCTS.flatMap((product) => {
     const canonical = product.aliases[0];
-    return hardConflict(productName, canonical) ? [] : [{ productKey: product.productKey, score: score(productName, canonical) }];
+    return hasHardAmexProductConflict(productName, canonical) ? [] : [{ productKey: product.productKey, score: weightedAmexProductTokenScore(productName, canonical) }];
   }).sort((left, right) => right.score - left.score || left.productKey.localeCompare(right.productKey));
   if (!candidates.length
-    || evaluateServerAmexProductScores(candidates[0].score, candidates[1]?.score ?? 0) !== "accepted") return null;
+    || evaluateAmexProductScores(candidates[0].score, candidates[1]?.score ?? 0) !== "accepted") return null;
   return candidates[0].productKey;
 }
 
@@ -207,13 +175,9 @@ export function resolveServerAmexCredit(
   providerTitle: string,
   evidence: AmexSourceCreditEvidence = {},
 ): ServerCreditDescriptor | null {
-  const productCredits = SERVER_AMEX_SOURCE_CREDITS.filter((descriptor) =>
-    descriptor.productKey === productKey
-    && titleSatisfiesAmexPolicy(descriptor, providerTitle)
-    && evidenceSatisfiesAmexPolicy(descriptor, evidence));
-  const normalizedTitle = normalizeAmexSelectionText(providerTitle);
-  const exact = productCredits.filter((descriptor) => descriptor.exactAliases
-    .some((alias) => normalizeAmexSelectionText(alias) === normalizedTitle));
-  if (exact.length === 1) return exact[0];
-  return exact.length > 1 || productCredits.length !== 1 ? null : productCredits[0];
+  return selectMatchingAmexPolicy(
+    SERVER_AMEX_SOURCE_CREDITS.filter((descriptor) => descriptor.productKey === productKey),
+    providerTitle,
+    evidence,
+  );
 }

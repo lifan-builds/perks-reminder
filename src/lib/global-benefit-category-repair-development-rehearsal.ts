@@ -1102,7 +1102,7 @@ async function cleanup(client: PrismaClient, fixture: DevelopmentRehearsalFixtur
   }
 }
 
-export const defaultGlobalBenefitCategoryRepairDevelopmentRehearsalDependencies:
+const defaultGlobalBenefitCategoryRepairDevelopmentRehearsalDependencies:
 GlobalBenefitCategoryRepairDevelopmentRehearsalDependencies = {
   createClient: (databaseUrlDev) => {
     const client = new PrismaClient({ datasourceUrl: databaseUrlDev });

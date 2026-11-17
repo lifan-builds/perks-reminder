@@ -165,9 +165,12 @@ function replayResults(
   stored: StoredRowResult[],
 ): PublicAmexSyncRowResult[] {
   const byIdentity = new Map(stored.map((result) => [result.sourceRowIdentity, result]));
+  if (stored.length !== plan.rows.length || byIdentity.size !== plan.rows.length) {
+    throw new Error("conflict_repreview_required");
+  }
   return plan.rows.map((row) => {
     const result = byIdentity.get(row.sourceRowIdentity);
-    if (!result) throw new Error("conflict_repreview_required");
+    if (!result || result.destinationCardId !== row.destinationCardId) throw new Error("conflict_repreview_required");
     const disposition = result.disposition === "UPDATED"
       ? "updated"
       : result.disposition === "UNCHANGED"
@@ -325,7 +328,7 @@ export async function confirmAmexSync(input: {
     group.push(row);
     groups.set(row.atomicGroupIdentity, group);
   });
-  for (const groupRows of Array.from(groups.values())) {
+  const applyGroup = async (groupRows: AmexSyncPlan["rows"]): Promise<void> => {
     const isAtomicWriteGroup = groupRows.length > 1 && groupRows.every((row) =>
       row.disposition === "proposed" || (row.disposition === "unchanged" && row.reason === "already_current"));
     if (isAtomicWriteGroup) {
@@ -343,7 +346,7 @@ export async function confirmAmexSync(input: {
           }
         }
       }
-      continue;
+      return;
     }
 
     for (const row of groupRows) {
@@ -366,8 +369,26 @@ export async function confirmAmexSync(input: {
         }
       }
     }
+  };
+  // Different cards can progress together; groups for one destination card
+  // remain serial so their mapping/provenance writes cannot race each other.
+  const byCard = new Map<string, AmexSyncPlan["rows"][]>();
+  for (const group of Array.from(groups.values())) {
+    const cardKey = group[0].destinationCardId ?? group[0].sourceLocalCardId;
+    const cardGroups = byCard.get(cardKey) ?? [];
+    cardGroups.push(group);
+    byCard.set(cardKey, cardGroups);
   }
-  await completeAmexSyncAttempt(attemptId, results, now);
+  const pendingCards = Array.from(byCard.values());
+  let nextCard = 0;
+  const worker = async (): Promise<void> => {
+    while (nextCard < pendingCards.length) {
+      const cardGroups = pendingCards[nextCard++];
+      for (const group of cardGroups) await applyGroup(group);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(2, pendingCards.length) }, worker));
   const rows = replayResults(plan, results);
+  await completeAmexSyncAttempt(attemptId, results, now);
   return { attemptId, replayed: false, rows, updatedCount: rows.filter((row) => row.disposition === "updated").length };
 }

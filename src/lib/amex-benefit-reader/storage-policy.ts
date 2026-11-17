@@ -36,6 +36,7 @@ export type CardAttemptResult =
     };
 
 const ERROR_MESSAGES: Record<IssueCode, string> = {
+  account_canceled: "Amex reports this card as canceled. Saved observations are retained as history and are not refreshed.",
   unknown_account_variant: "An unrecognized account response variant was not scanned.",
   duplicate_card_entry: "A physical card identity appeared more than once in account discovery.",
   identity_unavailable: "A stable local card identity could not be created.",
@@ -58,7 +59,7 @@ const ERROR_MESSAGES: Record<IssueCode, string> = {
   storage_invalid: "Local reader data is malformed or from an unsupported version.",
 };
 
-export function fixedErrorMessage(code: IssueCode): string {
+function fixedErrorMessage(code: IssueCode): string {
   return ERROR_MESSAGES[code];
 }
 
@@ -169,14 +170,4 @@ export function mergeScanSummary(store: StoreEnvelopeV1, summary: ScanSummaryV1)
     updatedAt: validatedSummary.finishedAt,
     lastScan: validatedSummary,
   });
-}
-
-export function hasMixedObservations(store: StoreEnvelopeV1): boolean {
-  const records = Object.values(store.cards);
-  const observationTimes = new Set(records.map((record) => record.observedAt).filter(Boolean));
-  return observationTimes.size > 1
-    || records.some((record) => record.freshness !== "current" || record.completeness !== "complete")
-    || Boolean(store.lastScan && (
-      store.lastScan.status !== "complete" || store.lastScan.visibleContext !== "unchanged"
-    ));
 }

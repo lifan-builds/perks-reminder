@@ -121,7 +121,7 @@ function expectNoRawSyntheticIdentity(harness: SyntheticAmexHarness): void {
 }
 
 async function waitForFinalReader(page: import("@playwright/test").Page): Promise<void> {
-  await expect(page.getByRole("button", { name: "Scan all cards" })).toBeEnabled({ timeout: 10_000 });
+  await expect(page.getByRole("button", { name: "Refresh" })).toBeEnabled({ timeout: 10_000 });
   await expect(page.getByRole("status")).toHaveCount(0);
 }
 
@@ -173,7 +173,8 @@ test("invalidates one role-unverified snapshot and mailbox without reading Amex"
   harness.storage.set(SYNC_MAILBOX_KEY, { syntheticPendingMailbox: true });
 
   await harness.installBeforeNavigation();
-  await harness.openAndInject();
+  await harness.openAndInject(SYNTHETIC_AMEX_NON_BENEFITS_URL);
+  await page.getByRole("button", { name: "Open Perks Reminder Amex benefit reader" }).click();
 
   expect(persistedEnvelope(harness)).toMatchObject({ revision: 5, cards: {}, lastScan: null });
   expect(harness.storage.get(IDENTITY_SECRET_KEY)).toBe(identitySecret);
@@ -182,7 +183,7 @@ test("invalidates one role-unverified snapshot and mailbox without reading Amex"
   expect(harness.storage.get(PRIMARY_ONLY_COMPATIBILITY_KEY)).toBe(PRIMARY_ONLY_COMPATIBILITY_VALUE);
   expect(harness.storage.get(V3_SELECTION_COMPATIBILITY_KEY)).toBe(V3_SELECTION_COMPATIBILITY_VALUE);
   expect(harness.apiRequests()).toHaveLength(0);
-  await expect(page.getByText("No local card observations yet")).toBeVisible();
+  await expect(page.getByText("Your benefits will appear here")).toBeVisible();
   harness.assertNetworkStayedSynthetic();
 });
 
@@ -192,20 +193,18 @@ test("shows only real scan progress until the built reader reaches a terminal re
   await harness.openAndInject();
 
   const readerHost = page.locator("#perks-reminder-amex-reader");
-  await expect(readerHost).toHaveAttribute("data-reader-version", "1.0.1");
-  const scanButton = page.getByRole("button", { name: "Scan all cards" });
-  expect(harness.apiRequests()).toHaveLength(0);
-  await scanButton.click();
+  await expect(readerHost).toHaveAttribute("data-reader-version", "1.5.0");
+  // The signed-in account UI starts the first scan without a click.
 
   const progress = page.getByRole("progressbar", { name: "Scan progress" });
   await expect(progress).toHaveAttribute("max", "2");
-  await expect(progress).toHaveAttribute("value", "1");
-  await expect(page.getByRole("status")).toContainText("Reading card 1 of 2");
+  await expect(progress).toHaveAttribute("value", "0");
+  await expect(page.getByRole("status")).toContainText("0 of 2 cards checked");
   await expect(page.getByRole("button", { name: "Cancel" })).toBeVisible();
   await expect(page.locator(".card-group")).toHaveCount(0);
   await expect(page.locator(".filters")).toHaveCount(0);
-  await expect(page.getByText("Data and privacy", { exact: true })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Sync reviewed" })).toHaveCount(0);
+  await expect(page.getByText("Settings", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Sync to Perks Reminder" })).toHaveCount(0);
 
   await waitForFinalReader(page);
   await expect(page.getByRole("heading", { name: "American Express Gold Card •••• 1234" })).toBeVisible();
@@ -227,10 +226,14 @@ test("shows only real scan progress until the built reader reaches a terminal re
 
   const requestCount = harness.apiRequests().length;
   await harness.reloadAndInject();
-  await expect(page.getByRole("button", { name: "Scan all cards" })).toBeEnabled();
+  await expect(page.getByRole("progressbar", { name: "Scan progress" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Find a card or benefit" })).toBeVisible();
+  await expect(page.locator(".card-group")).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Sync to Perks Reminder" })).toBeDisabled();
+  await waitForFinalReader(page);
   await expect(page.getByRole("status")).toHaveCount(0);
   await expect(page.locator(".card-group")).toHaveCount(1);
-  expect(harness.apiRequests()).toHaveLength(requestCount);
+  expect(harness.apiRequests()).toHaveLength(requestCount * 2);
   await harness.proveUnexpectedNetworkIsBlocked();
   harness.assertNetworkStayedSynthetic();
 });
@@ -239,7 +242,7 @@ test("keeps primary-only discovery and reviewed exclusions in the generated bund
   const harness = new SyntheticAmexHarness(context, page, "reviewed_exclusions");
   await harness.installBeforeNavigation();
   await harness.openAndInject();
-  await page.getByRole("button", { name: "Scan all cards" }).click();
+  await expect(page.getByRole("progressbar", { name: "Scan progress" })).toBeVisible();
   await waitForFinalReader(page);
 
   await expect(page.locator(".card-group")).toHaveCount(2);
@@ -259,7 +262,7 @@ test("keeps genuine V3 identity conflicts fail closed and internal", async ({ co
   const harness = new SyntheticAmexHarness(context, page, "conflict_diagnostics");
   await harness.installBeforeNavigation();
   await harness.openAndInject();
-  await page.getByRole("button", { name: "Scan all cards" }).click();
+  await expect(page.getByRole("progressbar", { name: "Scan progress" })).toBeVisible();
   await waitForFinalReader(page);
 
   const stored = persistedEnvelope(harness);
@@ -287,7 +290,7 @@ test("persists approved Morgan, empty Hilton, and Delta-Stays-only V3 outcomes",
   const harness = new SyntheticAmexHarness(context, page, "approved_v3_products");
   await harness.installBeforeNavigation();
   await harness.openAndInject();
-  await page.getByRole("button", { name: "Scan all cards" }).click();
+  await expect(page.getByRole("progressbar", { name: "Scan progress" })).toBeVisible();
   await waitForFinalReader(page);
 
   const stored = persistedEnvelope(harness);
@@ -332,11 +335,11 @@ test("keeps partial observations internal while rendering their safely retained 
   const harness = new SyntheticAmexHarness(context, page, "catalog_failure");
   await harness.installBeforeNavigation();
   await harness.openAndInject();
-  await page.getByRole("button", { name: "Scan all cards" }).click();
+  await expect(page.getByRole("progressbar", { name: "Scan progress" })).toBeVisible();
   await waitForFinalReader(page);
 
   await expect(page.getByRole("heading", { name: "Synthetic $12 Monthly Dining Credit Statement Credit" })).toBeVisible();
-  await expect(page.getByText("$4.00 of $10.00")).toBeVisible();
+  await expect(page.getByText("$4 of $10 used")).toBeVisible();
   await expect(page.getByText("Partial data", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Data quality and timestamps", { exact: true })).toHaveCount(0);
   await expect(page.getByText("The benefit catalog was unavailable", { exact: false })).toHaveCount(0);
@@ -346,17 +349,18 @@ test("keeps partial observations internal while rendering their safely retained 
   harness.assertNetworkStayedSynthetic();
 });
 
-test("cancels a later physical-card read while keeping only the in-progress workspace visible", async ({ context, page }) => {
+test("cancels a later physical-card read while keeping the completed card browsable", async ({ context, page }) => {
   const harness = new SyntheticAmexHarness(context, page, "cancellation");
   await harness.installBeforeNavigation();
   await harness.openAndInject();
-  await page.getByRole("button", { name: "Scan all cards" }).click();
+  await expect(page.getByRole("progressbar", { name: "Scan progress" })).toBeVisible();
   await harness.waitForCancellationRequest();
 
-  await expect(page.getByRole("progressbar", { name: "Scan progress" })).toHaveAttribute("value", "2");
-  await expect(page.getByRole("status")).toContainText("Reading card 2 of 2");
-  await expect(page.locator(".card-group")).toHaveCount(0);
-  await expect(page.getByText("Data and privacy", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("progressbar", { name: "Scan progress" })).toHaveAttribute("value", "1");
+  await expect(page.getByRole("status")).toContainText("1 of 2 cards checked");
+  await expect(page.locator(".card-group")).toHaveCount(1);
+  await page.screenshot({ path: "build/reader-verification/startup-refreshing-1.4.0.png" });
+  await expect(page.getByText("Settings", { exact: true })).toHaveCount(1);
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   await harness.releaseCancellationRequest();
   await waitForFinalReader(page);
@@ -366,6 +370,7 @@ test("cancels a later physical-card read while keeping only the in-progress work
     "tracker:primary:scan-1",
     "catalog:primary:scan-1",
     "tracker:secondary:scan-1",
+    "catalog:secondary:scan-1",
   ]);
   expect(persistedEnvelope(harness).lastScan).toMatchObject({ status: "interrupted", attemptedCardCount: 2 });
   await expect(page.getByRole("heading", { name: "American Express Gold Card •••• 1234" })).toBeVisible();
@@ -376,7 +381,7 @@ test("keeps a high-scale account filter-aware without summary or data-quality UI
   const harness = new SyntheticAmexHarness(context, page, "high_scale");
   await harness.installBeforeNavigation();
   await harness.openAndInject();
-  await page.getByRole("button", { name: "Scan all cards" }).click();
+  await expect(page.getByRole("progressbar", { name: "Scan progress" })).toBeVisible();
   await waitForFinalReader(page);
 
   await expect(page.getByRole("button", { name: "Remaining 130" })).toHaveAttribute("aria-pressed", "true");
@@ -386,18 +391,18 @@ test("keeps a high-scale account filter-aware without summary or data-quality UI
   await expect(page.getByText("Data notes", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Used 0" }).click();
   await expect(page.locator(".card-group")).toHaveCount(0);
-  await expect(page.locator(".account-empty-state")).toContainText("130 remaining benefits");
+  await expect(page.locator(".account-empty-state")).toContainText("See Remaining for 130 benefits");
   expect(harness.apiRequests("tracker")).toHaveLength(16);
   expect(harness.apiRequests("catalog")).toHaveLength(16);
   expectNoRawSyntheticIdentity(harness);
   harness.assertNetworkStayedSynthetic();
 });
 
-test("renders the Quiet Ledger reader at desktop and narrow widths @visual", async ({ context, page }, testInfo) => {
+test("renders the compact reader at desktop and narrow widths @visual", async ({ context, page }, testInfo) => {
   const harness = new SyntheticAmexHarness(context, page, "complete");
   await harness.installBeforeNavigation();
   await harness.openAndInject();
-  await page.getByRole("button", { name: "Scan all cards" }).click();
+  await expect(page.getByRole("progressbar", { name: "Scan progress" })).toBeVisible();
   await waitForFinalReader(page);
 
   const reader = page.locator("#perks-reminder-amex-reader");
@@ -411,6 +416,7 @@ test("renders the Quiet Ledger reader at desktop and narrow widths @visual", asy
     expect(bounds).not.toBeNull();
     expect(bounds!.x).toBeGreaterThanOrEqual(0);
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(width);
+    expect(await reader.locator(".content").evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
   }
 
   await page.setViewportSize({ width: 375, height: 812 });
@@ -424,6 +430,29 @@ test("renders the Quiet Ledger reader at desktop and narrow widths @visual", asy
   harness.assertNetworkStayedSynthetic();
 });
 
+test("supports search, keyboard filtering, and Escape without losing the query", async ({ context, page }) => {
+  const harness = new SyntheticAmexHarness(context, page, "complete");
+  await harness.installBeforeNavigation();
+  await harness.openAndInject();
+  await waitForFinalReader(page);
+  const search = page.getByRole("textbox", { name: "Find a card or benefit" });
+  await search.pressSequentially("dining");
+  await expect(search).toBeFocused();
+  await expect(search).toHaveValue("dining");
+  await expect(page.locator(".benefit-card")).toHaveCount(1);
+  await search.fill("no-such-benefit");
+  await expect(page.locator(".account-empty-state")).toContainText("No matches");
+  await search.press("Escape");
+  const launcher = page.getByRole("button", { name: "Open Perks Reminder Amex benefit reader" });
+  await expect(launcher).toBeFocused();
+  await launcher.press("Enter");
+  await expect(search).toHaveValue("no-such-benefit");
+  await page.getByRole("button", { name: "Clear search", exact: true }).click();
+  await expect(search).toBeFocused();
+  await expect(page.locator(".benefit-card")).toHaveCount(1);
+  harness.assertNetworkStayedSynthetic();
+});
+
 test("mounts once and scans manually from a selector-free non-benefits route", async ({ context, page }) => {
   const harness = new SyntheticAmexHarness(context, page, "complete");
   await harness.installBeforeNavigation();
@@ -432,7 +461,7 @@ test("mounts once and scans manually from a selector-free non-benefits route", a
   await expect(page.getByRole("button", { name: "Open Perks Reminder Amex benefit reader" })).toBeVisible();
   expect(harness.apiRequests()).toHaveLength(0);
   await page.getByRole("button", { name: "Open Perks Reminder Amex benefit reader" }).click();
-  await page.getByRole("button", { name: "Scan all cards" }).click();
+  await page.getByRole("button", { name: "Refresh" }).click();
   await waitForFinalReader(page);
   expect(page.url()).toBe(SYNTHETIC_AMEX_NON_BENEFITS_URL);
   expect(persistedEnvelope(harness).lastScan).toMatchObject({ visibleContext: "unchanged", attemptedCardCount: 2 });

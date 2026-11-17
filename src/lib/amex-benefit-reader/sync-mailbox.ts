@@ -1,7 +1,5 @@
 import { z } from "zod";
 import {
-  AMEX_SYNC_HANDOFF_PATH,
-  PRODUCTION_AMEX_SYNC_HANDOFF_TARGET,
   resolveAmexSyncHandoffTarget,
   type AmexSyncHandoffTargetName,
 } from "./handoff-target";
@@ -16,14 +14,12 @@ import {
 
 export const LEGACY_AMEX_SYNC_MAILBOX_KEY = "perksReminder.amexBenefitReader.syncMailbox.v1" as const;
 export const AMEX_SYNC_MAILBOX_KEY = "perksReminder.amexBenefitReader.syncMailbox.v2" as const;
-export const AMEX_SYNC_MAILBOX_VERSION = "amex-sync-mailbox/2" as const;
-export const AMEX_SYNC_HANDOFF_ORIGIN = PRODUCTION_AMEX_SYNC_HANDOFF_TARGET.origin;
-export { AMEX_SYNC_HANDOFF_PATH };
-export const AMEX_SYNC_MAILBOX_TTL_MS = 10 * 60 * 1000;
+const AMEX_SYNC_MAILBOX_VERSION = "amex-sync-mailbox/2" as const;
+const AMEX_SYNC_MAILBOX_TTL_MS = 10 * 60 * 1000;
 
 const opaqueIdSchema = z.string().regex(/^[a-f0-9]{32}$/);
 
-export const amexSyncMailboxSchema = z.object({
+const amexSyncMailboxSchema = z.object({
   mailboxVersion: z.literal(AMEX_SYNC_MAILBOX_VERSION),
   transferId: opaqueIdSchema,
   nonce: opaqueIdSchema,

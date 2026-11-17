@@ -11,8 +11,10 @@ import {
   setBenefitTrackingModeAction,
 } from '@/app/benefits/actions';
 import type { BenefitTrackingMode } from '@/lib/benefit-tracking-modes';
-import type { DisplayBenefitStatus } from '@/lib/benefit-dashboard-client';
-import { calculateCompletionPercentage } from '@/lib/partial-completion';
+import {
+  calculateCompletionPercentage,
+  type DisplayBenefitStatus,
+} from '@/lib/benefit-dashboard-client';
 import SuggestCorrectionLink from '@/components/SuggestCorrectionLink';
 
 const TRACKING_MODE_OPTIONS: ReadonlyArray<{

@@ -6,7 +6,11 @@ export const dynamic = 'force-dynamic';
 // GET handler to fetch all predefined cards
 export async function GET() {
   try {
-    const cards = getPublicStaticCards().map(({ benefits, ...card }) => card);
+    const cards = getPublicStaticCards().map((card) => {
+      const copy = { ...card } as Record<string, unknown>;
+      delete copy.benefits;
+      return copy;
+    });
     const response = NextResponse.json(cards);
     response.headers.set('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=604800');
     return response;

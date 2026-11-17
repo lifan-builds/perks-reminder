@@ -32,8 +32,7 @@ recoverable without silently changing a user's usage history.
 
    Apply requires immediate target verification and the exact
    `SYNC_GLOBAL_CATALOG` confirmation. Follow the
-   [Catalog and Benefit Updates specification](../.trellis/spec/perks-reminder/catalog-and-benefit-updates.md)
-   and [Database and Data Safety](../.trellis/spec/perks-reminder/database-and-data-safety.md)
+   the catalog and data-safety guidance in [AGENTS.md](../AGENTS.md)
    before using either mode.
 
 ## Guardrails

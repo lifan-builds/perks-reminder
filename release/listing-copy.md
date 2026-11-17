@@ -1,42 +1,48 @@
-# Perks Reminder AMEX Benefit Reader 1.0.1
+# Perks Reminder AMEX Benefit Reader 1.5.0
 
 ## Chrome Web Store short description
 
-Manually read normalized American Express benefit progress locally—nothing scans automatically.
+Track your Amex benefits across cards. See what’s remaining, what’s used, and sync to Perks Reminder.
 
 ## Long description
 
-Perks Reminder AMEX Benefit Reader is a focused, read-only browser reader for your signed-in American Express benefits page. Start a scan yourself, review normalized benefit progress by physical card, and optionally choose **Sync reviewed** to send a validated handoff to Perks Reminder for its separate preview and confirmation flow.
+See your American Express benefits together in one panel on the Amex website.
 
-The reader does not connect to a bank account, mutate American Express, enroll offers, or scan in the background. It does not inspect passwords, cookies, MFA values, authorization headers, or opaque provider tokens. Raw provider responses are not saved. Normalized observations and a local identity fingerprint stay in browser storage until you clear them.
+- Refresh automatically after you sign in, or choose Refresh whenever you need an update.
+- Browse saved benefits immediately while fresh results arrive.
+- Search by benefit, card name, or card ending. Switch between Remaining and Used.
+- See which benefits are included for sync and why any items were excluded.
+- Choose Sync to Perks Reminder to review benefits in a separate tab before adding them.
+- Keep saved history for canceled cards.
 
-Use either this Chrome extension or the Greasy Fork userscript, never both at the same time. Perks Reminder is an independent project and is not affiliated with or endorsed by American Express.
+Version 1.5.0 improves refresh speed and keeps search responsive during updates. Your existing saved reader data is preserved.
+
+The reader uses your existing Amex session. It does not enroll offers or change your Amex account. Benefit observations are stored in your browser; transfer to Perks Reminder happens only when you choose Sync to Perks Reminder. Use one edition at a time: Chrome extension or Tampermonkey userscript.
+
+Perks Reminder is independent and is not affiliated with or endorsed by American Express.
 
 Privacy: https://www.perks-reminder.com/privacy
 Support: https://github.com/lifan-builds/perks-reminder/issues
 
 ## Single-purpose statement
 
-This extension has one purpose: manually read and display normalized American Express benefit progress in an in-page panel, with an optional reviewed handoff to Perks Reminder.
+View American Express benefit usage across your cards and optionally send selected observations to Perks Reminder for review.
 
 ## Permission justification
 
-- `storage`: retain only normalized observations, a local installation fingerprint, and a short-lived validated handoff mailbox on the device.
-- Content-script site access to `global.americanexpress.com`: inject the reader on the reviewed AMEX pages and issue the three named first-party read requests only after the user presses Scan all cards.
-- The tracker and catalog reads are fixed, named first-party CORS-permitted operations issued from the reviewed American Express page context; no separate functions-origin permission is requested.
-- Content-script site access to `www.perks-reminder.com/integrations/amex-sync`: complete the optional validated handoff after the user presses Sync reviewed.
+- storage: saves benefit observations, local card fingerprints, and the temporary sync handoff on this device.
+- global.americanexpress.com: displays the benefits panel and reads account, tracker, and catalog data through the existing signed-in session. Refresh begins after sign-in on a new page load and when the user chooses Refresh.
+- www.perks-reminder.com/integrations/amex-sync: delivers the handoff only after the user chooses Sync to Perks Reminder.
 
-No `tabs`, `activeTab`, `scripting`, background worker, analytics, or remote executable code is used.
+No tabs, activeTab, scripting, background worker, analytics, or remote executable code is used.
 
 ## Data-use answers
 
-- Handles personal data: yes, only user-visible benefit observations and local identity material.
-- Purpose: app functionality, specifically local display and an optional user-requested Perks Reminder handoff.
-- Transfer: no sale or unrelated sharing; only the explicit handoff to Perks Reminder.
-- Authentication: uses the existing browser session; never reads credentials or cookies.
+- Handles card names, card endings, benefit amounts, usage, enrollment status, periods, and a local card fingerprint for app functionality.
+- Uses the existing browser session without reading passwords or cookies. Amex account identifiers are used transiently for the correct card's requests and a local fingerprint; raw responses and account tokens are not saved or included in the handoff.
+- Stores observations locally. An explicit sync transfers normalized observations to Perks Reminder for its preview and confirmation flow.
+- No sale, advertising use, or unrelated sharing of reader observations.
 
 ## Release notes
 
-1.0.1 — Introduces the Quiet Ledger redesign with clearer card and benefit context, calmer progress and result states, responsive dark-mode layouts, and improved keyboard focus.
-
-1.0.0 — First public release with a shared read-only runtime, local normalized storage, exact handoff validation, accessible panel, and Chrome/Greasy Fork distribution parity.
+1.5.0 — Faster benefit refresh with up to four requests at a time. Saved benefits remain searchable while refreshing. Clear coverage counts show which benefits are included for sync. Improved cancellation, recovery after interruption, and support for more Amex benefits. Existing saved data is preserved.

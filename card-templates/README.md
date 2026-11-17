@@ -23,7 +23,7 @@ Maintainers verify the sources, then update the static Catalog with explicit,
 immutable `catalogKey` values and exact benefit parent keys. A checked-in
 Catalog change also needs a separately reviewed global synchronization plan,
 existing-Physical-Card status propagation disposition, and Benefit Usage Guide
-disposition. Read the [Catalog and Benefit Updates specification](../.trellis/spec/perks-reminder/catalog-and-benefit-updates.md)
+disposition. Read the catalog and benefit update guidance in [AGENTS.md](../AGENTS.md)
 before changing the source.
 
 `prisma/seed.ts` consumes the static source for compatible database setup, but

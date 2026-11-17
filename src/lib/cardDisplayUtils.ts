@@ -16,15 +16,6 @@ export function isAmexCard(issuer: string): boolean {
 }
 
 /**
- * Gets the expected number of last digits for a card type
- * @param issuer Card issuer name
- * @returns 5 for AMEX (4-5 accepted), 4 for others
- */
-export function getExpectedDigitsCount(issuer: string): number {
-  return isAmexCard(issuer) ? 5 : 4;
-}
-
-/**
  * Validates last digits input for a specific card type
  * @param digits The digits string to validate
  * @param issuer Card issuer name

@@ -39,7 +39,7 @@ export interface LifecycleCardProjection {
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
-export function toUtcDate(value: Date | string | null | undefined): Date | null {
+function toUtcDate(value: Date | string | null | undefined): Date | null {
   if (!value) return null;
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return null;
@@ -102,7 +102,7 @@ export function deriveNextAnnualFeeDueDate(
   return dueDate;
 }
 
-export function isWithinDays(date: Date, referenceDate: Date, daysAhead: number): boolean {
+function isWithinDays(date: Date, referenceDate: Date, daysAhead: number): boolean {
   const normalizedDate = toUtcDate(date);
   const normalizedReference = toUtcDate(referenceDate);
   if (!normalizedDate || !normalizedReference) return false;

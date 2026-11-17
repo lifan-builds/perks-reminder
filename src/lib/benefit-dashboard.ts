@@ -5,6 +5,7 @@ import {
 } from '@/lib/effective-benefit';
 import type { EffectiveBenefitStatus } from '@/lib/effective-benefit';
 import { createCardDisplayNameMap } from '@/lib/cardDisplayUtils';
+import { getPrismaClient } from '@/lib/prisma-client-provider';
 
 import {
   CUSTOM_BENEFITS_CARD_NAME,
@@ -20,6 +21,7 @@ import type {
 export {
   applyBenefitDashboardFilters,
   calculateBenefitGroupSummary,
+  calculateCompletionPercentage,
   CUSTOM_BENEFITS_CARD_NAME,
   isFreeNightOrCertificateBenefit,
   resolveBenefitClaimedValue,
@@ -74,7 +76,7 @@ export interface BenefitDashboardProjection {
 
 export type RawDisplayBenefitStatus = EffectiveBenefitStatus;
 
-export function buildUsageWaySlugMap(usageWays: UsageWayForDashboard[]): Map<string, string> {
+function buildUsageWaySlugMap(usageWays: UsageWayForDashboard[]): Map<string, string> {
   const usageWayMap = new Map<string, string>();
 
   for (const way of usageWays) {
@@ -89,7 +91,7 @@ export function buildUsageWaySlugMap(usageWays: UsageWayForDashboard[]): Map<str
   return usageWayMap;
 }
 
-export function augmentBenefitStatusesForDashboard(
+function augmentBenefitStatusesForDashboard(
   statuses: RawDisplayBenefitStatus[],
   userCards: PrismaCreditCard[],
   usageWays: UsageWayForDashboard[],
@@ -175,7 +177,7 @@ export function deduplicateBenefitStatusesForDashboard(
   });
 }
 
-export function partitionBenefitStatusesForDashboard(
+function partitionBenefitStatusesForDashboard(
   statuses: DisplayBenefitStatus[],
   now: Date
 ): Pick<
@@ -198,7 +200,7 @@ export function partitionBenefitStatusesForDashboard(
   };
 }
 
-export function calculateBenefitDashboardTotals(
+function calculateBenefitDashboardTotals(
   partitions: Pick<
     BenefitDashboardProjection,
     'upcomingBenefits' | 'completedBenefits' | 'notUsableBenefits'
@@ -225,7 +227,7 @@ export function calculateBenefitDashboardTotals(
   return { totalUnusedValue, totalUsedValue, totalNotUsableValue };
 }
 
-export function calculateCardLevelRoi(
+function calculateCardLevelRoi(
   statuses: DisplayBenefitStatus[],
   userCards: PrismaCreditCard[],
   predefinedCardFees: PredefinedCardFee[]
@@ -509,4 +511,8 @@ export async function loadHomeDashboardSummary(
       .sort((left, right) => left.cycleEndDate.getTime() - right.cycleEndDate.getTime())
       .slice(0, 5),
   };
+}
+
+export function loadHomeDashboardSummaryForUser(userId: string, now = new Date()) {
+  return loadHomeDashboardSummary(getPrismaClient(), { userId, now });
 }

@@ -3,7 +3,6 @@ import {
   periodKeyForExactRange,
   periodKeysForExactRange,
   planAmexSync,
-  planReviewedAmexCompensation,
   syncIdempotencyKey,
   type AmexDestinationLegacyAuthority,
   type AmexSyncDestinationContext,
@@ -421,32 +420,5 @@ describe("Amex sync authority", () => {
     expect(first).toEqual(second);
     expect(syncIdempotencyKey(userId, first)).toBe(syncIdempotencyKey(userId, second));
     expect(syncIdempotencyKey("user-2", first)).not.toBe(syncIdempotencyKey(userId, first));
-  });
-
-  it("plans reviewed compensation only when no newer manual or Amex edit exists", () => {
-    const status = destination({ usedAmount: 25 }).cards[0].predefinedCard!.benefits[0].statuses[0];
-    status.updatedAt = new Date("2026-07-15T12:00:00.000Z");
-    const input = {
-      auditDisposition: "UPDATED" as const,
-      attemptId: "attempt-1",
-      auditAppliedAt: new Date("2026-07-15T12:00:01.000Z"),
-      auditBefore: { usedAmount: 0, isCompleted: false, completedAt: null, isNotUsable: false },
-      auditAfter: { usedAmount: 25, isCompleted: false, completedAt: null, isNotUsable: false },
-      currentStatus: status,
-      currentProvenance: { attemptId: "attempt-1", appliedAt: new Date("2026-07-15T12:00:00.500Z") },
-    };
-    expect(planReviewedAmexCompensation(input)).toMatchObject({
-      disposition: "proposed",
-      reason: "compensation_proposed",
-      after: { usedAmount: 0 },
-    });
-    expect(planReviewedAmexCompensation({
-      ...input,
-      currentStatus: { ...status, usedAmount: 30, updatedAt: new Date("2026-07-15T12:00:02.000Z") },
-    })).toMatchObject({ disposition: "refused", reason: "newer_status_edit" });
-    expect(planReviewedAmexCompensation({
-      ...input,
-      currentProvenance: { attemptId: "attempt-newer", appliedAt: new Date("2026-07-15T12:00:00.750Z") },
-    })).toMatchObject({ disposition: "refused", reason: "newer_source_provenance" });
   });
 });

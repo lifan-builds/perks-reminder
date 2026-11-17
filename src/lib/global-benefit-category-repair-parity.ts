@@ -2,8 +2,11 @@ import {
   categoryRepairManifestEntryFingerprint,
   categoryRepairPageFingerprint,
   encodeGlobalBenefitCategoryRepairCursor,
+  hasExactKeys as exactKeys,
+  isPlainObject,
   normalizeCategoryRepairSiblingEffects,
   planGlobalBenefitCategoryRepairUnit,
+  proposalsExactlyEqual,
   validateGlobalBenefitCategoryRepairManifest,
   type CategoryRepairBatchSnapshot,
   type CategoryRepairManifestEntry,
@@ -18,7 +21,7 @@ import { migrationFingerprint } from "./global-benefit-migration";
 // The page selector is part of the private baseline authority. Bump the
 // version so a baseline captured by the previous global-only shape cannot be
 // mistaken for this scoped shape.
-export const GLOBAL_BENEFIT_CATEGORY_REPAIR_PARITY_BASELINE_VERSION = 2 as const;
+const GLOBAL_BENEFIT_CATEGORY_REPAIR_PARITY_BASELINE_VERSION = 2 as const;
 
 export type GlobalBenefitCategoryRepairParityMode = "capture" | "verify";
 
@@ -199,16 +202,6 @@ const BASELINE_KEYS = [
   "baselineFingerprint",
 ] as const;
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function exactKeys(value: Record<string, unknown>, expected: readonly string[]): boolean {
-  const actual = Object.keys(value).sort();
-  const wanted = [...expected].sort();
-  return actual.length === wanted.length && actual.every((key, index) => key === wanted[index]);
-}
-
 function increment(
   target: Partial<Record<CategoryRepairParityStopReason, number>>,
   key: CategoryRepairParityStopReason,
@@ -338,7 +331,7 @@ function sortedManifestBody(manifest: GlobalBenefitCategoryRepairManifest): unkn
   };
 }
 
-export function categoryRepairParityManifestBundleFingerprint(
+function categoryRepairParityManifestBundleFingerprint(
   pages: readonly GlobalBenefitCategoryRepairManifest[],
 ): string {
   return migrationFingerprint(pages.map(sortedManifestBody));
@@ -653,10 +646,6 @@ function actionRemovedCount(proposal: CategoryRepairProposal): number {
 
 function actionCount(proposal: CategoryRepairProposal): number {
   return proposal.actions.length;
-}
-
-function proposalsExactlyEqual(left: CategoryRepairProposal, right: CategoryRepairProposal): boolean {
-  return migrationFingerprint(left) === migrationFingerprint(right);
 }
 
 function expectedCounts(

@@ -27,10 +27,10 @@ class MemoryStore implements ResultStore {
   summaries: ScanSummaryV1[] = [];
   constructor(initial: StoreEnvelopeV1) { this.value = initial; }
   async load() { return this.value; }
-  async commitCard(attempt: CardAttemptResult): Promise<StoredCardRecordV1> {
+  async commitCard(attempt: CardAttemptResult, checkpoint?: ScanSummaryV1): Promise<StoredCardRecordV1> {
     this.attempts.push(attempt);
     const merged = mergeCardAttempt(this.value, attempt);
-    this.value = merged.store;
+    this.value = checkpoint ? mergeScanSummary(merged.store, checkpoint) : merged.store;
     return merged.record;
   }
   async recordScanSummary(summary: ScanSummaryV1) {
@@ -92,7 +92,176 @@ function visible(unchanged = true): VisibleContextGuard {
 }
 
 describe("API Amex scan engine", () => {
-  it("processes every card sequentially, commits independently, and persists no raw tokens", async () => {
+  it("cancels queued reads without sending them and retains an atomic card checkpoint", async () => {
+    const accounts = Array.from({ length: 4 }, (_, i) => ({
+      ...memberResponse.accounts[0], account_token: `synthetic-${i}`, display_account_number: String(10000 + i),
+    }));
+    const store = new MemoryStore(createEmptyStore(times[0]));
+    let canceled = false;
+    const releases: Array<() => void> = [];
+    const read = <T,>(value: T) => new Promise<T>((resolve) => releases.push(() => resolve(value)));
+    const engine = new AmexBenefitScanEngine({
+      discoverAccounts: async () => ({ accounts }),
+      readBenefitTrackers: () => read(trackers), readBenefitCatalog: () => read(catalog),
+    }, visible(), store, {
+      prepareCard: async ({ productName, endingDigits }) => ({ productName, endingDigits, sourceFingerprint: endingDigits.padStart(64, "0") }),
+    }, { report: (event) => {
+      if (event.type === "card_committed") {
+        expect(store.value.lastScan?.status).toBe("interrupted");
+        expect(store.value.lastScan?.cards.some((card) => card.localCardId === event.record.localCardId)).toBe(true);
+        engine.cancel();
+        canceled = true;
+      }
+    } });
+    const pending = engine.scanAllCards();
+    for (let tick = 0; tick < 60 && releases.length < 4; tick++) await Promise.resolve();
+    expect(releases).toHaveLength(4);
+    // Finish one card: its freed slots may start two more reads before commit.
+    releases[0](); releases[1]();
+    for (let tick = 0; tick < 100 && !canceled; tick++) await Promise.resolve();
+    expect(canceled).toBe(true);
+    expect(store.attempts).toHaveLength(1);
+    const sentAtCancel = releases.length;
+    releases.slice(2).forEach((release) => release());
+    expect((await pending).status).toBe("interrupted");
+    expect(releases.length).toBe(sentAtCancel);
+    expect(releases.length).toBeLessThan(8);
+    expect(engine.isScanning).toBe(false);
+    expect(Object.values(store.value.cards).filter((card) => card.latest)).toHaveLength(1);
+  });
+
+  it("skips canceled cards without HTTP calls, preserves history, and refreshes them again if reopened", async () => {
+    const { client, calls } = setupClient();
+    const store = makeStore();
+    const engine = new AmexBenefitScanEngine(client, visible(), store, identity, { report: () => undefined });
+    await engine.scanAllCards();
+    const cardId = "22222222-2222-4222-8222-222222222222";
+    const previous = store.value.cards[cardId].latest;
+    client.discoverAccounts = async () => memberResponseSchema.parse({ accounts: memberResponse.accounts.map((a, i) => ({
+      ...a, status: { account_status: [i === 1 ? "Canceled" : "Active"] },
+    })) });
+    calls.length = 0;
+    const summary = await engine.scanAllCards();
+    expect(summary).toMatchObject({ status: "complete", discoveredCardCount: 2, attemptedCardCount: 1 });
+    expect(summary.cards).toContainEqual({ localCardId: cardId, result: "skipped", issueCode: "account_canceled" });
+    expect(calls).toEqual(["trackers:invented-token-a", "catalog:invented-token-a"]);
+    expect(store.value.cards[cardId].latest).toEqual(previous);
+    expect(store.value.cards[cardId].error?.code).toBe("account_canceled");
+    expect(JSON.stringify(store.value)).not.toContain("invented-token");
+    client.discoverAccounts = async () => ({ accounts: [memberResponse.accounts[0]] });
+    expect((await engine.scanAllCards()).status).toBe("complete");
+    expect(store.value.cards[cardId].latest).toEqual(previous);
+    expect(store.value.cards[cardId].error?.code).toBe("account_canceled");
+    client.discoverAccounts = async () => memberResponse;
+    await engine.scanAllCards();
+    expect(store.value.cards[cardId].freshness).toBe("current");
+    expect(store.value.cards[cardId].error).toBeNull();
+  });
+
+  it("reads two cards together with at most four requests in flight", async () => {
+    jest.useFakeTimers();
+    try {
+      let active = 0;
+      let maximum = 0;
+      const delayed = async <T,>(value: T): Promise<T> => {
+        active += 1;
+        maximum = Math.max(maximum, active);
+        await new Promise((resolve) => setTimeout(resolve, 200));
+        active -= 1;
+        return value;
+      };
+      const client: AmexReadClient = {
+        discoverAccounts: async () => memberResponse,
+        readBenefitTrackers: () => delayed(trackers),
+        readBenefitCatalog: () => delayed(catalog),
+      };
+      const store = makeStore();
+      const started = Date.now();
+      const scan = new AmexBenefitScanEngine(client, visible(), store, identity, { report: () => undefined }).scanAllCards();
+      await jest.advanceTimersByTimeAsync(200);
+      expect((await scan).status).toBe("complete");
+      expect(maximum).toBe(4);
+      expect(Date.now() - started).toBe(200); // The previous per-card loop required 400 ms.
+      expect(store.attempts).toHaveLength(2);
+    } finally { jest.useRealTimers(); }
+  });
+
+  it("serializes slow storage writes and publishes a faster card before a slower card", async () => {
+    jest.useFakeTimers();
+    try {
+      const store = makeStore();
+      let activeWrites = 0;
+      let peakWrites = 0;
+      const commit = store.commitCard.bind(store);
+      const summary = store.recordScanSummary.bind(store);
+      const delayedWrite = async <T,>(operation: () => Promise<T>) => {
+        activeWrites++;
+        peakWrites = Math.max(peakWrites, activeWrites);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        try { return await operation(); } finally { activeWrites--; }
+      };
+      store.commitCard = (result) => delayedWrite(() => commit(result));
+      store.recordScanSummary = (result) => delayedWrite(() => summary(result));
+      const delayedRead = async <T,>(token: string, value: T) => {
+        await new Promise((resolve) => setTimeout(resolve, token.endsWith("a") ? 300 : 20));
+        return value;
+      };
+      const events: ScanProgress[] = [];
+      const engine = new AmexBenefitScanEngine({
+        discoverAccounts: async () => memberResponse,
+        readBenefitTrackers: (token) => delayedRead(token, trackers),
+        readBenefitCatalog: (token) => delayedRead(token, catalog),
+      }, visible(), store, identity, { report: (event) => events.push(event) });
+      const pending = engine.scanAllCards();
+      await jest.advanceTimersByTimeAsync(150);
+      expect(store.attempts).toHaveLength(1);
+      expect(store.attempts[0].identity.endingDigits).toBe("54321");
+      expect(events.some((event) => event.type === "finished")).toBe(false);
+      await jest.runAllTimersAsync();
+      expect((await pending).status).toBe("complete");
+      expect(peakWrites).toBe(1);
+      expect(store.attempts).toHaveLength(2);
+      expect(Object.values(store.value.cards).every((card) => card.latest !== null)).toBe(true);
+    } finally { jest.useRealTimers(); }
+  });
+
+  it("does not report complete when one worker cannot persist its card", async () => {
+    const store = makeStore();
+    const commit = store.commitCard.bind(store);
+    store.commitCard = async (attempt) => {
+      if (attempt.identity.endingDigits === "1234") throw new Error("Synthetic storage failure");
+      return commit(attempt);
+    };
+    const { client } = setupClient();
+    const result = await new AmexBenefitScanEngine(client, visible(), store, identity, { report: () => undefined }).scanAllCards();
+    expect(result.status).toBe("partial");
+    expect(store.attempts).toHaveLength(1);
+    expect(store.attempts[0].identity.endingDigits).toBe("54321");
+  });
+
+  it("waits for every canceled read to settle before allowing another scan", async () => {
+    const store = makeStore();
+    const releases: Array<() => void> = [];
+    const delayed = <T,>(value: T) => new Promise<T>((resolve) => releases.push(() => resolve(value)));
+    const engine = new AmexBenefitScanEngine({
+      discoverAccounts: async () => memberResponse,
+      readBenefitTrackers: () => delayed(trackers), readBenefitCatalog: () => delayed(catalog),
+    }, visible(), store, identity, { report: () => undefined });
+    const pending = engine.scanAllCards();
+    for (let tick = 0; tick < 30 && releases.length < 4; tick++) await Promise.resolve();
+    expect(releases).toHaveLength(4);
+    engine.cancel();
+    releases[0](); releases[1]();
+    await Promise.resolve();
+    expect(engine.isScanning).toBe(true);
+    await expect(engine.scanAllCards()).rejects.toThrow("already active");
+    releases[2](); releases[3]();
+    expect((await pending).status).toBe("interrupted");
+    expect(engine.isScanning).toBe(false);
+    expect(store.attempts).toHaveLength(0);
+  });
+
+  it("processes every card, commits independently, and persists no raw tokens", async () => {
     const { client, calls } = setupClient();
     const store = makeStore();
     const events: ScanProgress[] = [];
@@ -445,7 +614,7 @@ describe("API Amex scan engine", () => {
 
     expect(summary.status).toBe("interrupted");
     expect(store.attempts).toEqual([]);
-    expect(calls).not.toContain("trackers:invented-token-b");
+    expect(calls.filter((call) => call.startsWith("trackers:"))).toHaveLength(2);
     expect(JSON.stringify(store.value)).not.toContain("invented-token");
   });
 
@@ -488,7 +657,7 @@ describe("API Amex scan engine", () => {
     const summary = await engine.scanAllCards();
     expect(summary.status).toBe("interrupted");
     expect(store.attempts).toHaveLength(1);
-    expect(calls).not.toContain("trackers:invented-token-b");
+    expect(calls.filter((call) => call.startsWith("trackers:"))).toHaveLength(2);
   });
 
   it("records discovery schema/auth failures as redacted failed summaries", async () => {

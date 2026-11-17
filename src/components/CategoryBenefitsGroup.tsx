@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import BenefitCardClient from '@/components/BenefitCardClient';
 import { batchCompleteBenefitsByCategoryAction } from '@/app/benefits/actions';
 import type { DisplayBenefitStatus } from '@/lib/benefit-dashboard-client';

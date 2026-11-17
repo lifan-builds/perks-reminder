@@ -255,7 +255,64 @@ describe("Amex sync service orchestration", () => {
     expect(completeAmexSyncAttempt).toHaveBeenCalledWith("attempt-1", [expect.objectContaining({ disposition: "UPDATED" })], now);
   });
 
-  it("orchestrates a December Uber split through one grouped persistence call", async () => {
+  it("processes two cards concurrently, preserves per-card order, and waits for every receipt", async () => {
+    jest.useFakeTimers();
+    try {
+      const manyEnvelope = parseAmexSyncEnvelope({ ...envelope, cards: Array.from({ length: 8 }, (_, index) => ({
+        ...envelope.cards[0], sourceLocalCardId: `11111111-1111-4111-8111-${String(index).padStart(12, "0")}`,
+        endingDigits: String(12345 + index),
+        rows: [envelope.cards[0].rows[0], { ...envelope.cards[0].rows[0],
+          providerTitle: "Saks Credit", sourceCreditKey: "american-express-platinum-card:saks",
+          creditFamilyKey: "american-express-platinum-card:saks" }],
+      })) });
+      const template = context().cards[0];
+      loadContext.mockResolvedValue({ cards: manyEnvelope.cards.map((card, index) => ({
+        ...template, id: `card-${index}`, lastFourDigits: card.endingDigits,
+        predefinedCard: { ...template.predefinedCard, benefits: template.predefinedCard.benefits.map((benefit) => ({
+          ...benefit, statuses: benefit.statuses.map((status) => ({ ...status, creditCardId: `card-${index}`, id: `status-${index}` })),
+        })) },
+      })) });
+      const active = new Set<string>();
+      let peak = 0;
+      let collision = false;
+      const calls: string[] = [];
+      const delayedReceipt = async (row: AmexSyncPlanRow) => {
+        const cardId = row.destinationCardId ?? row.sourceLocalCardId;
+        collision ||= active.has(cardId);
+        active.add(cardId);
+        peak = Math.max(peak, active.size);
+        calls.push(row.sourceRowIdentity);
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        active.delete(cardId);
+        return storedRowFromPlan(row, { disposition: row.disposition === "proposed" ? "UPDATED" : "SKIPPED" });
+      };
+      applyRow.mockImplementation(({ row }) => delayedReceipt(row));
+      recordNonApplied.mockImplementation((_attempt, row) => delayedReceipt(row));
+      const preview = await previewAmexSync({ userId: "user-1", envelope: manyEnvelope, mode: "write", hmacKey: key, now });
+      expect(preview.rows).toHaveLength(16);
+      const pending = confirmAmexSync({ userId: "user-1", envelope: manyEnvelope, proposalToken: preview.proposalToken, hmacKey: key, now });
+      await jest.advanceTimersByTimeAsync(799);
+      expect(completeAmexSyncAttempt).not.toHaveBeenCalled();
+      await jest.advanceTimersByTimeAsync(1);
+      const result = await pending;
+      expect(peak).toBe(2);
+      expect(collision).toBe(false);
+      expect(calls).toHaveLength(16);
+      expect(result.rows.map((row) => row.sourceRowIdentity)).toEqual(preview.rows.map((row) => row.sourceRowIdentity));
+      expect(result.updatedCount).toBe(8);
+      expect(completeAmexSyncAttempt).toHaveBeenCalledTimes(1);
+    } finally { jest.useRealTimers(); }
+  });
+
+  it("does not finalize an attempt with a substituted persistence receipt", async () => {
+    const preview = await previewAmexSync({ userId: "user-1", envelope, mode: "write", hmacKey: key, now });
+    applyRow.mockResolvedValue(storedRowResult("f".repeat(64)));
+    await expect(confirmAmexSync({ userId: "user-1", envelope, proposalToken: preview.proposalToken, hmacKey: key, now }))
+      .rejects.toThrow("conflict_repreview_required");
+    expect(completeAmexSyncAttempt).not.toHaveBeenCalled();
+  });
+
+  it.each(["complete", "missing", "duplicate"])("verifies %s receipts for an atomic December Uber split", async (receiptMode) => {
     const decemberNow = new Date("2026-12-15T12:00:00.000Z");
     const decemberEnvelope = parseAmexSyncEnvelope({
       ...envelope,
@@ -306,6 +363,17 @@ describe("Amex sync service orchestration", () => {
     });
     expect(preview.rows).toHaveLength(2);
     expect(new Set(preview.rows.map((row) => row.atomicGroupIdentity))).toHaveProperty("size", 1);
+    if (receiptMode !== "complete") {
+      applyGroup.mockImplementation(async ({ rows }) => {
+        const first = storedRowFromPlan(rows[0]);
+        return receiptMode === "missing" ? [first] : [first, first];
+      });
+      await expect(confirmAmexSync({ userId: "user-1", envelope: decemberEnvelope,
+        proposalToken: preview.proposalToken, hmacKey: key, now: decemberNow }))
+        .rejects.toThrow("conflict_repreview_required");
+      expect(completeAmexSyncAttempt).not.toHaveBeenCalled();
+      return;
+    }
     const result = await confirmAmexSync({
       userId: "user-1",
       envelope: decemberEnvelope,

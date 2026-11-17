@@ -1,25 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ArrowRightIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { AMEX_READER_SETUP_PATH } from '@/lib/amex-benefit-reader/public-links';
-
-function getSwitchUrl(isLoyaltyContext: boolean): string {
-  if (!isLoyaltyContext) {
-    return '/loyalty';
-  }
-  if (typeof window === 'undefined') return '/';
-  const host = window.location.hostname;
-  const port = window.location.port;
-  const proto = window.location.protocol;
-  const isLocalhost = host.includes('localhost');
-  return isLocalhost
-    ? `${proto}//${host.replace(/^loyalty\./, '')}${port ? `:${port}` : ''}`
-    : `${proto}//${host.replace(/^loyalty\./, 'www.')}`;
-}
+import { getLoyaltySwitchUrl } from '@/lib/site';
 
 const Footer = () => {
   const pathname = usePathname();
@@ -83,7 +70,7 @@ const Footer = () => {
               {isLoyaltyContext !== null && (
                 <li>
                   <a
-                    href={getSwitchUrl(isLoyaltyContext)}
+                    href={getLoyaltySwitchUrl(isLoyaltyContext)}
                     className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground transition-colors hover:text-muted-foreground"
                   >
                     {isLoyaltyContext ? 'Credit Card Benefits' : 'Loyalty Points'}

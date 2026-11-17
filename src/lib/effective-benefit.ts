@@ -83,15 +83,6 @@ export interface EffectiveBenefitStatus {
   canMutateDefinition: boolean;
 }
 
-export function resolveAuthoritativeDefinition<TLegacy, TGlobal>(relations: {
-  benefit: TLegacy | null;
-  predefinedBenefit: TGlobal | null;
-}): TLegacy | TGlobal {
-  const definition = relations.predefinedBenefit ?? relations.benefit;
-  if (!definition) throw new Error('Benefit status has no definition source.');
-  return definition;
-}
-
 export interface EffectiveBenefitStatusFilters {
   userId?: string;
   userIds?: string[];

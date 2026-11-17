@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-export const AMEX_API_CONTRACT_VERSION = "amex-private-read/1" as const;
 export const AMEX_API_TIMEOUT_MS = 15_000;
 
 const responseText = (maxLength: number) => z.string().max(maxLength).nullish();
@@ -38,6 +37,7 @@ const supplementaryAccountSchema = z.object({
 }).strip();
 
 const memberAccountSchema = z.object({
+  status: z.object({ account_status: z.array(z.string().max(80)).optional() }).strip().optional(),
   account_token: responseText(4096),
   product: accountProductSchema.optional(),
   ...accountDisplayFields,

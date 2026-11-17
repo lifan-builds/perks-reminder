@@ -4,7 +4,7 @@ interface SkeletonProps {
   className?: string;
 }
 
-export function Skeleton({ className }: SkeletonProps) {
+function Skeleton({ className }: SkeletonProps) {
   return (
     <div
       className={cn(
@@ -16,7 +16,7 @@ export function Skeleton({ className }: SkeletonProps) {
 }
 
 // Card skeleton for loading credit cards
-export function CardSkeleton() {
+function CardSkeleton() {
   return (
     <div className="rounded-xl border border-border shadow-sm shadow-black/[0.03] p-4 shadow-md bg-card dark:border-border">
       {/* Card image placeholder */}
@@ -50,78 +50,6 @@ export function CardSkeleton() {
   );
 }
 
-// Benefit card skeleton
-export function BenefitCardSkeleton() {
-  return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-card p-4 shadow-sm shadow-black/[0.03] sm:p-6">
-      {/* Status indicator */}
-      <div className="absolute left-0 top-0 h-full w-1 bg-muted" />
-      
-      <div className="space-y-4">
-        {/* Top section */}
-        <div className="flex items-start space-x-3">
-          <Skeleton className="h-9 w-9 rounded-lg flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <Skeleton className="h-5 w-3/4 mb-2" />
-            <Skeleton className="h-6 w-20" />
-          </div>
-        </div>
-        
-        {/* Card info */}
-        <div className="pl-11 space-y-2">
-          <Skeleton className="h-4 w-48" />
-          <Skeleton className="h-4 w-32" />
-        </div>
-        
-        {/* Action buttons */}
-        <div className="pl-11 flex gap-2">
-          <Skeleton className="h-10 w-32 rounded-lg" />
-          <Skeleton className="h-10 w-28 rounded-lg" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Summary widget skeleton
-export function SummaryWidgetSkeleton() {
-  return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card p-6 shadow-sm shadow-black/[0.03]">
-      <div className="flex items-center">
-        <Skeleton className="h-12 w-12 rounded-xl flex-shrink-0" />
-        <div className="ml-4 flex-1">
-          <Skeleton className="h-4 w-24 mb-2" />
-          <Skeleton className="h-7 w-20" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Dashboard skeleton combining multiple elements
-export function DashboardSkeleton() {
-  return (
-    <div className="space-y-8">
-      {/* Summary widgets */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <SummaryWidgetSkeleton />
-        <SummaryWidgetSkeleton />
-        <SummaryWidgetSkeleton />
-      </div>
-      
-      {/* Upcoming benefits */}
-      <div>
-        <Skeleton className="h-8 w-48 mb-4" />
-        <div className="space-y-4">
-          <BenefitCardSkeleton />
-          <BenefitCardSkeleton />
-          <BenefitCardSkeleton />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // Cards page skeleton
 export function CardsPageSkeleton() {
   return (
@@ -138,78 +66,3 @@ export function CardsPageSkeleton() {
     </div>
   );
 }
-
-// Benefits page skeleton
-export function BenefitsPageSkeleton() {
-  return (
-    <div className="container mx-auto p-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
-        <Skeleton className="h-9 w-48" />
-        <div className="flex gap-2">
-          <Skeleton className="h-10 w-28 rounded-md" />
-          <Skeleton className="h-10 w-28 rounded-md" />
-          <Skeleton className="h-10 w-36 rounded-md" />
-        </div>
-      </div>
-      
-      {/* Summary widgets */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <SummaryWidgetSkeleton />
-        <SummaryWidgetSkeleton />
-        <SummaryWidgetSkeleton />
-        <SummaryWidgetSkeleton />
-      </div>
-      
-      {/* Tabs */}
-      <div className="mb-4 border-b border-border">
-        <div className="flex space-x-8">
-          <Skeleton className="h-10 w-24" />
-          <Skeleton className="h-10 w-24" />
-          <Skeleton className="h-10 w-28" />
-        </div>
-      </div>
-      
-      {/* Benefits list */}
-      <div className="space-y-4">
-        <BenefitCardSkeleton />
-        <BenefitCardSkeleton />
-        <BenefitCardSkeleton />
-        <BenefitCardSkeleton />
-      </div>
-    </div>
-  );
-}
-
-// Table row skeleton
-export function TableRowSkeleton({ columns = 4 }: { columns?: number }) {
-  return (
-    <tr className="border-b border-border">
-      {Array.from({ length: columns }).map((_, i) => (
-        <td key={i} className="px-4 py-4">
-          <Skeleton className="h-4 w-full" />
-        </td>
-      ))}
-    </tr>
-  );
-}
-
-// Loyalty account skeleton
-export function LoyaltyAccountSkeleton() {
-  return (
-    <div className="rounded-xl border border-border shadow-sm shadow-black/[0.03] p-4 bg-card dark:border-border">
-      <div className="flex items-start gap-4">
-        <Skeleton className="h-12 w-12 rounded-lg flex-shrink-0" />
-        <div className="flex-1">
-          <Skeleton className="h-5 w-40 mb-2" />
-          <Skeleton className="h-4 w-24 mb-3" />
-          <div className="flex gap-2">
-            <Skeleton className="h-6 w-20 rounded-full" />
-            <Skeleton className="h-6 w-24 rounded-full" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-

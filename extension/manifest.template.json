@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Perks Reminder — AMEX Benefit Reader",
-  "version": "1.0.1",
-  "description": "Manually read normalized benefit progress from your signed-in American Express session.",
+  "version": "1.5.0",
+  "description": "Track your Amex benefits across cards. See what’s remaining, what’s used, and sync to Perks Reminder.",
   "permissions": ["storage"],
   "content_scripts": [{
     "matches": [
@@ -10,7 +10,7 @@
       "https://www.perks-reminder.com/integrations/amex-sync"
     ],
     "js": ["content.js"],
-    "run_at": "document_idle",
+    "run_at": "document_end",
     "all_frames": false
   }],
   "action": {

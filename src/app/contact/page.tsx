@@ -1,4 +1,3 @@
-import React from 'react';
 import { Metadata } from 'next';
 import { SUPPORT_EMAIL } from '@/lib/site';
 

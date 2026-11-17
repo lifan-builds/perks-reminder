@@ -6,8 +6,9 @@ export const OBSERVATION_CONTRACT_VERSION_V3 = "amex-benefits/3" as const;
 export const STORAGE_SCHEMA_VERSION = 1 as const;
 export const PARSER_VERSION = "amex-api-us/3.0.0" as const;
 
-export const issueCodeSchema = z.enum([
+const issueCodeSchema = z.enum([
   "unknown_account_variant",
+  "account_canceled",
   "duplicate_card_entry",
   "identity_unavailable",
   "identity_ambiguous",
@@ -50,7 +51,7 @@ function approvedVisibleText(maxLength: number) {
   );
 }
 
-export function observedFieldSchema<T extends z.ZodTypeAny>(value: T) {
+function observedFieldSchema<T extends z.ZodTypeAny>(value: T) {
   return z.discriminatedUnion("state", [
     z.object({ state: z.literal("observed"), value }).strict(),
     z.object({ state: z.literal("not_exposed") }).strict(),
@@ -63,7 +64,7 @@ export type ObservedField<T> =
   | { state: "not_exposed" }
   | { state: "unrecognized"; issueCode: IssueCode };
 
-export const activityKindSchema = z.enum([
+const activityKindSchema = z.enum([
   "enrollment_candidate",
   "spend_progress",
   "credit_usage",
@@ -98,7 +99,7 @@ const benefitObservationFields = {
   issueCodes: z.array(issueCodeSchema).max(20),
 };
 
-export const normalizedBenefitObservationSchema = z.object(benefitObservationFields).strict();
+const normalizedBenefitObservationSchema = z.object(benefitObservationFields).strict();
 export type NormalizedBenefitObservationV1 = z.infer<typeof normalizedBenefitObservationSchema>;
 
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/;
@@ -112,7 +113,7 @@ function isRealDateOnly(value: string): boolean {
     && date.getUTCDate() === day;
 }
 
-export const utcDateOnlySchema = z.string().refine(isRealDateOnly, "Expected a real UTC calendar date in YYYY-MM-DD form.");
+const utcDateOnlySchema = z.string().refine(isRealDateOnly, "Expected a real UTC calendar date in YYYY-MM-DD form.");
 
 export const sourcePeriodV2Schema = z.object({
   kind: z.literal("calendar_date_range"),
@@ -147,7 +148,7 @@ export const creditFamilyKeySchema = z.string()
   .max(120)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*(?::[a-z0-9]+(?:-[a-z0-9]+)*)$/);
 
-export const normalizedBenefitObservationV2Schema = z.object({
+const normalizedBenefitObservationV2Schema = z.object({
   ...benefitObservationFields,
   creditFamilyKey: creditFamilyKeySchema,
   sourcePeriod: observedFieldSchema(sourcePeriodV2Schema),
@@ -220,19 +221,19 @@ export type NormalizedCardObservation =
   | NormalizedCardObservationV2
   | NormalizedCardObservationV3;
 
-export const normalizedCardObservationAnySchema = z.union([
+const normalizedCardObservationAnySchema = z.union([
   normalizedCardObservationSchema,
   normalizedCardObservationV2Schema,
   normalizedCardObservationV3Schema,
 ]);
 
-export const redactedErrorSchema = z.object({
+const redactedErrorSchema = z.object({
   code: issueCodeSchema,
   message: z.string().min(1).max(240),
 }).strict();
 export type RedactedErrorV1 = z.infer<typeof redactedErrorSchema>;
 
-export const storedCardRecordSchema = z.object({
+const storedCardRecordSchema = z.object({
   localCardId: z.string().uuid(),
   identity: z.object({
     sourceFingerprint: z.string().regex(/^[a-f0-9]{64}$/),
@@ -264,9 +265,9 @@ export const storedCardRecordSchema = z.object({
 });
 export type StoredCardRecordV1 = z.infer<typeof storedCardRecordSchema>;
 
-export const scanCardDispositionSchema = z.object({
+const scanCardDispositionSchema = z.object({
   localCardId: z.string().uuid().nullable(),
-  result: z.enum(["complete", "partial", "failed"]),
+  result: z.enum(["complete", "partial", "failed", "skipped"]),
   issueCode: issueCodeSchema.nullable(),
 }).strict();
 

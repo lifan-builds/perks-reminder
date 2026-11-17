@@ -3,12 +3,17 @@ import {
   AMEX_CATALOG_IDENTITY_REGISTRY,
   type AmexCatalogCardName,
 } from "@/lib/amex-catalog/catalog-registry";
-import { normalizeAmexSelectionText } from "@/lib/amex-catalog/normalization";
+import {
+  evaluateAmexProductScores,
+  hasHardAmexProductConflict,
+  normalizeAmexSelectionText,
+  weightedAmexProductTokenScore,
+} from "@/lib/amex-catalog/normalization";
+import { formatAmexBenefitTitle } from "./presentation";
 import type { AmexPeriodKey } from "@/lib/amex-catalog/catalog-registry";
 import {
-  evidenceSatisfiesAmexPolicy,
   GENERIC_FORBIDDEN_AMEX_CREDIT_TOKEN_GROUPS,
-  titleSatisfiesAmexPolicy,
+  selectMatchingAmexPolicy,
   type AmexSourceCreditEvidence,
   type AmexSourceCreditPolicy,
 } from "@/lib/amex-catalog/source-credit-policy";
@@ -36,7 +41,7 @@ const REVIEWED_IGNORED_CATALOG_TITLES = new Set([
 ]);
 
 export function isIgnoredAmexCatalogBenefitTitle(title: string): boolean {
-  return REVIEWED_IGNORED_CATALOG_TITLES.has(normalizeAmexSelectionText(title));
+  return REVIEWED_IGNORED_CATALOG_TITLES.has(normalizeAmexSelectionText(formatAmexBenefitTitle(title)));
 }
 
 function isExplicitlyUnsupportedTitle(normalizedTitle: string): boolean {
@@ -45,7 +50,7 @@ function isExplicitlyUnsupportedTitle(normalizedTitle: string): boolean {
 }
 
 export function isEligibleLocalAmexUsageTitle(title: string): boolean {
-  const normalized = normalizeAmexSelectionText(title);
+  const normalized = normalizeAmexSelectionText(formatAmexBenefitTitle(title));
   return normalized.length > 0 && !isExplicitlyUnsupportedTitle(normalized);
 }
 
@@ -59,49 +64,7 @@ export type AmexProductResolution =
   | { disposition: "matched"; match: AmexProductMatch }
   | { disposition: "low_confidence" | "ambiguous" | "hard_conflict"; match: null };
 
-export const AMEX_BROWSER_PRODUCT_MATCH_MIN_SCORE = 0.88;
-export const AMEX_BROWSER_PRODUCT_MATCH_MIN_MARGIN = 0.10;
-
-export function evaluateAmexBrowserProductScores(
-  bestScore: number,
-  runnerUpScore: number,
-): "accepted" | "low_confidence" | "ambiguous" {
-  if (bestScore < AMEX_BROWSER_PRODUCT_MATCH_MIN_SCORE) return "low_confidence";
-  if (bestScore - runnerUpScore + Number.EPSILON < AMEX_BROWSER_PRODUCT_MATCH_MIN_MARGIN) return "ambiguous";
-  return "accepted";
-}
-const PRODUCT_NOISE = new Set(["american", "express", "card", "the", "from"]);
-const COBRANDS = ["hilton", "delta", "marriott"] as const;
-const TIERS = ["gold", "platinum", "reserve", "aspire", "surpass", "brilliant"] as const;
-
-function tokens(value: string, noise = PRODUCT_NOISE): Set<string> {
-  return new Set(normalizeAmexSelectionText(value).split(" ").filter((token) => token && !noise.has(token)));
-}
-
-function weightedTokenScore(left: string, right: string): number {
-  const a = tokens(left);
-  const b = tokens(right);
-  const union = new Set([...Array.from(a), ...Array.from(b)]);
-  if (!union.size) return 0;
-  let shared = 0;
-  union.forEach((token) => { if (a.has(token) && b.has(token)) shared += 1; });
-  return shared / union.size;
-}
-
-function hasHardProductConflict(source: string, candidate: string, affiliation = false): boolean {
-  if (affiliation) return false;
-  const sourceTokens = tokens(source, new Set());
-  const candidateTokens = tokens(candidate, new Set());
-  if (sourceTokens.has("business") !== candidateTokens.has("business")) return true;
-  const sourceCobrand = COBRANDS.find((token) => sourceTokens.has(token));
-  const candidateCobrand = COBRANDS.find((token) => candidateTokens.has(token));
-  if (sourceCobrand !== candidateCobrand) return true;
-  const sourceTier = TIERS.find((token) => sourceTokens.has(token));
-  const candidateTier = TIERS.find((token) => candidateTokens.has(token));
-  return Boolean(sourceTier && candidateTier && sourceTier !== candidateTier);
-}
-
-export function resolveAmexBrowserProduct(productName: string): AmexProductResolution {
+function resolveAmexBrowserProduct(productName: string): AmexProductResolution {
   const normalized = normalizeAmexSelectionText(productName);
   const products = Object.entries(AMEX_CATALOG_IDENTITY_REGISTRY);
   for (const [, descriptor] of products) {
@@ -112,13 +75,13 @@ export function resolveAmexBrowserProduct(productName: string): AmexProductResol
   }
 
   const candidates = products.flatMap(([name, descriptor]) => {
-    const hardConflict = hasHardProductConflict(productName, name);
-    return hardConflict ? [] : [{ productKey: descriptor.productKey, score: weightedTokenScore(productName, name) }];
+    const hardConflict = hasHardAmexProductConflict(productName, name);
+    return hardConflict ? [] : [{ productKey: descriptor.productKey, score: weightedAmexProductTokenScore(productName, name) }];
   }).sort((left, right) => right.score - left.score || left.productKey.localeCompare(right.productKey));
   if (!candidates.length) return { disposition: "hard_conflict", match: null };
   const best = candidates[0];
   const runnerUp = candidates[1]?.score ?? 0;
-  const scoreDisposition = evaluateAmexBrowserProductScores(best.score, runnerUp);
+  const scoreDisposition = evaluateAmexProductScores(best.score, runnerUp);
   if (scoreDisposition !== "accepted") return { disposition: scoreDisposition, match: null };
   return { disposition: "matched", match: { ...best, confidence: "fuzzy" } };
 }
@@ -143,6 +106,7 @@ const REVIEWED_SOURCE_ALIASES: Record<string, readonly string[]> = {
 };
 
 const SOURCE_REQUIRED_TOKEN_OVERRIDES: Record<string, readonly (readonly string[])[]> = {
+  "american-express-platinum-card:clear-plus": [["clear"]],
   "american-express-gold-card:dining": [["dining", "grubhub"]],
   "american-express-business-gold-card:flexible-business": [["flexible", "fedex", "grubhub", "office"], ["business", "credit"]],
   "american-express-platinum-card:hotel": [["hotel", "fhr", "thc"]],
@@ -220,22 +184,22 @@ export function matchAmexBrowserSyncCredit(
   trackerTitle: string,
   evidence: AmexSourceCreditEvidence = {},
 ): AmexBrowserSyncMatch | null {
+  return createAmexBrowserCreditMatcher(productName)(trackerTitle, evidence);
+}
+
+export function createAmexBrowserCreditMatcher(productName: string) {
   const product = resolveAmexBrowserProduct(productName);
-  if (product.disposition !== "matched") return null;
-  const normalizedTitle = normalizeAmexSelectionText(trackerTitle);
-  const candidates = BROWSER_AMEX_SOURCE_CREDIT_DESCRIPTORS
-    .filter((descriptor) => descriptor.productKey === product.match.productKey
-      && titleSatisfiesAmexPolicy(descriptor, trackerTitle)
-      && evidenceSatisfiesAmexPolicy(descriptor, evidence));
-  const exact = candidates.filter((descriptor) => descriptor.exactAliases
-    .some((alias) => normalizeAmexSelectionText(alias) === normalizedTitle));
-  const resolved = exact.length === 1
-    ? exact[0]
-    : exact.length > 1 || candidates.length !== 1 ? null : candidates[0];
-  if (!resolved) return null;
-  return {
-    productKey: product.match.productKey,
-    creditFamilyKey: resolved.creditFamilyKey,
-    sourceCreditKey: resolved.sourceCreditKey,
+  const descriptors = product.disposition === "matched"
+    ? BROWSER_AMEX_SOURCE_CREDIT_DESCRIPTORS.filter((descriptor) => descriptor.productKey === product.match.productKey)
+    : [];
+  return (trackerTitle: string, evidence: AmexSourceCreditEvidence = {}): AmexBrowserSyncMatch | null => {
+    if (product.disposition !== "matched") return null;
+    const resolved = selectMatchingAmexPolicy(descriptors, trackerTitle, evidence);
+    if (!resolved) return null;
+    return {
+      productKey: product.match.productKey,
+      creditFamilyKey: resolved.creditFamilyKey,
+      sourceCreditKey: resolved.sourceCreditKey,
+    };
   };
 }

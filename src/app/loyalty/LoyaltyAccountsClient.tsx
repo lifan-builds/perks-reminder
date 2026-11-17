@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,41 +8,7 @@ import { Plus, Calendar, AlertTriangle, Edit, Trash2, ExternalLink, Plane, Hotel
 import { addLoyaltyAccountAction, updateLoyaltyAccountAction, deleteLoyaltyAccountAction } from './actions';
 import { AddLoyaltyAccountModal } from './AddLoyaltyAccountModal';
 import { EditLoyaltyAccountModal } from './EditLoyaltyAccountModal';
-
-type LoyaltyProgram = {
-  id: string;
-  name: string;
-  displayName: string;
-  type: string;
-  company: string;
-  expirationMonths: number | null;
-  hasExpiration: boolean;
-  expirationBasis: string | null;
-  description: string | null;
-  qualifyingActivities: string | null;
-  website: string | null;
-};
-
-type LoyaltyAccount = {
-  id: string;
-  accountNumber: string | null;
-  pointsBalance: number | null;
-  lastActivityDate: Date;
-  expirationDate: Date | null;
-  isActive: boolean;
-  notes: string | null;
-  certificates: LoyaltyCertificate[];
-  loyaltyProgram: LoyaltyProgram;
-};
-
-type LoyaltyCertificate = {
-  id: string;
-  label: string | null;
-  quantity: number;
-  expirationDate: Date;
-  notes: string | null;
-  isActive: boolean;
-};
+import type { LoyaltyAccount, LoyaltyProgram } from './loyalty-account-shared';
 
 interface LoyaltyAccountsClientProps {
   userAccounts: LoyaltyAccount[];

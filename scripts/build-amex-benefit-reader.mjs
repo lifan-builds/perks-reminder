@@ -5,7 +5,7 @@ import { build } from "esbuild";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const requestedTarget = process.argv[2] ?? "production";
-const publicReleaseVersion = "1.0.1";
+const publicReleaseVersion = "1.5.0";
 
 const targetConfigurations = Object.freeze({
   production: Object.freeze({
@@ -21,7 +21,7 @@ const targetConfigurations = Object.freeze({
     output: "public/local-development/amex-benefit-reader.local.user.js",
     userscriptName: "Perks Reminder — Amex Benefit Reader (Local Development)",
     namespace: "http://localhost:3000/perks-reminder-amex-reader-local/",
-    version: "0.5.0-local.3",
+    version: "0.5.0-local.4",
     handoffMatch: null,
     handoffInclude: "http://localhost:3000/integrations/amex-sync?transfer=*",
     unsafeWindowGrant: true,
@@ -46,10 +46,10 @@ const metadata = `// ==UserScript==
 // @name         ${configuration.userscriptName}
 // @namespace    ${configuration.namespace}
 // @version      ${configuration.version}
-// @description  Locally reads normalized Amex benefit status after a manual first-party read request.
+// @description  Track your Amex benefits across cards. See what’s remaining, what’s used, and sync to Perks Reminder.
 // @match        https://global.americanexpress.com/*
 ${handoffMetadata}
-// @run-at       document-idle
+// @run-at       document-end
 // @noframes
 // @grant        GM.getValue
 // @grant        GM.setValue
@@ -61,6 +61,7 @@ await build({
   entryPoints: [resolve(root, "src/userscripts/amex-benefit-reader.user.ts")],
   outfile: output,
   bundle: true,
+  loader: { ".webp": "dataurl" },
   format: "iife",
   platform: "browser",
   target: ["chrome120"],

@@ -5,8 +5,8 @@ import {
   type AmexSyncPlan,
 } from "./authority";
 
-export const AMEX_SYNC_PROPOSAL_PURPOSE = "amex-sync-confirm" as const;
-export const AMEX_SYNC_PROPOSAL_TTL_MS = 5 * 60 * 1000;
+const AMEX_SYNC_PROPOSAL_PURPOSE = "amex-sync-confirm" as const;
+const AMEX_SYNC_PROPOSAL_TTL_MS = 5 * 60 * 1000;
 export const AMEX_SYNC_PROPOSAL_MAX_LENGTH = 16_384;
 const SHA256_BYTES = 32;
 const MAX_ROWS = 300;

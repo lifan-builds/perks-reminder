@@ -18,9 +18,9 @@ export { periodKeyForExactRange, periodKeysForExactRange } from "@/lib/amex-cata
 
 // Destination tuples come from the reviewed catalog, while provider evidence
 // authority is separately enumerated by the server and never trusts browser claims.
-export const WRITABLE_AMEX_PRODUCT_KEYS = new Set(SERVER_AMEX_SOURCE_CREDITS.map((entry) => entry.productKey));
-export const WRITABLE_AMEX_CREDIT_FAMILIES = new Set(AMEX_WRITABLE_DESTINATIONS.map((entry) => entry.creditFamilyKey));
-export const WRITABLE_AMEX_SOURCE_CREDITS = new Set(SERVER_AMEX_SOURCE_CREDITS.map((entry) => `${entry.productKey}:${entry.sourceCreditKey}`));
+const WRITABLE_AMEX_PRODUCT_KEYS = new Set(SERVER_AMEX_SOURCE_CREDITS.map((entry) => entry.productKey));
+const WRITABLE_AMEX_CREDIT_FAMILIES = new Set(AMEX_WRITABLE_DESTINATIONS.map((entry) => entry.creditFamilyKey));
+const WRITABLE_AMEX_SOURCE_CREDITS = new Set(SERVER_AMEX_SOURCE_CREDITS.map((entry) => `${entry.productKey}:${entry.sourceCreditKey}`));
 
 export type AmexSyncReason =
   | "proposed_update"
@@ -928,53 +928,4 @@ export function planAmexSync(input: {
 
 export function syncIdempotencyKey(userId: string, plan: AmexSyncPlan): string {
   return hash({ userId, envelopeDigest: plan.envelopeDigest });
-}
-
-export type AmexCompensationReason =
-  | "compensation_proposed"
-  | "audit_not_applied"
-  | "newer_status_edit"
-  | "newer_source_provenance";
-
-export interface AmexCompensationPlan {
-  disposition: "proposed" | "refused";
-  reason: AmexCompensationReason;
-  statusId: string;
-  before: StatusStateProjection;
-  after: StatusStateProjection | null;
-}
-
-/**
- * Plans, but never executes, a reviewed compensation. A caller must separately
- * authorize any write and re-run the same compare-and-set checks transactionally.
- */
-export function planReviewedAmexCompensation(input: {
-  auditDisposition: "UPDATED" | "UNCHANGED" | "SKIPPED" | "FAILED";
-  attemptId: string;
-  auditAppliedAt: Date;
-  auditBefore: StatusStateProjection | null;
-  auditAfter: StatusStateProjection | null;
-  currentStatus: DestinationStatusSnapshot;
-  currentProvenance: { attemptId: string; appliedAt: Date } | null;
-}): AmexCompensationPlan {
-  const current = snapshot(input.currentStatus);
-  if (input.auditDisposition !== "UPDATED" || !input.auditBefore || !input.auditAfter) {
-    return { disposition: "refused", reason: "audit_not_applied", statusId: input.currentStatus.id, before: current, after: null };
-  }
-  if (input.currentStatus.updatedAt.getTime() > input.auditAppliedAt.getTime()
-    || canonicalJson(current) !== canonicalJson(input.auditAfter)) {
-    return { disposition: "refused", reason: "newer_status_edit", statusId: input.currentStatus.id, before: current, after: null };
-  }
-  if (!input.currentProvenance
-    || input.currentProvenance.attemptId !== input.attemptId
-    || input.currentProvenance.appliedAt.getTime() > input.auditAppliedAt.getTime()) {
-    return { disposition: "refused", reason: "newer_source_provenance", statusId: input.currentStatus.id, before: current, after: null };
-  }
-  return {
-    disposition: "proposed",
-    reason: "compensation_proposed",
-    statusId: input.currentStatus.id,
-    before: current,
-    after: input.auditBefore,
-  };
 }

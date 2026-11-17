@@ -170,6 +170,27 @@ describe("Tampermonkey storage adapter", () => {
     delete (globalThis as unknown as { GM?: FakeGm }).GM;
   });
 
+  it("saves a card and its interruption checkpoint in one durable write", async () => {
+    const initial = currentEmptyHiltonV3Store();
+    gm.getValue.mockImplementation(async (key) => key === STORE_KEY ? initial
+      : key === PRIMARY_ONLY_COMPATIBILITY_KEY ? PRIMARY_ONLY_COMPATIBILITY_VALUE
+        : key === V3_SELECTION_COMPATIBILITY_KEY ? V3_SELECTION_COMPATIBILITY_VALUE : null);
+    const checkpoint = { ...initial.lastScan!, status: "interrupted" as const,
+      cards: [{ localCardId, result: "failed" as const, issueCode: "network_error" as const }] };
+    const store = new TampermonkeyResultStore();
+    await store.commitCard({ disposition: "failed", identity: { ...initial.cards[localCardId].identity, localCardId },
+      attemptedAt: observedAt, errorCode: "network_error" }, checkpoint);
+    expect(gm.setValue).toHaveBeenCalledTimes(1);
+    const [key, value] = gm.setValue.mock.calls[0];
+    expect(key).toBe(STORE_KEY);
+    expect(value).toMatchObject({ lastScan: checkpoint, cards: { [localCardId]: { error: { code: "network_error" } } } });
+    gm.setValue.mockRejectedValueOnce(new Error("Synthetic disk failure"));
+    await expect(store.commitCard({ disposition: "failed", identity: { ...initial.cards[localCardId].identity, localCardId },
+      attemptedAt: observedAt, errorCode: "network_error" }, checkpoint)).rejects.toThrow("Synthetic disk failure");
+    expect(initial.cards[localCardId].error).toBeNull();
+    expect(initial.lastScan?.status).toBe("complete");
+  });
+
   it("marks a new empty installation only after deleting both mailbox generations", async () => {
     await expect(new TampermonkeyResultStore().load()).resolves.toMatchObject({
       schemaVersion: 1,
@@ -228,11 +249,23 @@ describe("Tampermonkey storage adapter", () => {
     gm.deleteValue.mockImplementation(async (key) => { values.delete(key); });
 
     const store = new TampermonkeyResultStore();
-    const [first, second] = await Promise.all([store.load(), store.load()]);
+    // Force the calls into different milliseconds so duplicate migrations
+    // cannot pass just because both calls happened within one clock tick.
+    const clock = jest.spyOn(Date.prototype, "toISOString")
+      .mockReturnValueOnce("2026-11-02T12:00:00.000Z")
+      .mockReturnValueOnce("2026-11-02T12:00:00.001Z");
+    let first;
+    let second;
+    try {
+      [first, second] = await Promise.all([store.load(), store.load()]);
+    } finally {
+      clock.mockRestore();
+    }
 
     expect(first).toMatchObject({ revision: 5, cards: {}, lastScan: null });
     expect(second).toEqual(first);
     expect(values.get(STORE_KEY)).toEqual(first);
+    expect(gm.setValue.mock.calls.filter(([key]) => key === STORE_KEY)).toHaveLength(1);
     expect(values.get(PRIMARY_ONLY_COMPATIBILITY_KEY)).toBe(PRIMARY_ONLY_COMPATIBILITY_VALUE);
     expect(values.get(V3_SELECTION_COMPATIBILITY_KEY)).toBe(V3_SELECTION_COMPATIBILITY_VALUE);
   });

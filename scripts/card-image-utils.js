@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 export const SUPPORTED_IMAGE_EXTENSIONS = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".avif"];
-export const DEFAULT_IMAGE_LIMITS = {
+const DEFAULT_IMAGE_LIMITS = {
   minBytes: 1000,
   maxBytes: 2_000_000,
   minWidth: 120,
@@ -36,11 +36,11 @@ export function filenameForCardImage(cardName, extension = ".png") {
   return `${slugifyCardName(cardName)}${normalizeExtension(extension)}`;
 }
 
-export function imageHash(buffer) {
+function imageHash(buffer) {
   return crypto.createHash("sha256").update(buffer).digest("hex");
 }
 
-export function detectImageType(buffer) {
+function detectImageType(buffer) {
   if (buffer.length >= 8 && buffer[0] === 0x89 && buffer.toString("ascii", 1, 4) === "PNG") {
     return "png";
   }
@@ -72,19 +72,19 @@ export function readImageDimensions(buffer) {
 
   if (type === "webp" && buffer.length >= 30) {
     const variant = buffer.toString("ascii", 12, 16);
-    if (variant === "VP8X" && buffer.length >= 30) {
+    if (variant === "VP8X") {
       const width = 1 + buffer.readUIntLE(24, 3);
       const height = 1 + buffer.readUIntLE(27, 3);
       return { type, width, height };
     }
-    if (variant === "VP8 " && buffer.length >= 30) {
+    if (variant === "VP8 ") {
       return {
         type,
         width: buffer.readUInt16LE(26) & 0x3fff,
         height: buffer.readUInt16LE(28) & 0x3fff,
       };
     }
-    if (variant === "VP8L" && buffer.length >= 25) {
+    if (variant === "VP8L") {
       const bits = buffer.readUInt32LE(21);
       return {
         type,

@@ -37,7 +37,7 @@ const CARD_ALIASES: Record<string, string> = {
   'venture x': 'Capital One Venture X',
 };
 
-export function normalizeBulkCardToken(value: string): string {
+function normalizeBulkCardToken(value: string): string {
   return value
     .toLowerCase()
     .replace(/&/g, ' and ')

@@ -20,10 +20,6 @@ export class ChromeLocalStorage implements ReaderStorage {
     return this.area.set({ [key]: value });
   }
 
-  removeValue(key: string): Promise<void> {
-    return this.area.remove(key);
-  }
-
   deleteValue(key: string): Promise<void> {
     return this.area.remove(key);
   }

@@ -1,6 +1,6 @@
 # Post-2.0 Product Priorities
 
-> Retained product/history record. Completed, parked, and archived items below are historical context, not current requirements. Current task requirements live under `.trellis/tasks/` and durable contracts under `.trellis/spec/`.
+> Retained product/history record. Completed, parked, and archived items below are historical context, not current requirements. Current requirements live in the issue or plan being worked; durable contracts are summarized in `AGENTS.md` and current docs.
 
 ## Completely Free Product Pivot
 

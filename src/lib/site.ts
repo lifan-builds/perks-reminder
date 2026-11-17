@@ -1,7 +1,7 @@
 export const SITE_NAME = 'Perks Reminder';
 export const SITE_DESCRIPTION =
   'Credit card benefit tracker. Track recurring credits, reset windows, loyalty expirations, and annual fee ROI without connecting bank accounts.';
-export const ROOT_DOMAIN = 'perks-reminder.com';
+const ROOT_DOMAIN = 'perks-reminder.com';
 export const PRIMARY_SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL || `https://www.${ROOT_DOMAIN}`;
 export const SUPPORT_EMAIL = 'support@perks-reminder.com';
@@ -38,4 +38,18 @@ export function getCanonicalAuthUrl(url: string | undefined): string | undefined
   } catch {
     return url;
   }
+}
+
+export function getLoyaltySwitchUrl(isLoyaltyContext: boolean): string {
+  if (!isLoyaltyContext) {
+    return '/loyalty';
+  }
+  if (typeof window === 'undefined') return '/';
+  const host = window.location.hostname;
+  const port = window.location.port;
+  const proto = window.location.protocol;
+  const isLocalhost = host.includes('localhost');
+  return isLocalhost
+    ? `${proto}//${host.replace(/^loyalty\./, '')}${port ? `:${port}` : ''}`
+    : `${proto}//${host.replace(/^loyalty\./, 'www.')}`;
 }

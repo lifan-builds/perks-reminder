@@ -1,7 +1,6 @@
 import { OBSERVATION_CONTRACT_VERSION, type NormalizedCardObservationV1 } from "../contract";
 import {
   createEmptyStore,
-  hasMixedObservations,
   loadStoreValue,
   mergeCardAttempt,
   mergeScanSummary,
@@ -96,11 +95,11 @@ describe("Amex local storage policy", () => {
 
     const migrated = loadStoreValue(legacy, secondTime);
     expect(migrated.lastScan?.visibleContext).toBe("unavailable");
-    expect(hasMixedObservations(migrated)).toBe(true);
+    expect(migrated.lastScan?.status).toBe("partial");
     expect(JSON.stringify(migrated)).not.toContain("restoration");
   });
 
-  it("records a scan summary and identifies partial or mixed observations", () => {
+  it("records a scan summary and preserves partial scan metadata", () => {
     const partialStore = mergeCardAttempt(createEmptyStore(firstTime), {
       disposition: "partial", identity, attemptedAt: firstTime, observation: observation(firstTime, "partial"),
     }).store;
@@ -115,6 +114,6 @@ describe("Amex local storage policy", () => {
       visibleContext: "unchanged",
     });
     expect(withSummary.revision).toBe(2);
-    expect(hasMixedObservations(withSummary)).toBe(true);
+    expect(withSummary.lastScan?.status).toBe("partial");
   });
 });

@@ -11,6 +11,7 @@ const bundled = await build({
   entryPoints: [resolve(root, "src/extension/screenshot-entry.ts")],
   outfile: bundlePath,
   bundle: true,
+  loader: { ".webp": "dataurl" },
   format: "iife",
   platform: "browser",
   target: ["chrome120"],

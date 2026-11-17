@@ -1,15 +1,6 @@
 # Contributing to Perks Reminder
 
-Thank you for helping improve Perks Reminder. Contributions should preserve the project vocabulary in [CONTEXT.md](CONTEXT.md) and the executable contracts under `.trellis/spec/`.
-
-## Before you begin
-
-1. Read [AGENTS.md](AGENTS.md).
-2. Read [.trellis/spec/perks-reminder/index.md](.trellis/spec/perks-reminder/index.md).
-3. For frontend changes, also read [.trellis/spec/frontend/index.md](.trellis/spec/frontend/index.md).
-4. Follow the linked checklist documents for the files and behavior you will change.
-
-Never read, create, copy, or modify `.env`. Do not run database, build, deployment, cron, email, notification, Vercel, or live-provider operations without satisfying the target-verification and authorization rules in the specs.
+Thank you for helping improve Perks Reminder. See [AGENTS.md](AGENTS.md) for repository invariants.
 
 ## Development
 
@@ -33,7 +24,7 @@ prisma/           schema and migration history
 scripts/          explicit operational or verification tooling
 card-templates/   contributor-facing Catalog intake
 docs/             current runbooks, provenance, and archived history
-.trellis/spec/    durable engineering contracts
+AGENTS.md         durable engineering contracts
 ```
 
 ## Catalog and benefit updates
@@ -54,7 +45,7 @@ A complete Catalog change addresses:
 4. missing Benefit Status propagation for existing active Physical Cards;
 5. Benefit Usage Guide and retired/prior-status disposition.
 
-Follow [.trellis/spec/perks-reminder/catalog-and-benefit-updates.md](.trellis/spec/perks-reminder/catalog-and-benefit-updates.md). Database-backed synchronization remains separately authorized even in dry-run mode.
+Database-backed synchronization remains separately authorized even in dry-run mode; preserve the catalog and data-safety rules in the current docs.
 
 ## Card images
 
@@ -78,7 +69,7 @@ Do not download or replace images without recording an approved source.
 
 ## Tests and safe checks
 
-Choose checks from [.trellis/spec/perks-reminder/verification.md](.trellis/spec/perks-reminder/verification.md). Common safe checks include:
+Choose checks from the current repository guidance. Common safe checks include:
 
 ```bash
 npm test -- --runInBand

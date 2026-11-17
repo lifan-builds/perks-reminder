@@ -32,16 +32,3 @@ export function normalizeCycleDate(date: Date): Date {
     0, 0, 0, 0
   ));
 }
-
-/**
- * Check if a date is at midnight UTC
- * 
- * @param date - The date to check
- * @returns true if the date is at exactly 00:00:00.000 UTC
- */
-export function isMidnightUTC(date: Date): boolean {
-  return date.getUTCHours() === 0 &&
-         date.getUTCMinutes() === 0 &&
-         date.getUTCSeconds() === 0 &&
-         date.getUTCMilliseconds() === 0;
-} 

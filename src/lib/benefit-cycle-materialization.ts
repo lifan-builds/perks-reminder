@@ -48,9 +48,9 @@ export interface StandardBenefitStatusMaterializationResult {
   warnings: string[];
 }
 
-export const MAX_OCCURRENCES_IN_CYCLE = 12;
+const MAX_OCCURRENCES_IN_CYCLE = 12;
 
-export function deriveBenefitCycleCoordinates(
+function deriveBenefitCycleCoordinates(
   benefit: Omit<BenefitCycleMaterializationInput, 'userId'>,
   options: BenefitStatusMaterializationOptions = {}
 ): { rows: BenefitCycleCoordinates[]; warnings: string[] } {
@@ -137,36 +137,26 @@ export function materializeStandardBenefitStatusRows(
   };
 }
 
-export function calculateMaterializedCycle(
+function calculateMaterializedCycle(
   benefit: Omit<BenefitCycleMaterializationInput, 'userId'>,
   referenceDate: Date,
   cardOpenedDate: Date | null
 ): { cycleStartDate: Date; cycleEndDate: Date } {
+  let cycle: { cycleStartDate: Date; cycleEndDate: Date };
   if (benefit.frequency === BenefitFrequency.ONE_TIME) {
-    const startDate = benefit.startDate ?? referenceDate;
-    const cycle = calculateOneTimeBenefitLifetime(startDate);
-    return {
-      cycleStartDate: normalizeCycleDate(cycle.cycleStartDate),
-      cycleEndDate: cycle.cycleEndDate,
-    };
+    cycle = calculateOneTimeBenefitLifetime(benefit.startDate ?? referenceDate);
+  } else if (!cardOpenedDate && benefit.startDate) {
+    cycle = calculateStandaloneBenefitCycle(benefit.frequency, referenceDate, benefit.startDate);
+  } else {
+    cycle = calculateBenefitCycle(
+      benefit.frequency,
+      referenceDate,
+      cardOpenedDate,
+      benefit.cycleAlignment,
+      benefit.fixedCycleStartMonth,
+      benefit.fixedCycleDurationMonths
+    );
   }
-
-  if (!cardOpenedDate && benefit.startDate) {
-    const cycle = calculateStandaloneBenefitCycle(benefit.frequency, referenceDate, benefit.startDate);
-    return {
-      cycleStartDate: normalizeCycleDate(cycle.cycleStartDate),
-      cycleEndDate: cycle.cycleEndDate,
-    };
-  }
-
-  const cycle = calculateBenefitCycle(
-    benefit.frequency,
-    referenceDate,
-    cardOpenedDate,
-    benefit.cycleAlignment,
-    benefit.fixedCycleStartMonth,
-    benefit.fixedCycleDurationMonths
-  );
 
   return {
     cycleStartDate: normalizeCycleDate(cycle.cycleStartDate),

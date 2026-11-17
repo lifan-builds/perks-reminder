@@ -60,12 +60,12 @@ function card(
 
 function syntheticStore(): StoreEnvelopeV1 {
   let store = createEmptyStore(observedAt);
-  store = card(store, "11111111-1111-4111-8111-111111111111", "Synthetic Platinum Card", "1234", "a".repeat(64), [
-    benefit({ title: "Synthetic Dining Credit", key: "synthetic-dining-credit-1", current: "25.00", target: "100.00", tracker: "in_progress" }),
-    benefit({ title: "Synthetic Travel Credit", key: "synthetic-travel-credit-1", current: "0.00", target: "200.00", tracker: "not_started" }),
+  store = card(store, "11111111-1111-4111-8111-111111111111", "American Express Platinum Card", "12345", "a".repeat(64), [
+    benefit({ title: "$100 Resy Credit", key: "synthetic-dining-credit-1", current: "25.00", target: "100.00", tracker: "in_progress" }),
+    benefit({ title: "$75 lululemon Credit", key: "synthetic-travel-credit-1", current: "0.00", target: "75.00", tracker: "not_started" }),
   ]);
-  store = card(store, "22222222-2222-4222-8222-222222222222", "Synthetic Gold Card", "5678", "b".repeat(64), [
-    benefit({ title: "Synthetic Dining Credit", key: "synthetic-dining-credit-2", current: "10.00", target: "50.00", tracker: "in_progress" }),
+  store = card(store, "22222222-2222-4222-8222-222222222222", "American Express Gold Card", "56789", "b".repeat(64), [
+    { ...benefit({ title: "$50 Resy Credit", key: "synthetic-dining-credit-2", current: "10.00", target: "50.00", tracker: "in_progress" }), sourcePeriod: { state: "observed", value: { kind: "calendar_date_range", startDate: "2026-07-01", endDate: "2026-12-31", timeZone: "UTC" } } },
   ]);
   return mergeScanSummary(store, {
     scanId: "33333333-3333-4333-8333-333333333333",

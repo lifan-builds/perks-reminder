@@ -1,14 +1,21 @@
 import { americanExpressCardCatalog } from "@/lib/american-express-card-catalog";
 import { AMEX_CATALOG_IDENTITY_REGISTRY, type AmexCatalogCardName } from "@/lib/amex-catalog/catalog-registry";
 import {
-  AMEX_BROWSER_PRODUCT_MATCH_MIN_MARGIN,
-  AMEX_BROWSER_PRODUCT_MATCH_MIN_SCORE,
+  AMEX_PRODUCT_MATCH_MIN_MARGIN,
+  AMEX_PRODUCT_MATCH_MIN_SCORE,
+  evaluateAmexProductScores,
+} from "@/lib/amex-catalog/normalization";
+import {
   BROWSER_AMEX_SOURCE_CREDIT_DESCRIPTORS,
-  evaluateAmexBrowserProductScores,
   isEligibleLocalAmexUsageTitle,
   isIgnoredAmexCatalogBenefitTitle,
   matchAmexBrowserSyncCredit,
 } from "../supported-card-credits";
+
+test("matches the provider’s Morgan Stanley Platinum Card display name", () => {
+  expect(matchAmexBrowserSyncCredit("Morgan Stanley Platinum Card®", "$400 Resy Credit"))
+    .toMatchObject({ productKey: "american-express-platinum-card", creditFamilyKey: "american-express-platinum-card:resy" });
+});
 
 describe("Amex local title eligibility", () => {
   it("admits ordinary usage-credit titles independent of card product", () => {
@@ -58,10 +65,10 @@ describe("Amex local title eligibility", () => {
 
 describe("Amex browser sync mapping", () => {
   it("accepts the exact product score and margin boundaries but rejects values immediately below", () => {
-    expect(evaluateAmexBrowserProductScores(AMEX_BROWSER_PRODUCT_MATCH_MIN_SCORE, 0)).toBe("accepted");
-    expect(evaluateAmexBrowserProductScores(AMEX_BROWSER_PRODUCT_MATCH_MIN_SCORE - 0.000001, 0)).toBe("low_confidence");
-    expect(evaluateAmexBrowserProductScores(0.88, 0.88 - AMEX_BROWSER_PRODUCT_MATCH_MIN_MARGIN)).toBe("accepted");
-    expect(evaluateAmexBrowserProductScores(0.88, 0.88 - AMEX_BROWSER_PRODUCT_MATCH_MIN_MARGIN + 0.000001)).toBe("ambiguous");
+    expect(evaluateAmexProductScores(AMEX_PRODUCT_MATCH_MIN_SCORE, 0)).toBe("accepted");
+    expect(evaluateAmexProductScores(AMEX_PRODUCT_MATCH_MIN_SCORE - 0.000001, 0)).toBe("low_confidence");
+    expect(evaluateAmexProductScores(0.88, 0.88 - AMEX_PRODUCT_MATCH_MIN_MARGIN)).toBe("accepted");
+    expect(evaluateAmexProductScores(0.88, 0.88 - AMEX_PRODUCT_MATCH_MIN_MARGIN + 0.000001)).toBe("ambiguous");
   });
 
   it("maps only the reviewed exact base Platinum product-title pairs", () => {
@@ -178,8 +185,6 @@ describe("Amex browser sync mapping", () => {
       ["Delta SkyMiles Gold Business Card", "$150 Delta Stays Credit"],
       ["American Express Platinum Card Extra", "$400 Resy Credit"],
       ["Platinum Card® Extra", "Resy Credit"],
-      ["American Express Platinum Card", "$219 CLEAR+ Credit"],
-      ["American Express Platinum Card", "$300 Equinox Credit"],
     ]) {
       expect(matchAmexBrowserSyncCredit(productName, title)).toBeNull();
     }

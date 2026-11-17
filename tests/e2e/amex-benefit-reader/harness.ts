@@ -782,7 +782,7 @@ export class SyntheticAmexHarness {
   private readonly cancellationRequestFailed = new DeferredSignal();
   private expectedCatalogHttpErrorLogs: number;
   private expectedTrackerHttpErrorLogs: number;
-  private expectedCancellationRequest: Request | null = null;
+  private readonly expectedCancellationRequests = new Set<Request>();
   private expectedCancellationConsoleErrors = 0;
   private expectedDeniedProbeConsoleError = false;
   private expectedDeniedProbeFailure = false;
@@ -834,9 +834,9 @@ export class SyntheticAmexHarness {
         return;
       }
       if (
-        this.expectedCancellationRequest !== null
+        this.expectedCancellationRequests.size > 0
         && this.expectedCancellationConsoleErrors > 0
-        && message.location().url === TRACKER_URL
+        && [TRACKER_URL, CATALOG_URL].includes(message.location().url)
         && /^Failed to load resource:.*ERR_ABORTED/.test(message.text())
       ) {
         this.expectedCancellationConsoleErrors -= 1;
@@ -853,10 +853,12 @@ export class SyntheticAmexHarness {
         this.expectedDeniedProbeFailure = false;
         return;
       }
-      if (request === this.expectedCancellationRequest) {
-        this.expectedCancellationRequest = null;
-        this.expectedCancellationConsoleErrors = 0;
-        this.cancellationRequestFailed.trigger();
+      if (this.expectedCancellationRequests.has(request)) {
+        this.expectedCancellationRequests.delete(request);
+        if (this.expectedCancellationRequests.size === 0) {
+          this.expectedCancellationConsoleErrors = 0;
+          this.cancellationRequestFailed.trigger();
+        }
         return;
       }
       const url = new URL(request.url());
@@ -1048,6 +1050,15 @@ export class SyntheticAmexHarness {
         : `${request.operation}:scan-${request.scanNumber}`);
   }
 
+  private async holdCancelledRead(route: Route): Promise<void> {
+    this.expectedCancellationRequests.add(route.request());
+    this.expectedCancellationConsoleErrors += 1;
+    if (this.expectedCancellationRequests.size === 2) this.cancellationGate.enter();
+    await this.cancellationGate.released;
+    await route.abort("aborted").catch(() => undefined);
+    this.cancellationGate.finish();
+  }
+
   async waitForCancellationRequest(): Promise<void> {
     assert.equal(this.scenario, "cancellation");
     await this.cancellationGate.entered;
@@ -1073,7 +1084,7 @@ export class SyntheticAmexHarness {
     assert.deepEqual(this.runtimeErrors, []);
     assert.equal(this.expectedCatalogHttpErrorLogs, 0);
     assert.equal(this.expectedTrackerHttpErrorLogs, 0);
-    assert.equal(this.expectedCancellationRequest, null);
+    assert.equal(this.expectedCancellationRequests.size, 0);
     assert.equal(this.expectedCancellationConsoleErrors, 0);
     assert.equal(this.expectedDeniedProbeConsoleError, false);
     assert.equal(this.expectedDeniedProbeFailure, false);
@@ -1203,14 +1214,7 @@ export class SyntheticAmexHarness {
       await assertExactJsonRequest(route, [{ accountToken, locale: "en-US", limit: "ALL" }], "*/*");
 
       if (this.scenario === "cancellation" && syntheticCard === "secondary" && this.activeScanNumber === 1) {
-        assert.equal(this.expectedCancellationRequest, null);
-        assert.equal(this.expectedCancellationConsoleErrors, 0);
-        this.expectedCancellationRequest = request;
-        this.expectedCancellationConsoleErrors = 1;
-        this.cancellationGate.enter();
-        await this.cancellationGate.released;
-        await route.abort("aborted").catch(() => undefined);
-        this.cancellationGate.finish();
+        await this.holdCancelledRead(route);
         return;
       }
 
@@ -1233,6 +1237,10 @@ export class SyntheticAmexHarness {
       const syntheticCard = syntheticCardForToken(body.accountToken as string);
       this.record(route, "catalog", syntheticCard);
       await assertExactJsonRequest(route, { accountToken: body.accountToken, locale: "en-US" }, "application/json");
+      if (this.scenario === "cancellation" && syntheticCard === "secondary" && this.activeScanNumber === 1) {
+        await this.holdCancelledRead(route);
+        return;
+      }
       await shortDelay();
       if (this.fixture.catalogFailureTokens.has(body.accountToken as string)) {
         await fulfillJson(route, { syntheticError: true }, 500);

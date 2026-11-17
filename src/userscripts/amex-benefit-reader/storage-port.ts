@@ -3,7 +3,6 @@ import type { CardIdentityService, PreparedCardIdentity, ResultStore } from "@/l
 import {
   IDENTITY_SECRET_KEY,
   STORE_KEY,
-  createEmptyStore,
   loadStoreValue,
   mergeCardAttempt,
   mergeScanSummary,
@@ -60,6 +59,8 @@ function invalidateSelectionIncompleteObservations(
 }
 
 export class BrowserResultStore implements ResultStore {
+  private pendingLoad: Promise<StoreEnvelopeV1> | undefined;
+
   constructor(protected readonly storage: ReaderStorage) {}
 
   private async deletePendingMailboxes(): Promise<void> {
@@ -68,10 +69,24 @@ export class BrowserResultStore implements ResultStore {
   }
 
   async load(): Promise<StoreEnvelopeV1> {
+    // Mounting and a login-triggered scan can load together. Share migration
+    // work so neither caller writes a snapshot read before the other migrated.
+    if (this.pendingLoad) return this.pendingLoad;
+    this.pendingLoad = this.loadCurrent();
+    try {
+      return await this.pendingLoad;
+    } finally {
+      this.pendingLoad = undefined;
+    }
+  }
+
+  private async loadCurrent(): Promise<StoreEnvelopeV1> {
     const migratedAt = nowIso();
-    const primaryCompatibility = await this.storage.getValue(PRIMARY_ONLY_COMPATIBILITY_KEY, null);
-    const v3Compatibility = await this.storage.getValue(V3_SELECTION_COMPATIBILITY_KEY, null);
-    const rawStore = await this.storage.getValue(STORE_KEY, null);
+    const [primaryCompatibility, v3Compatibility, rawStore] = await Promise.all([
+      this.storage.getValue(PRIMARY_ONLY_COMPATIBILITY_KEY, null),
+      this.storage.getValue(V3_SELECTION_COMPATIBILITY_KEY, null),
+      this.storage.getValue(STORE_KEY, null),
+    ]);
     let loaded = loadStoreValue(rawStore, migratedAt);
 
     if (primaryCompatibility !== PRIMARY_ONLY_COMPATIBILITY_VALUE) {
@@ -93,10 +108,11 @@ export class BrowserResultStore implements ResultStore {
     return loaded;
   }
 
-  async commitCard(result: CardAttemptResult): Promise<StoredCardRecordV1> {
+  async commitCard(result: CardAttemptResult, checkpoint?: ScanSummaryV1): Promise<StoredCardRecordV1> {
     const current = await this.load();
     const merged = mergeCardAttempt(current, result);
-    await this.storage.setValue(STORE_KEY, merged.store);
+    // One durable write publishes both the card and its interruption checkpoint.
+    await this.storage.setValue(STORE_KEY, checkpoint ? mergeScanSummary(merged.store, checkpoint) : merged.store);
     return merged.record;
   }
 
@@ -114,11 +130,6 @@ export class BrowserResultStore implements ResultStore {
       this.storage.deleteValue(PRIMARY_ONLY_COMPATIBILITY_KEY),
       this.storage.deleteValue(V3_SELECTION_COMPATIBILITY_KEY),
     ]);
-  }
-
-  async initializeIfNeeded(): Promise<void> {
-    const value = await this.storage.getValue(STORE_KEY, null);
-    if (value == null) await this.storage.setValue(STORE_KEY, createEmptyStore(nowIso()));
   }
 }
 

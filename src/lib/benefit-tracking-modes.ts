@@ -18,13 +18,13 @@
 
 export type BenefitTrackingMode = 'TRACK' | 'AUTO_CLAIM' | 'IGNORE';
 
-export const BENEFIT_TRACKING_MODES: readonly BenefitTrackingMode[] = [
+const BENEFIT_TRACKING_MODES: readonly BenefitTrackingMode[] = [
   'TRACK',
   'AUTO_CLAIM',
   'IGNORE',
 ] as const;
 
-export const DEFAULT_BENEFIT_TRACKING_MODE: BenefitTrackingMode = 'TRACK';
+const DEFAULT_BENEFIT_TRACKING_MODE: BenefitTrackingMode = 'TRACK';
 
 export function isBenefitTrackingMode(value: unknown): value is BenefitTrackingMode {
   return typeof value === 'string'

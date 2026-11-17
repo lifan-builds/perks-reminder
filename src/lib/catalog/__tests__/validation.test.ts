@@ -9,11 +9,11 @@ function copyCatalog(): StaticPredefinedCard[] {
 describe("global static catalog validation", () => {
   it("validates every explicit identity and preserves AMEX invariants", () => {
     expect(validateStaticCatalog(predefinedCardsData)).toEqual({
-      cards: 37,
-      benefits: 134,
+      cards: 44,
+      benefits: 159,
       amexCards: 12,
-      amexBenefits: 56,
-      amexWritableBenefits: 47,
+      amexBenefits: 59,
+      amexWritableBenefits: 50,
     });
   });
 
@@ -26,7 +26,7 @@ describe("global static catalog validation", () => {
     card.benefits[0].description = "Rewritten current benefit terms";
     card.benefits = [...card.benefits].reverse();
 
-    expect(validateStaticCatalog(catalog)).toEqual(expect.objectContaining({ cards: 37, benefits: 134 }));
+    expect(validateStaticCatalog(catalog)).toEqual(expect.objectContaining({ cards: 44, benefits: 159 }));
     expect(card.catalogKey).toBe(originalCardKey);
     expect(card.benefits.map((benefit) => benefit.catalogKey).sort()).toEqual(originalBenefitKeys);
   });
@@ -35,7 +35,7 @@ describe("global static catalog validation", () => {
     const catalog = copyCatalog();
     const platinum = catalog.find((card) => card.catalogKey === "card:american-express-platinum-card")!;
     platinum.benefits = [...platinum.benefits].reverse();
-    expect(validateStaticCatalog(catalog).amexBenefits).toBe(56);
+    expect(validateStaticCatalog(catalog).amexBenefits).toBe(59);
   });
 
   it.each([

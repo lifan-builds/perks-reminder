@@ -3,8 +3,8 @@ import { createHash } from "node:crypto";
 export const GLOBAL_BENEFIT_BRIDGE_CONFIRMATION = "BRIDGE_EXACT_GLOBAL_BENEFITS" as const;
 export const GLOBAL_BENEFIT_CLEANUP_CONFIRMATION = "CLEANUP_LEDGER_PROVEN_GLOBAL_BENEFITS" as const;
 export const GLOBAL_BENEFIT_ROLLBACK_CONFIRMATION = "ROLLBACK_LEDGER_PROVEN_GLOBAL_BENEFITS" as const;
-export const GLOBAL_BENEFIT_MIGRATION_DEFAULT_LIMIT = 100;
-export const GLOBAL_BENEFIT_MIGRATION_MAX_LIMIT = 500;
+const GLOBAL_BENEFIT_MIGRATION_DEFAULT_LIMIT = 100;
+const GLOBAL_BENEFIT_MIGRATION_MAX_LIMIT = 500;
 
 export type GlobalBenefitMigrationMode = "dry-run" | "apply" | "cleanup" | "rollback";
 export type LegacyBenefitDisposition = "standard" | "custom" | "unresolved";

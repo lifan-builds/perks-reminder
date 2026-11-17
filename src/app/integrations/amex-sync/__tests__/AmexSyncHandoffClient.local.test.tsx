@@ -79,7 +79,7 @@ describe("local-development Amex sync handoff client", () => {
       transferId,
       nonce,
     }, "http://localhost:3000");
-    expect(screen.getByRole("status")).toHaveTextContent("Review every row");
+    expect(screen.getByRole("status")).toHaveTextContent("Review the updates");
     view.unmount();
   });
 });

@@ -4,10 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import BenefitsDisplayClient from '@/components/BenefitsDisplayClient';
 import { Metadata } from 'next';
-import {
-  loadBenefitDashboard,
-  type DisplayBenefitStatus,
-} from '@/lib/benefit-dashboard';
+import { loadBenefitDashboard } from '@/lib/benefit-dashboard';
 
 export const metadata: Metadata = {
   title: "Benefits Dashboard - Track All Your Credit Card Benefits",
@@ -23,8 +20,6 @@ export const metadata: Metadata = {
     canonical: '/benefits',
   },
 };
-
-export type { DisplayBenefitStatus };
 
 export default async function BenefitsDashboardPage() {
   const session = await getServerSession(authOptions);

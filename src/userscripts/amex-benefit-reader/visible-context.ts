@@ -1,8 +1,8 @@
 import type { VisibleContextGuard, VisiblePageContext } from "@/lib/amex-benefit-reader/scan-engine";
 
-export const AMEX_MEMBER_ORIGIN = "https://global.americanexpress.com";
+const AMEX_MEMBER_ORIGIN = "https://global.americanexpress.com";
 const AMEX_BENEFITS_PATHS = new Set(["/card-benefits/view-all", "/card-benefits/activity"]);
-const SELECTED_CARD_DISPLAY = '[data-testid="simple_switcher_combobox"][role="combobox"], [data-testid*="account-selector"] button[aria-expanded], [data-pr-account-selector-trigger]';
+export const SELECTED_CARD_DISPLAY = '[data-testid="simple_switcher_combobox"][role="combobox"], [data-testid*="account-selector"] button[aria-expanded], [data-pr-account-selector-trigger]';
 
 export function isSupportedAmexOrigin(
   locationValue: Pick<Location, "origin"> = window.location,

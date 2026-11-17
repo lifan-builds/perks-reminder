@@ -137,6 +137,20 @@ describe("Amex sync handoff client", () => {
     view.unmount();
   });
 
+  it("does not call the sync complete when the reader excluded benefits", async () => {
+    (global.fetch as jest.Mock)
+      .mockReturnValueOnce(response({ mode: "write", rows: [row], proposalToken: "proposal-token".repeat(4),
+        proposalExpiresAt: new Date(Date.now() + 300_000).toISOString(), cardSkips: [] }))
+      .mockReturnValueOnce(response({ attemptId: "attempt-1", replayed: false,
+        rows: [{ ...row, disposition: "updated" }], updatedCount: 1 }));
+    const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="write" />);
+    await deliverPayload({ ...envelope, exclusions: [{ reason: "source_mapping_ambiguous", count: 2 }] });
+    fireEvent.click(await screen.findByRole("button", { name: "Confirm 1 update" }));
+    expect(await screen.findByRole("heading", { name: "Sync finished with items to review" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Benefit sync complete" })).not.toBeInTheDocument();
+    view.unmount();
+  });
+
   it("uses the reviewed Uber source context for the December bonus row", async () => {
     const decemberEnvelope = parseAmexSyncEnvelope({
       ...envelope,
@@ -160,8 +174,8 @@ describe("Amex sync handoff client", () => {
     });
     (global.fetch as jest.Mock).mockReturnValue(response({
       mode: "preview",
-      rows: [{
-        ...row,
+      rows: [{ ...row, creditFamilyKey: "american-express-platinum-card:uber-cash" }, {
+        ...row, sourceRowIdentity: "e".repeat(64),
         creditFamilyKey: "american-express-platinum-card:uber-cash-december-bonus",
       }],
       proposalToken: "december-proposal".repeat(4),
@@ -171,8 +185,8 @@ describe("Amex sync handoff client", () => {
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="preview" />);
     await deliverPayload(decemberEnvelope);
 
-    expect(await screen.findByRole("heading", { name: "Uber Cash" })).toBeInTheDocument();
-    expect(screen.getByText("Dec 2026")).toBeInTheDocument();
+    expect(await screen.findAllByRole("heading", { name: "Uber Cash" })).toHaveLength(2);
+    expect(screen.getAllByText("Dec 2026")).toHaveLength(2);
     view.unmount();
   });
 
@@ -234,12 +248,12 @@ describe("Amex sync handoff client", () => {
       cardSkips: [],
     }));
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="write" />);
-    await deliverPayload();
+    await deliverPayload({ ...envelope, cards: [{ ...envelope.cards[0], rows: Array(3).fill(envelope.cards[0].rows[0]) }] });
 
     const proposed = await screen.findByText("Ready to update");
     const confirm = screen.getByRole("button", { name: "Confirm 1 update" });
     const unchanged = screen.getByText("Already current", { selector: "summary" });
-    const skipped = screen.getByText("Skipped safely", { selector: "summary" });
+    const skipped = screen.getByText("Not synced", { selector: "summary" });
     expect(unchanged.closest("details")).not.toHaveAttribute("open");
     expect(skipped.closest("details")).not.toHaveAttribute("open");
     expect(proposed.compareDocumentPosition(unchanged) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -308,7 +322,7 @@ describe("Amex sync handoff client", () => {
     (global.fetch as jest.Mock)
       .mockReturnValueOnce(response({
         mode: "write",
-        rows: [row],
+        rows: [row, { ...failedRow, disposition: "proposed", reason: "proposed_update" }],
         proposalToken: "partial-proposal".repeat(4),
         proposalExpiresAt: new Date(Date.now() + 300_000).toISOString(),
         cardSkips: [],
@@ -320,8 +334,8 @@ describe("Amex sync handoff client", () => {
         updatedCount: 1,
       }));
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="write" />);
-    await deliverPayload();
-    fireEvent.click(await screen.findByRole("button", { name: "Confirm 1 update" }));
+    await deliverPayload({ ...envelope, cards: [{ ...envelope.cards[0], rows: Array(2).fill(envelope.cards[0].rows[0]) }] });
+    fireEvent.click(await screen.findByRole("button", { name: "Confirm 2 updates" }));
 
     expect(await screen.findByRole("heading", { name: "Result already recorded" })).toBeInTheDocument();
     expect(screen.getByText("1 updated, 0 unchanged, 0 skipped, and 1 failed.")).toBeInTheDocument();
@@ -329,6 +343,36 @@ describe("Amex sync handoff client", () => {
     expect(screen.getByRole("status")).toHaveTextContent("already processed");
     view.unmount();
   });
+
+  it.each([[[]], [[row, row]], [[{ ...row, creditFamilyKey: "american-express-platinum-card:saks" }]]])(
+    "rejects missing, duplicate, or unexpected preview rows", async (rows) => {
+      (global.fetch as jest.Mock).mockReturnValue(response({
+        mode: "write", rows, proposalToken: "proposal-token".repeat(4),
+        proposalExpiresAt: new Date(Date.now() + 300_000).toISOString(), cardSkips: [],
+      }));
+      const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="write" />);
+      await deliverPayload();
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("couldn’t verify every benefit"));
+      expect(screen.queryByRole("button", { name: /Confirm/ })).not.toBeInTheDocument();
+      view.unmount();
+    },
+  );
+
+  it.each([[[]], [[row, row]], [[{ ...row, sourceRowIdentity: "e".repeat(64) }]]])(
+    "rejects missing, duplicate, or substituted confirmation receipts", async (rows) => {
+      (global.fetch as jest.Mock)
+        .mockReturnValueOnce(response({ mode: "write", rows: [row], proposalToken: "proposal-token".repeat(4),
+          proposalExpiresAt: new Date(Date.now() + 300_000).toISOString(), cardSkips: [] }))
+        .mockReturnValueOnce(response({ attemptId: "attempt-1", replayed: false,
+          rows: rows.map((item) => ({ ...item, disposition: "updated" })), updatedCount: rows.length }));
+      const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="write" />);
+      await deliverPayload();
+      fireEvent.click(await screen.findByRole("button", { name: "Confirm 1 update" }));
+      await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("couldn’t verify every result"));
+      expect(screen.queryByText("Confirmation recorded")).not.toBeInTheDocument();
+      view.unmount();
+    },
+  );
 
   it("rejects an incomplete 2xx confirmation result instead of reporting success", async () => {
     (global.fetch as jest.Mock)
@@ -348,7 +392,7 @@ describe("Amex sync handoff client", () => {
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="write" />);
     await deliverPayload();
     fireEvent.click(await screen.findByRole("button", { name: "Confirm 1 update" }));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Confirmation failed safely"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("We couldn’t verify every result"));
     expect(screen.queryByText("Confirmation recorded")).not.toBeInTheDocument();
     view.unmount();
   });
@@ -371,7 +415,7 @@ describe("Amex sync handoff client", () => {
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="write" />);
     await deliverPayload();
     fireEvent.click(await screen.findByRole("button", { name: "Confirm 1 update" }));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Confirmation failed safely"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("We couldn’t verify every result"));
     expect(screen.queryByText("Confirmation recorded")).not.toBeInTheDocument();
     view.unmount();
   });
@@ -394,7 +438,7 @@ describe("Amex sync handoff client", () => {
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="write" />);
     await deliverPayload();
     fireEvent.click(await screen.findByRole("button", { name: "Confirm 1 update" }));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Confirmation failed safely"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("We couldn’t verify every result"));
     expect(screen.queryByText("Confirmation recorded")).not.toBeInTheDocument();
     view.unmount();
   });
@@ -456,7 +500,7 @@ describe("Amex sync handoff client", () => {
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="write" />);
     await deliverPayload();
 
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("could not be previewed"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("couldn’t verify every benefit"));
     expect(screen.queryByRole("link", { name: /add five ending digits/i })).not.toBeInTheDocument();
     expect(window.postMessage).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: "perks-reminder:amex-sync-accepted" }),
@@ -606,7 +650,7 @@ describe("Amex sync handoff client", () => {
     await deliverPayload();
     fireEvent.click(await screen.findByRole("button", { name: "Check card details" }));
 
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("run a fresh scan, then choose Sync reviewed again"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("refresh, and choose Sync to Perks Reminder again"));
     expect(screen.queryByRole("button", { name: "Confirm 1 update" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Check card details" })).not.toBeInTheDocument();
     view.unmount();
@@ -625,7 +669,7 @@ describe("Amex sync handoff client", () => {
     (global.fetch as jest.Mock).mockReturnValue(response({ error: "request_invalid" }, false, 400));
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="preview" />);
     await deliverPayload();
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("could not be previewed"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("couldn’t verify every benefit"));
     expect(window.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "perks-reminder:amex-sync-accepted" }), "https://www.perks-reminder.com");
     view.unmount();
   });
@@ -640,7 +684,7 @@ describe("Amex sync handoff client", () => {
     }));
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="preview" />);
     await deliverPayload();
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("could not be previewed"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("couldn’t verify every benefit"));
     expect(window.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "perks-reminder:amex-sync-accepted" }), "https://www.perks-reminder.com");
     view.unmount();
   });
@@ -655,7 +699,7 @@ describe("Amex sync handoff client", () => {
     }));
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="preview" />);
     await deliverPayload();
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("could not be previewed"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("couldn’t verify every benefit"));
     expect(screen.queryByText("Amex card")).not.toBeInTheDocument();
     expect(window.postMessage).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: "perks-reminder:amex-sync-accepted" }),
@@ -675,7 +719,7 @@ describe("Amex sync handoff client", () => {
     }));
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="preview" />);
     await deliverPayload();
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("could not be previewed"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("couldn’t verify every benefit"));
     expect(window.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "perks-reminder:amex-sync-accepted" }), "https://www.perks-reminder.com");
     view.unmount();
   });
@@ -690,7 +734,7 @@ describe("Amex sync handoff client", () => {
     }));
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="preview" />);
     await deliverPayload();
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("could not be previewed"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("couldn’t verify every benefit"));
     expect(window.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "perks-reminder:amex-sync-accepted" }), "https://www.perks-reminder.com");
     view.unmount();
   });
@@ -705,7 +749,7 @@ describe("Amex sync handoff client", () => {
     }));
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="preview" />);
     await deliverPayload();
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("could not be previewed"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("couldn’t verify every benefit"));
     expect(window.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "perks-reminder:amex-sync-accepted" }), "https://www.perks-reminder.com");
     view.unmount();
   });
@@ -720,7 +764,7 @@ describe("Amex sync handoff client", () => {
     }));
     const view = render(<AmexSyncHandoffClient transferId={transferId} initialMode="preview" />);
     await deliverPayload();
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("could not be previewed"));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("couldn’t verify every benefit"));
     expect(window.postMessage).not.toHaveBeenCalledWith(expect.objectContaining({ type: "perks-reminder:amex-sync-accepted" }), "https://www.perks-reminder.com");
     view.unmount();
   });

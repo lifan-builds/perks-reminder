@@ -16,6 +16,7 @@ const config = {
   },
   // preset: 'ts-jest', // Removed: next/jest handles transpilation
   moduleNameMapper: {
+    "\\.webp$": "<rootDir>/src/userscripts/amex-benefit-reader/__tests__/asset-mock.cjs",
     // Next/SWC may rewrite tsconfig aliases to long relative paths in tests.
     '^(?:\\.\\./)+\\.\\/src\\/(.*)$': '<rootDir>/src/$1',
     // Handle module aliases (this will be automatically configured for you soon)

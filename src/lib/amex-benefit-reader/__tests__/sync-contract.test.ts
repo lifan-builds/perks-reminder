@@ -158,15 +158,29 @@ describe("Amex sync transport contract", () => {
       ["Hilton Honors Card", "$400 Resy Credit"],
       ["Delta SkyMiles Gold Business Card", "$150 Delta Stays Credit"],
       ["American Express Platinum Card Extra", "$400 Resy Credit"],
-      ["American Express Platinum Card", "$219 CLEAR+ Credit"],
-      ["American Express Platinum Card", "$300 Equinox Credit"],
     ]) {
       const store = v3Store(productName);
       const latest = store.cards[cardId].latest;
       if (!latest || latest.contractVersion !== "amex-benefits/3") throw new Error("Expected V3 fixture.");
       latest.benefits = [benefit(title)];
-      expect(projectLatestV3SyncEnvelope(store)).toEqual({ envelope: null, reason: "no_complete_cards" });
+      expect(projectLatestV3SyncEnvelope(store)).toMatchObject({ envelope: null, reason: "no_complete_cards" });
     }
+  });
+
+  it.each([
+    ["American Express Platinum Card", "$219 CLEAR+ Credit", "clear-plus"],
+    ["American Express Platinum Card", "$300 Equinox Credit", "equinox"],
+    ["American Express Business Platinum Card", "$300 ChatGPT Business Credit", "chatgpt-business"],
+  ])("includes the annual credit %s %s", (productName, title, family) => {
+    const store = v3Store(productName);
+    const latest = store.cards[cardId].latest!;
+    if (latest.contractVersion !== "amex-benefits/3") throw new Error("Expected V3");
+    latest.benefits = [{ ...benefit(title), sourcePeriod: { state: "observed", value: {
+      kind: "calendar_date_range", startDate: "2026-01-01", endDate: "2026-12-31", timeZone: "UTC",
+    } } }];
+    const projected = projectLatestV3SyncEnvelope(store);
+    expect(projected.envelope?.cards[0].rows[0].creditFamilyKey.endsWith(`:${family}`)).toBe(true);
+    expect(projected.coverage).toMatchObject({ totalBenefits: 1, readyBenefits: 1, excludedBenefits: 0 });
   });
 
   it("excludes colliding source benefits without suppressing another unambiguous benefit on the card", () => {
@@ -196,12 +210,12 @@ describe("Amex sync transport contract", () => {
     const partial = v3Store();
     partial.cards[cardId].completeness = "partial";
     partial.cards[cardId].latest!.completeness = "partial";
-    expect(projectLatestV3SyncEnvelope(partial)).toEqual({ envelope: null, reason: "no_complete_cards" });
+    expect(projectLatestV3SyncEnvelope(partial)).toMatchObject({ envelope: null, reason: "no_complete_cards" });
 
     const older = v3Store();
     if (older.cards[cardId].latest?.contractVersion !== "amex-benefits/3") throw new Error("Expected V3 fixture.");
     older.cards[cardId].latest.scanId = "44444444-4444-4444-8444-444444444444";
-    expect(projectLatestV3SyncEnvelope(older)).toEqual({ envelope: null, reason: "no_complete_cards" });
+    expect(projectLatestV3SyncEnvelope(older)).toMatchObject({ envelope: null, reason: "no_complete_cards" });
 
     const v1 = v3Store();
     const latest = v1.cards[cardId].latest!;
@@ -217,11 +231,44 @@ describe("Amex sync transport contract", () => {
       issueCodes: latest.issueCodes,
       benefits: [],
     };
-    expect(projectLatestV3SyncEnvelope(v1)).toEqual({ envelope: null, reason: "no_complete_cards" });
+    expect(projectLatestV3SyncEnvelope(v1)).toMatchObject({ envelope: null, reason: "no_complete_cards" });
 
     const noSummary = v3Store();
     noSummary.lastScan = null;
-    expect(projectLatestV3SyncEnvelope(noSummary)).toEqual({ envelope: null, reason: "fresh_v3_scan_required" });
+    expect(projectLatestV3SyncEnvelope(noSummary)).toMatchObject({ envelope: null, reason: "fresh_v3_scan_required" });
+  });
+
+  it("accounts for every benefit, including unsupported and non-usage benefits", () => {
+    const store = v3Store();
+    const latest = store.cards[cardId].latest!;
+    if (latest.contractVersion !== "amex-benefits/3") throw new Error("Expected V3");
+    latest.benefits.push(benefit("Unlisted widget credit", "unmapped"), {
+      ...benefit("Membership", "membership"), category: { state: "observed", value: "enrollment" },
+    });
+    const projection = projectLatestV3SyncEnvelope(store);
+    expect(projection.coverage).toMatchObject({ totalBenefits: 3, readyBenefits: 1, excludedBenefits: 2 });
+    expect(projection.coverage.issues.map((issue) => issue.reason)).toEqual(["unmapped", "not_usage"]);
+    expect(projection.envelope?.exclusions.reduce((total, item) => total + item.count, 0)).toBe(2);
+    expect(projection.coverage.readyBenefits + projection.coverage.excludedBenefits).toBe(projection.coverage.totalBenefits);
+  });
+
+  it("keeps canceled history and unavailable cards separate from benefit counts", () => {
+    const store = v3Store();
+    const record = store.cards[cardId];
+    store.cards.canceled = { ...record, error: { code: "account_canceled", message: "Canceled" } };
+    store.cards.unavailable = { ...record, latest: null };
+    expect(projectLatestV3SyncEnvelope(store).coverage).toMatchObject({
+      totalBenefits: 1, readyBenefits: 1, excludedBenefits: 0, canceledCards: 1, unavailableCards: 1,
+    });
+  });
+
+  it("retains issue details when nothing can be handed off", () => {
+    const store = v3Store();
+    store.cards[cardId].completeness = "partial";
+    const projection = projectLatestV3SyncEnvelope(store);
+    expect(projection.envelope).toBeNull();
+    expect(projection.coverage).toMatchObject({ totalBenefits: 1, readyBenefits: 0, excludedBenefits: 1 });
+    expect(projection.coverage.issues[0].reason).toBe("partial");
   });
 
   it("uses the injected time for the exact 30-minute freshness boundary", () => {

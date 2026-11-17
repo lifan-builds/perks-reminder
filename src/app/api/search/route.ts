@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { searchCards } from '@/lib/cardSearchUtils';
+import { hasSessionCookie } from '@/lib/session-cookie';
 import { getPublicStaticCards, getStaticSearchSuggestions } from '@/lib/static-catalog';
 
 // Enable caching for search results
 export const dynamic = 'force-dynamic';
-
-function hasSessionCookie(request: NextRequest): boolean {
-  return (
-    request.cookies.has('next-auth.session-token') ||
-    request.cookies.has('__Secure-next-auth.session-token')
-  );
-}
 
 function cachedJson(data: unknown) {
   const response = NextResponse.json(data);
@@ -44,7 +38,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const [{ getServerSession }, { authOptions }, { searchCardsOptimized, hybridSearch, getSearchSuggestionsOptimized }] = await Promise.all([
+    const [{ getServerSession }, { authOptions }, { searchCardsOptimized, getSearchSuggestionsOptimized }] = await Promise.all([
       import('next-auth'),
       import('@/lib/auth'),
       import('@/lib/search/optimizedSearch'),
@@ -59,10 +53,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ suggestions });
     }
 
-    const searchFunction = type === 'optimized' ? searchCardsOptimized : hybridSearch;
-    
-    const results = await searchFunction(query, {
-      limit: Math.min(limit, 100), // Cap at 100 results
+    const results = await searchCardsOptimized(query, {
+      limit: Math.min(limit, 100),
       includeBenefits: true,
       sortBy: sortBy as 'relevance' | 'name' | 'issuer' | 'annualFee',
       minScore,
@@ -99,7 +91,7 @@ export async function GET(request: NextRequest) {
 // POST endpoint for more complex search queries
 export async function POST(request: NextRequest) {
   try {
-    const [{ getServerSession }, { authOptions }, { hybridSearch }] = await Promise.all([
+    const [{ getServerSession }, { authOptions }, { searchCardsOptimized }] = await Promise.all([
       import('next-auth'),
       import('@/lib/auth'),
       import('@/lib/search/optimizedSearch'),
@@ -123,7 +115,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Apply filters (e.g., issuer, annual fee range, benefit categories)
     const searchOptions = {
       limit: options.limit || 20,
       includeBenefits: options.includeBenefits !== false,
@@ -132,7 +123,7 @@ export async function POST(request: NextRequest) {
       ...filters,
     };
 
-    const results = await hybridSearch(query, searchOptions);
+    const results = await searchCardsOptimized(query, searchOptions);
 
     return NextResponse.json({
       results,

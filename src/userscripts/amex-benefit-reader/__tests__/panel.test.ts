@@ -112,6 +112,58 @@ describe("Amex reader side panel", () => {
     jest.restoreAllMocks();
   });
 
+  it("searches card and benefit names while preserving typing focus and filter counts", () => {
+    const store = addCard(createEmptyStore(now), { benefits: [
+      benefit({ title: "Dining credit" }),
+      benefit({ title: "Hotel credit", benefitKey: "benefit-hotel-12345678", completionState: { state: "observed", value: "complete" } }),
+    ] });
+    new AmexBenefitReaderPanel(store, { startScan: jest.fn(), cancelScan: jest.fn(), clearData: jest.fn() });
+    const search = shadow().querySelector<HTMLInputElement>(".search")!;
+    search.focus();
+    fireEvent.input(search, { target: { value: "1234 hotel" } });
+    expect(shadow().activeElement).toBe(shadow().querySelector(".search"));
+    expect(button("Remaining 0")).toBeDefined();
+    expect(button("Used 1")).toBeDefined();
+    fireEvent.click(button("Used 1"));
+    expect(shadow().querySelectorAll(".benefit-card")).toHaveLength(1);
+    expect(shadow().querySelector(".benefit-card")?.textContent).toContain("Hotel credit");
+    fireEvent.click(button("Clear"));
+    expect(shadow().querySelector<HTMLInputElement>(".search")?.value).toBe("");
+    expect(button("Remaining 1")).toBeDefined();
+  });
+
+  it("leaves refresh available after an unexpected failure", async () => {
+    const startScan = jest.fn().mockRejectedValue(new Error("fixture"));
+    new AmexBenefitReaderPanel(createEmptyStore(now), { startScan, cancelScan: jest.fn(), clearData: jest.fn() });
+    fireEvent.click(button("Refresh"));
+    await waitFor(() => expect(button("Refresh")).toBeEnabled());
+    expect(shadow().querySelector('[role="alert"]')).toHaveTextContent("Couldn’t refresh. Try again.");
+  });
+
+  it("shows where to continue after opening sync", async () => {
+    const syncReviewed = jest.fn(async () => undefined);
+    new AmexBenefitReaderPanel(withLatestScan(addCard(createEmptyStore(now))), {
+      startScan: jest.fn(), cancelScan: jest.fn(), clearData: jest.fn(), syncReviewed,
+    });
+    fireEvent.click(button("Sync to Perks Reminder"));
+    await waitFor(() => expect(shadow().querySelector('.sync-message')).toHaveTextContent("Continue in the Perks Reminder tab"));
+    expect(syncReviewed).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps canceled-card history separate from current benefit totals", () => {
+    let store = addCard(createEmptyStore(now), { benefits: [benefit()] });
+    store = addCard(store, { localCardId: cardTwoId, endingDigits: "5678", benefits: [benefit()] });
+    store = mergeCardAttempt(store, {
+      disposition: "failed", identity: { localCardId: cardTwoId, ...store.cards[cardTwoId].identity },
+      attemptedAt: now, errorCode: "account_canceled",
+    }).store;
+    new AmexBenefitReaderPanel(store, { startScan: jest.fn(), cancelScan: jest.fn(), clearData: jest.fn() });
+    expect(button("Remaining 1")).toBeDefined();
+    expect(button("Remaining 2")).toBeUndefined();
+    expect(shadow().querySelector('.canceled-cards')?.textContent).toContain("Canceled cards (1)");
+    expect(shadow().querySelector('.canceled-cards')?.textContent).toContain("Synthetic benefit");
+  });
+
   it("mounts the local-only reader without scanning automatically", () => {
     const startScan = jest.fn(async () => undefined);
     new AmexBenefitReaderPanel(createEmptyStore(now), {
@@ -121,11 +173,34 @@ describe("Amex reader side panel", () => {
     });
 
     expect(shadow().textContent).toContain("Amex benefits");
-    expect(shadow().textContent).toContain("Local unless you choose Sync reviewed");
-    expect(shadow().textContent).toContain("No local card observations yet");
-    expect(button("Scan all cards")).toBeEnabled();
+    expect(shadow().textContent).not.toMatch(/read.only|normalized|local reader|safe step/i);
+    expect(shadow().textContent).toContain("Your benefits will appear here");
+    expect(button("Refresh")).toBeEnabled();
     expect(startScan).not.toHaveBeenCalled();
     expect(shadow().querySelector('[role="progressbar"]')).toBeNull();
+  });
+
+  it("preserves benefit rows and focused search during progress-only updates", () => {
+    const panel = new AmexBenefitReaderPanel(addCard(createEmptyStore(now), { benefits: [benefit()] }), {
+      startScan: async () => undefined, cancelScan: () => undefined, clearData: async () => undefined,
+    });
+    panel.report({ type: "started" });
+    const search = shadow().querySelector<HTMLInputElement>(".search")!;
+    const row = shadow().querySelector(".benefit-card");
+    search.focus();
+    search.value = "synthetic";
+    search.setSelectionRange(2, 4);
+    panel.report({ type: "discovered", cardCount: 8, unknownEntryCount: 0 });
+    panel.report({ type: "card", cardIndex: 1, cardCount: 8, productName: "Synthetic", endingDigits: "12345", phase: "normalizing" });
+    expect(shadow().querySelector(".search")).toBe(search);
+    expect(shadow().querySelector(".benefit-card")).toBe(row);
+    expect(shadow().activeElement).toBe(search);
+    expect([search.selectionStart, search.selectionEnd]).toEqual([2, 4]);
+    expect(shadow().querySelector(".scan-progress")).toHaveAttribute("max", "8");
+    expect(shadow().querySelector(".scan-status")).toHaveTextContent("0 of 8 cards checked");
+    panel.report({ type: "verifying_context" });
+    expect(shadow().querySelector(".scan-progress")).toHaveAttribute("value", "8");
+    expect(shadow().querySelector(".scan-status")).toHaveTextContent("Finishing up");
   });
 
   it("uses a collapsed launcher off primary routes without starting work", () => {
@@ -136,15 +211,32 @@ describe("Amex reader side panel", () => {
       clearData: jest.fn(async () => undefined),
     }, { initiallyCollapsed: true });
 
-    expect(button("PR")).toHaveAccessibleName("Open Perks Reminder Amex benefit reader");
+    expect(button("Benefits")).toHaveAccessibleName("Open Perks Reminder Amex benefit reader");
     expect(shadow().querySelector("#pr-reader-panel")).toBeNull();
-    fireEvent.click(button("PR"));
-    expect(button("Collapse")).toHaveAccessibleName("Collapse Perks Reminder Amex benefit reader");
-    expect(button("Scan all cards")).toBeEnabled();
+    fireEvent.click(button("Benefits"));
+    expect(button("−")).toHaveAccessibleName("Collapse Perks Reminder Amex benefit reader");
+    expect(button("Refresh")).toBeEnabled();
     expect(startScan).not.toHaveBeenCalled();
   });
 
-  it("shows only determinate scan progress while data is committed and restores results after finish", async () => {
+  it("keeps an automatic refresh collapsed and allows hiding an active scan", async () => {
+    const panel = new AmexBenefitReaderPanel(createEmptyStore(now), {
+      startScan: async () => undefined,
+      cancelScan: jest.fn(),
+      clearData: async () => undefined,
+    }, { initiallyCollapsed: true });
+    await panel.start({ reveal: false });
+    panel.report({ type: "started" });
+    expect(shadow().querySelector("#pr-reader-panel")).toBeNull();
+    expect(shadow().querySelector(".launcher-busy")).not.toBeNull();
+    fireEvent.click(button("Benefits"));
+    expect(button("Cancel")).toBeEnabled();
+    fireEvent.click(button("−"));
+    expect(shadow().querySelector("#pr-reader-panel")).toBeNull();
+    expect(panel.isBusy).toBe(true);
+  });
+
+  it("keeps saved and newly committed benefits browsable during refresh", async () => {
     let release!: () => void;
     const startScan = jest.fn(() => new Promise<void>((resolve) => { release = resolve; }));
     const cancelScan = jest.fn();
@@ -159,7 +251,7 @@ describe("Amex reader side panel", () => {
     });
     const panel = new AmexBenefitReaderPanel(stored, { startScan, cancelScan, clearData: jest.fn(async () => undefined) });
 
-    fireEvent.click(button("Scan all cards"));
+    fireEvent.click(button("Refresh"));
     await waitFor(() => expect(startScan).toHaveBeenCalledTimes(1));
     panel.report({ type: "started" });
     panel.report({ type: "discovered", cardCount: 2, unknownEntryCount: 1 });
@@ -182,25 +274,30 @@ describe("Amex reader side panel", () => {
     expect(progress).toHaveAccessibleName("Scan progress");
     expect(progress).toHaveAttribute("max", "2");
     expect(progress).toHaveAttribute("value", "1");
-    expect(progress).toHaveAttribute("aria-valuetext", "Card 1 of 2");
-    expect(shadow().querySelector('[role="status"]')).toHaveTextContent("Reading card 1 of 2");
+    expect(progress).toHaveAttribute("aria-valuetext", "1 of 2 cards checked");
+    expect(shadow().querySelector('[role="status"]')).toHaveTextContent("1 of 2 cards checked");
     expect(button("Cancel")).toBeEnabled();
-    expect(shadow().querySelector(".card-group")).toBeNull();
-    expect(shadow().querySelector(".filters")).toBeNull();
-    expect(shadow().textContent).not.toContain("Stored benefit before scan");
-    expect(shadow().textContent).not.toContain("Committed benefit during scan");
-    expect(shadow().textContent).not.toContain("Data and privacy");
-    expect(shadow().textContent).not.toContain("Sync reviewed");
+    expect(shadow().querySelector(".card-group")).not.toBeNull();
+    expect(shadow().querySelector(".filters")).not.toBeNull();
+    expect(shadow().textContent).toContain("Stored benefit before scan");
+    expect(shadow().textContent).toContain("Committed benefit during scan");
+    expect(button("Clear saved benefits")).toBeDisabled();
+    const search = shadow().querySelector<HTMLInputElement>(".search")!;
+    fireEvent.input(search, { target: { value: "Committed" } });
+    expect(shadow().querySelectorAll(".benefit-card")).toHaveLength(1);
+    fireEvent.input(shadow().querySelector(".search")!, { target: { value: "" } });
+    expect(shadow().textContent).toContain("Settings");
+    expect(shadow().textContent).not.toContain("Sync to Perks Reminder");
 
     panel.report({ type: "finished", summary: withLatestScan(committedStore).lastScan! });
     expect(shadow().querySelector('[role="progressbar"]')).toBeNull();
-    expect(button("Scan all cards")).toBeEnabled();
+    expect(button("Refresh")).toBeEnabled();
     expect(shadow().textContent).toContain("Committed benefit during scan");
     expect(shadow().textContent).toContain("Stored benefit before scan");
     release();
   });
 
-  it("keeps the progress-only workspace visible while cancelling", async () => {
+  it("keeps benefits visible while cancelling", async () => {
     let release!: () => void;
     const startScan = jest.fn(() => new Promise<void>((resolve) => { release = resolve; }));
     const cancelScan = jest.fn();
@@ -210,17 +307,17 @@ describe("Amex reader side panel", () => {
       clearData: jest.fn(async () => undefined),
     });
 
-    fireEvent.click(button("Scan all cards"));
+    fireEvent.click(button("Refresh"));
     await waitFor(() => expect(startScan).toHaveBeenCalledTimes(1));
     fireEvent.click(button("Cancel"));
     expect(cancelScan).toHaveBeenCalledTimes(1);
-    expect(button("Cancelling…")).toBeDisabled();
-    expect(shadow().querySelector(".card-group")).toBeNull();
-    expect(shadow().querySelector(".footer")).toBeNull();
+    expect(button("Stopping…")).toBeDisabled();
+    expect(shadow().querySelector(".card-group")).not.toBeNull();
+    expect(shadow().querySelector(".footer")).not.toBeNull();
     release();
   });
 
-  it("keeps zero-card progress isolated until the engine reports finished", async () => {
+  it("keeps saved benefits visible when discovery returns no cards", async () => {
     const startScan = jest.fn(async () => undefined);
     const panel = new AmexBenefitReaderPanel(addCard(createEmptyStore(now), {
       benefits: [benefit({ title: "Stored benefit before zero-card scan" })],
@@ -230,7 +327,7 @@ describe("Amex reader side panel", () => {
       clearData: jest.fn(async () => undefined),
     });
 
-    fireEvent.click(button("Scan all cards"));
+    fireEvent.click(button("Refresh"));
     await waitFor(() => expect(startScan).toHaveBeenCalledTimes(1));
     panel.report({ type: "started" });
     panel.report({ type: "discovered", cardCount: 0, unknownEntryCount: 0 });
@@ -239,11 +336,11 @@ describe("Amex reader side panel", () => {
     expect(progress).toHaveAccessibleName("Scan progress");
     expect(progress).not.toHaveAttribute("max");
     expect(progress).not.toHaveAttribute("value");
-    expect(shadow().querySelector('[role="status"]')).toHaveTextContent("No eligible cards were found. Finishing the scan");
+    expect(shadow().querySelector('[role="status"]')).toHaveTextContent("No cards found. Finishing up");
     expect(button("Cancel")).toBeEnabled();
-    expect(shadow().textContent).not.toContain("Stored benefit before zero-card scan");
-    expect(shadow().querySelector(".filters")).toBeNull();
-    expect(shadow().querySelector(".footer")).toBeNull();
+    expect(shadow().textContent).toContain("Stored benefit before zero-card scan");
+    expect(shadow().querySelector(".filters")).not.toBeNull();
+    expect(shadow().querySelector(".footer")).not.toBeNull();
 
     await Promise.resolve();
     expect(shadow().querySelector("progress")).not.toBeNull();
@@ -251,7 +348,7 @@ describe("Amex reader side panel", () => {
 
     panel.report({ type: "finished", summary: withLatestScan(createEmptyStore(now)).lastScan! });
     expect(shadow().querySelector("progress")).toBeNull();
-    expect(button("Scan all cards")).toBeEnabled();
+    expect(button("Refresh")).toBeEnabled();
     expect(shadow().textContent).toContain("Stored benefit before zero-card scan");
   });
 
@@ -426,10 +523,10 @@ describe("Amex reader side panel", () => {
       clearData,
     });
 
-    fireEvent.click(button("Clear local data"));
+    fireEvent.click(button("Clear saved benefits"));
     expect(clearData).not.toHaveBeenCalled();
-    fireEvent.click(button("Clear local data"));
+    fireEvent.click(button("Clear saved benefits"));
     await waitFor(() => expect(clearData).toHaveBeenCalledTimes(1));
-    expect(shadow().textContent).toContain("No local card observations yet");
+    expect(shadow().textContent).toContain("Your benefits will appear here");
   });
 });

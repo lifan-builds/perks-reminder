@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { hasSessionCookie } from '@/lib/session-cookie';
 
 const LOYALTY_SUBDOMAINS = ['loyalty'];
 const OLD_DOMAIN = 'coupon-cycle.site';
@@ -36,13 +37,6 @@ function getMainAuthHost(hostname: string, subdomain: string): { host: string; p
     host: rootHost.startsWith('www.') ? rootHost : `www.${rootHost}`,
     port: '',
   };
-}
-
-function hasSessionCookie(request: NextRequest): boolean {
-  return (
-    request.cookies.has('next-auth.session-token') ||
-    request.cookies.has('__Secure-next-auth.session-token')
-  );
 }
 
 function redirectToSignin(request: NextRequest) {

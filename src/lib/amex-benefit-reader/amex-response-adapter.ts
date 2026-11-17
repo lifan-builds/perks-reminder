@@ -22,6 +22,7 @@ import {
 } from "./supported-card-credits";
 
 export interface TransientAccountCard {
+  canceled?: true;
   rawAccountToken: string;
   productName: string;
   endingDigits: string;
@@ -34,7 +35,7 @@ export interface AccountDiscovery {
   issueCodes: IssueCode[];
 }
 
-export const BENEFIT_IDENTITY_CONFLICT_DIAGNOSTICS = [
+const BENEFIT_IDENTITY_CONFLICT_DIAGNOSTICS = [
   "tracker_state_collision",
   "tracker_catalog_key_mismatch",
   "ambiguous_catalog_join",
@@ -44,8 +45,8 @@ export const BENEFIT_IDENTITY_CONFLICT_DIAGNOSTICS = [
 export type BenefitIdentityConflictDiagnostic =
   (typeof BENEFIT_IDENTITY_CONFLICT_DIAGNOSTICS)[number];
 
-export const BENEFIT_IDENTITY_CONFLICT_DETAIL_LIMIT = 24;
-export const BENEFIT_IDENTITY_CONFLICT_CANDIDATE_LIMIT = 4;
+const BENEFIT_IDENTITY_CONFLICT_DETAIL_LIMIT = 24;
+const BENEFIT_IDENTITY_CONFLICT_CANDIDATE_LIMIT = 4;
 const BENEFIT_IDENTITY_CONFLICT_TOTAL_LIMIT = 100;
 
 export type BenefitIdentityConflictSourceRole =
@@ -213,6 +214,7 @@ export function parseAccountDiscovery(response: MemberResponse): AccountDiscover
             rawAccountToken: rawAccountToken.value,
             productName: productName.value,
             endingDigits,
+            ...(account.status?.account_status?.includes("Canceled") ? { canceled: true as const } : {}),
           }
         : null);
     } else {
@@ -695,12 +697,17 @@ export function normalizeBenefits(input: {
     for (const tracker of block.trackers) {
       const normalizedCategory = exactString(tracker.category)?.toLocaleLowerCase("en-US") ?? null;
       if (normalizedCategory !== "usage") continue;
-      const title = text(tracker.benefitName, 200);
+      let title = text(tracker.benefitName, 200);
       if (!title || !isEligibleLocalAmexUsageTitle(title)) continue;
 
       const itemIssues = new Set<IssueCode>();
       const issuerId = exactString(tracker.sorBenefitId);
       const catalogGroup = issuerId ? catalogsByIssuerId.get(issuerId) ?? [] : [];
+      // Amex replaces the airline credit name with this completion message.
+      // Recover its title only through a unique issuer-ID catalog join.
+      if (title === "Congratulations!" && catalogGroup.length === 1) {
+        title = catalogTitle(catalogGroup[0]) ?? title;
+      }
       const ambiguousCatalog = catalogGroup.length > 1;
       if (ambiguousCatalog) {
         itemIssues.add("benefit_identity_conflict");

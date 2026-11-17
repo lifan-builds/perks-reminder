@@ -34,6 +34,44 @@ function usageTracker(title: string, overrides: Record<string, unknown> = {}) {
 }
 
 describe("Amex private response adapter", () => {
+  it.each(["35&#37; Airline Bonus", "35&#x25; Airline Bonus<sup>‡</sup>"])("excludes encoded non-credit catalog title %s before resolving issuer joins", (bonusTitle) => {
+    const result = normalize({
+      trackers: [usageTracker("Congratulations!", { sorBenefitId: "synthetic-shared-id" })],
+      catalog: {
+        credit: { sorBenefitId: "synthetic-shared-id", benefitTitle: "&#36;200 Airline Fee Credit", layoutType: "ENROLLED", isEnrollable: true },
+        bonus: { sorBenefitId: "synthetic-shared-id", benefitTitle: bonusTitle, layoutType: "ENROLLED", isEnrollable: true },
+      },
+    });
+    expect(result.issueCodes).toEqual([]);
+    expect(result.conflictDiagnostics).toEqual([]);
+    expect(result.benefits).toHaveLength(1);
+    expect(result.benefits[0].title).toBe("&#36;200 Airline Fee Credit");
+    expect(result.benefits[0].enrollmentState).toEqual({ state: "observed", value: "enrolled" });
+  });
+
+  it("keeps a generic completion title unresolved without a unique catalog join", () => {
+    for (const catalog of [{}, {
+      one: { sorBenefitId: "same", benefitTitle: "Airline Fee Credit" },
+      two: { sorBenefitId: "same", benefitTitle: "Hotel Credit" },
+    }]) {
+      const result = normalize({ trackers: [usageTracker("Congratulations!", { sorBenefitId: "same" })], catalog });
+      expect(result.benefits[0].title).toBe("Congratulations!");
+    }
+  });
+
+  it("retains only the explicit canceled status needed to skip an identifiable primary card", () => {
+    const parsed = memberResponseSchema.parse({ accounts: [{
+      account_token: "synthetic-canceled-token", relationship: "BASIC",
+      product: { description: "Synthetic Canceled Card" }, display_account_number: "1234",
+      status: { account_status: ["Canceled"], days_past_due: 42 },
+    }] });
+    expect(parsed.accounts[0].status).toEqual({ account_status: ["Canceled"] });
+    expect(parseAccountDiscovery(parsed).cards).toEqual([{
+      rawAccountToken: "synthetic-canceled-token", productName: "Synthetic Canceled Card",
+      endingDigits: "1234", canceled: true,
+    }]);
+  });
+
   it("emits only characterized top-level BASIC cards and excludes nested SUPP before identity inspection", () => {
     const excludedToken = "invented-supplementary-token";
     const discovery = parseAccountDiscovery(memberResponseSchema.parse({

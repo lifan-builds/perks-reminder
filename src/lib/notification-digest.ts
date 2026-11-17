@@ -408,7 +408,7 @@ function buildDigestHtml(name: string, sections: string[], baseUrl: string): str
   ].join('');
 }
 
-export function escapeNotificationHtml(value: string): string {
+function escapeNotificationHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => ({
     '&': '&amp;',
     '<': '&lt;',

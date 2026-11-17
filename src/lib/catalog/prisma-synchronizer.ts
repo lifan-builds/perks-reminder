@@ -56,7 +56,7 @@ const benefitSelect = {
   updatedAt: true,
 } as const;
 
-export async function readCatalogSnapshot(database: CatalogPrismaClient): Promise<CatalogSnapshot> {
+async function readCatalogSnapshot(database: CatalogPrismaClient): Promise<CatalogSnapshot> {
   const [cards, benefits] = await Promise.all([
     database.predefinedCard.findMany({ select: cardSelect, orderBy: { id: "asc" } }),
     database.predefinedBenefit.findMany({ select: benefitSelect, orderBy: { id: "asc" } }),

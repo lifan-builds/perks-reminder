@@ -51,9 +51,7 @@ npm run migrate:global-benefits -- --dry-run
 Do not run either command merely to validate documentation. Before any
 database-backed operation, read:
 
-- [Catalog and Benefit Updates](../.trellis/spec/perks-reminder/catalog-and-benefit-updates.md)
-- [Global Benefit Definitions and Migration](../.trellis/spec/perks-reminder/global-benefit-definitions-and-migration.md)
-- [Database and Data Safety](../.trellis/spec/perks-reminder/database-and-data-safety.md)
+- [AGENTS.md](../AGENTS.md) for catalog, migration, and data safety
 
 ### Approval-gated automation
 
@@ -89,5 +87,5 @@ catalog apply. A failed apply stops the workflow without compensating writes.
 - Using a legacy per-card migration script for a shared Catalog change.
 
 For the complete contracts and operator gates, see [Catalog and Benefit
-Updates](../.trellis/spec/perks-reminder/catalog-and-benefit-updates.md) and
+Updates guidance in [AGENTS.md](../AGENTS.md) and
 [Community Data Quality Loop](community-data-quality-loop.md).

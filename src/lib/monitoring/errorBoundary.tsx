@@ -206,30 +206,3 @@ function generateErrorId(): string {
   const randomStr = Math.random().toString(36).substring(2, 15);
   return `err_${timestamp}_${randomStr}`;
 }
-
-/**
- * Hook for handling async errors in components
- */
-export function useErrorHandler() {
-  return (error: Error) => {
-    // Do not serialize or log handoff errors: they may contain reviewed source data.
-    if (isAmexHandoffPage()) return;
-
-    const errorId = generateErrorId();
-    const errorLog = {
-      errorId,
-      message: error.message,
-      stack: error.stack,
-      url: sanitizedClientUrl(),
-      timestamp: new Date().toISOString(),
-    };
-
-    console.error('Async error caught:', errorLog);
-
-    fetch('/api/monitoring/errors', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(errorLog),
-    }).catch(console.error);
-  };
-}

@@ -1,6 +1,8 @@
-import { LOCAL_AMEX_SYNC_HANDOFF_TARGET } from "../handoff-target";
 import {
-  AMEX_SYNC_HANDOFF_ORIGIN,
+  LOCAL_AMEX_SYNC_HANDOFF_TARGET,
+  PRODUCTION_AMEX_SYNC_HANDOFF_TARGET,
+} from "../handoff-target";
+import {
   AMEX_SYNC_MAILBOX_KEY,
   amexSyncHandoffUrl,
   clearAmexSyncMailbox,
@@ -45,7 +47,7 @@ describe("private Amex sync mailbox", () => {
     expect(mailbox.nonce).toMatch(/^[a-f0-9]{32}$/);
     expect(mailbox.transferId).not.toBe(mailbox.nonce);
     const url = new URL(amexSyncHandoffUrl(mailbox.transferId));
-    expect(url.origin).toBe(AMEX_SYNC_HANDOFF_ORIGIN);
+    expect(url.origin).toBe(PRODUCTION_AMEX_SYNC_HANDOFF_TARGET.origin);
     expect(url.pathname).toBe("/integrations/amex-sync");
     expect(Array.from(url.searchParams.keys())).toEqual(["transfer"]);
 

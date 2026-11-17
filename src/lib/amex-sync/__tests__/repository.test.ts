@@ -4,7 +4,6 @@ import {
   amexSyncAuditRetentionCutoff,
   applyAmexSyncGroup,
   applyAmexSyncRow,
-  deactivateAmexCardMapping,
   deleteExpiredAmexSyncRowAudits,
   loadAmexSyncDestinationContext,
   recordCurrentAmexSyncRow,
@@ -181,6 +180,19 @@ const row: AmexSyncPlanRow = {
 };
 
 describe("Amex sync persistence boundary", () => {
+  it("starts both context reads before either resolves", async () => {
+    let resolveCards!: (cards: unknown[]) => void;
+    let resolveAuthority!: (rows: unknown[]) => void;
+    db.creditCard.findMany.mockReturnValueOnce(new Promise((resolve) => { resolveCards = resolve; }));
+    db.$queryRaw.mockReturnValueOnce(new Promise((resolve) => { resolveAuthority = resolve; }));
+    const pending = loadAmexSyncDestinationContext("user-1");
+    expect(db.creditCard.findMany).toHaveBeenCalledTimes(1);
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+    resolveCards([]);
+    resolveAuthority([]);
+    await expect(pending).resolves.toEqual({ cards: [] });
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     db.amexSyncRowAudit.findUnique.mockResolvedValue(null);
@@ -671,16 +683,6 @@ describe("Amex sync persistence boundary", () => {
         },
       },
       data: expect.objectContaining({ disposition: storedDisposition, reasonCode: reason }),
-    });
-  });
-
-  it("deactivates only the authenticated user's exact active Amex mapping", async () => {
-    const deactivatedAt = new Date("2026-07-15T12:00:00.000Z");
-    db.externalCardMapping.updateMany.mockResolvedValue({ count: 1 });
-    await expect(deactivateAmexCardMapping({ userId: "user-1", sourceLocalCardId: row.sourceLocalCardId, deactivatedAt })).resolves.toBe(true);
-    expect(db.externalCardMapping.updateMany).toHaveBeenCalledWith({
-      where: { userId: "user-1", source: "AMEX", sourceLocalCardId: row.sourceLocalCardId, inactiveAt: null },
-      data: { inactiveAt: deactivatedAt },
     });
   });
 

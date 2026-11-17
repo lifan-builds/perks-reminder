@@ -159,9 +159,3 @@ export function classifyGlobalBenefitCategoryRepairAuthority(
     && (actionIsPromote || actionIsRetain);
   return occurrenceValid ? 'APPLIED_VALID' : 'APPLIED_INVALID';
 }
-
-export function isAppliedCategoryRepairPhase(
-  repair: Pick<RuntimeCategoryRepairSnapshot, 'phase'> | null | undefined,
-): boolean {
-  return repair?.phase === 'APPLIED';
-}

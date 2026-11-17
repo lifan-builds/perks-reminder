@@ -3,7 +3,7 @@ import { PRIMARY_SITE_URL } from "@/lib/site";
 import { resolveApprovedAmexSyncApplicationOrigin } from "@/lib/amex-benefit-reader/handoff-target";
 import { parseAmexSyncEnvelope } from "@/lib/amex-benefit-reader/sync-contract";
 
-export const AMEX_SYNC_REQUEST_MAX_BYTES = 300 * 1024;
+const AMEX_SYNC_REQUEST_MAX_BYTES = 300 * 1024;
 
 const previewRequestShape = z.object({ envelope: z.unknown() }).strict();
 const confirmRequestShape = z.object({

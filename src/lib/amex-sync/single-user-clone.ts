@@ -13,10 +13,10 @@ import type {
   User,
 } from "@/generated/prisma";
 
-export const PRODUCTION_DATABASE_HOST_PREFIX = "ep-falling-butterfly" as const;
-export const DEVELOPMENT_DATABASE_HOST_PREFIX = "ep-frosty-snowflake" as const;
+const PRODUCTION_DATABASE_HOST_PREFIX = "ep-falling-butterfly" as const;
+const DEVELOPMENT_DATABASE_HOST_PREFIX = "ep-frosty-snowflake" as const;
 
-export const USER_CLONE_TABLES = [
+const USER_CLONE_TABLES = [
   "User",
   "CreditCard",
   "Benefit",
@@ -376,7 +376,7 @@ export class UserCloneOperatorError extends Error {
   }
 }
 
-export function normalizeCloneEmail(value: string): string {
+function normalizeCloneEmail(value: string): string {
   return value.trim().toLowerCase();
 }
 
@@ -386,10 +386,6 @@ export function userCloneApplyConfirmation(normalizedEmail: string): string {
 
 export function userCloneReplacementConfirmation(normalizedEmail: string): string {
   return `REPLACE DEVELOPMENT USER ${normalizedEmail}`;
-}
-
-export function emptyUserCloneCounts(): UserCloneCounts {
-  return Object.fromEntries(USER_CLONE_TABLES.map((table) => [table, 0])) as UserCloneCounts;
 }
 
 export function countUserCloneSnapshot(snapshot: UserCloneSnapshot): UserCloneCounts {

@@ -4,7 +4,6 @@ import {
   fetchEffectiveBenefitStatuses,
   fetchEffectiveCardTerms,
   projectEffectiveBenefitRow,
-  resolveAuthoritativeDefinition,
 } from '../effective-benefit';
 
 const date = (value: string) => new Date(`${value}T00:00:00.000Z`);
@@ -433,13 +432,6 @@ describe('projectEffectiveBenefitRow', () => {
 });
 
 describe('effective benefit lookup contracts', () => {
-  it('prefers a global relation over a retained legacy relation', () => {
-    expect(resolveAuthoritativeDefinition({
-      benefit: { description: 'legacy' },
-      predefinedBenefit: { description: 'global' },
-    })).toEqual({ description: 'global' });
-  });
-
   it('requires an explicit ownership scope and short-circuits an empty user list', async () => {
     const database = { $queryRaw: jest.fn() };
 

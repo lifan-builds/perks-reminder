@@ -8,6 +8,7 @@ import {
 } from "@/lib/amex-benefit-reader/sync-mailbox";
 import { projectLatestV3SyncEnvelope } from "@/lib/amex-benefit-reader/sync-contract";
 import { AMEX_READER_HOST_ID, AmexBenefitReaderPanel } from "./panel";
+import { watchAmexLogin } from "./login-scan";
 import {
   TampermonkeyCardIdentityService,
   TampermonkeyMailboxStorage,
@@ -58,20 +59,20 @@ export async function mountAmexBenefitReader(
     const reporter: ScanReporter = { report: (progress) => panel?.report(progress) };
     panel = new AmexBenefitReaderPanel(initialStore, {
       startScan: async () => {
-        if (!engine) throw new Error("The local scanner is not ready.");
+        if (!engine) throw new Error("Still getting ready. Try again in a moment.");
         await engine.scanAllCards();
       },
       cancelScan: () => engine?.cancel(),
       syncReviewed: async () => {
         const popup = window.open("about:blank", "_blank");
-        if (!popup) throw new Error("Allow pop-ups for Amex, then choose Sync reviewed again.");
+        if (!popup) throw new Error("Allow pop-ups for Amex, then choose Sync to Perks Reminder again.");
         popup.opener = null;
         try {
           const projection = projectLatestV3SyncEnvelope(await store.load());
           if (!projection.envelope) {
             throw new Error(projection.reason === "fresh_v3_scan_required"
-              ? "Run and review a fresh complete scan before syncing."
-              : "No complete reviewed card observations are available to sync.");
+              ? "Refresh your benefits before syncing."
+              : "No benefits are ready to sync. Try refreshing.");
           }
           const mailbox = await createAmexSyncMailbox(projection.envelope);
           await storeAmexSyncMailbox(adapters.mailboxStorage, mailbox);
@@ -91,11 +92,19 @@ export async function mountAmexBenefitReader(
       adapters.identity,
       reporter,
     );
-    window.addEventListener("beforeunload", () => engine?.cancel(), { once: true });
+    const stopWatching = watchAmexLogin({
+      scan: () => panel!.start({ reveal: false }),
+      cancel: () => engine?.cancel(),
+      isBusy: () => panel!.isBusy,
+    });
+    window.addEventListener("beforeunload", () => {
+      stopWatching();
+      engine?.cancel();
+    }, { once: true });
   } catch {
     if (document.getElementById(AMEX_READER_HOST_ID)) return;
     AmexBenefitReaderPanel.mountError(
-      "Local reader data is malformed or from an unsupported version. Clear local data to recover.",
+      "Couldn’t load saved benefits. Open Settings and clear them, then reload this page.",
       () => store.clear(),
       { initiallyCollapsed },
     );

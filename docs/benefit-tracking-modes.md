@@ -120,8 +120,7 @@ The card and custom-benefit paths cannot have a pre-existing preference, since
 preferences key on ids those paths are creating. They are routed through the
 helper anyway so no path can drift.
 
-**Deliberately not filtered:** integrity and repair tooling
-(`/api/cron/benefit-integrity`, the global category repair utilities) reads
+**Deliberately not filtered:** repair and migration tooling reads
 `BenefitStatus` directly and stays unfiltered. A display preference must never
 hide a row from a consistency check.
 

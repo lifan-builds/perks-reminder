@@ -14,9 +14,9 @@ export const GLOBAL_BENEFIT_CATEGORY_REPAIR_APPLY_CONFIRMATION =
   "APPLY_REVIEWED_CATEGORY_DRIFT_REPAIR" as const;
 export const GLOBAL_BENEFIT_CATEGORY_REPAIR_ROLLBACK_CONFIRMATION =
   "ROLLBACK_REVIEWED_CATEGORY_DRIFT_REPAIR" as const;
-export const GLOBAL_BENEFIT_CATEGORY_REPAIR_DEFAULT_LIMIT = 100;
+const GLOBAL_BENEFIT_CATEGORY_REPAIR_DEFAULT_LIMIT = 100;
 export const GLOBAL_BENEFIT_CATEGORY_REPAIR_MAX_LIMIT = 500;
-export const GLOBAL_BENEFIT_CATEGORY_REPAIR_MANIFEST_VERSION = 1 as const;
+const GLOBAL_BENEFIT_CATEGORY_REPAIR_MANIFEST_VERSION = 1 as const;
 
 export type GlobalBenefitCategoryRepairMode =
   | "discover"
@@ -393,22 +393,8 @@ function portableAuditFingerprintInput(audit: CategoryRepairAuditSnapshot | Lega
 
 function statusFingerprintInput(status: CategoryRepairStatusSnapshot): unknown {
   return {
-    id: status.id,
-    benefitId: status.benefitId,
-    creditCardId: status.creditCardId,
+    ...statusPreimage(status),
     predefinedBenefitId: status.predefinedBenefitId === null ? null : "catalog-bound",
-    userId: status.userId,
-    cycleStartDate: exactDate(status.cycleStartDate),
-    cycleEndDate: exactDate(status.cycleEndDate),
-    occurrenceIndex: status.occurrenceIndex,
-    usedAmount: status.usedAmount,
-    isCompleted: status.isCompleted,
-    completedAt: status.completedAt === null ? null : exactDate(status.completedAt),
-    isNotUsable: status.isNotUsable,
-    orderIndex: status.orderIndex,
-    createdAt: exactDate(status.createdAt),
-    updatedAt: exactDate(status.updatedAt),
-    stateFingerprint: status.stateFingerprint,
     audits: sortedAttachments(status.audits).map(portableAuditFingerprintInput),
     provenance: sortedAttachments(status.provenance),
   };
@@ -1425,7 +1411,7 @@ export function planGlobalBenefitCategoryRepairUnit(
   return planInitialUnit(unit);
 }
 
-function siblingSnapshotFromPreimage(
+export function snapshotFromPreimage(
   preimage: CategoryRepairStatusPreimage,
   audits: CategoryRepairAuditSnapshot[] = [],
   provenance: CategoryRepairAttachmentSnapshot[] = [],
@@ -1449,27 +1435,6 @@ function siblingSnapshotFromPreimage(
     stateFingerprint: preimage.stateFingerprint,
     audits,
     provenance,
-  };
-}
-
-function siblingCurrentPreimage(status: CategoryRepairStatusSnapshot): CategoryRepairStatusPreimage {
-  return {
-    id: status.id,
-    benefitId: status.benefitId,
-    creditCardId: status.creditCardId,
-    predefinedBenefitId: status.predefinedBenefitId,
-    userId: status.userId,
-    cycleStartDate: exactDate(status.cycleStartDate),
-    cycleEndDate: exactDate(status.cycleEndDate),
-    occurrenceIndex: status.occurrenceIndex,
-    usedAmount: status.usedAmount,
-    isCompleted: status.isCompleted,
-    completedAt: status.completedAt === null ? null : exactDate(status.completedAt),
-    isNotUsable: status.isNotUsable,
-    orderIndex: status.orderIndex,
-    createdAt: exactDate(status.createdAt),
-    updatedAt: exactDate(status.updatedAt),
-    stateFingerprint: status.stateFingerprint,
   };
 }
 
@@ -1513,7 +1478,7 @@ function siblingAppliedKeeperMatches(
       predefinedBenefitId: action.predefinedBenefitId,
     }
     : action.keeperBaseline;
-  return migrationFingerprint(siblingCurrentPreimage(status)) === migrationFingerprint(expected)
+  return migrationFingerprint(statusPreimage(status)) === migrationFingerprint(expected)
     && siblingAppliedAttachmentsMatch(status, action);
 }
 
@@ -1700,7 +1665,7 @@ export function normalizeCategoryRepairSiblingEffects(
       if (!keeper || !siblingAppliedKeeperMatches(keeper, action)) {
         throw new GlobalBenefitCategoryRepairError("The repair graph changed; review a new page.");
       }
-      statuses.set(action.keeperStatusId, siblingSnapshotFromPreimage(
+      statuses.set(action.keeperStatusId, snapshotFromPreimage(
         action.keeperBaseline,
         action.keeperAuditBaseline,
         action.keeperProvenanceBaseline,
@@ -1709,7 +1674,7 @@ export function normalizeCategoryRepairSiblingEffects(
         if (statuses.has(action.removedStatusId)) {
           throw new GlobalBenefitCategoryRepairError("The repair graph changed; review a new page.");
         }
-        statuses.set(action.removedStatusId, siblingSnapshotFromPreimage(action.removedPreimage));
+        statuses.set(action.removedStatusId, snapshotFromPreimage(action.removedPreimage));
       }
       for (const patch of action.repairAddedAuditMetadata) {
         const audit = audits.get(patch.auditId);
@@ -1908,15 +1873,19 @@ export function buildGlobalBenefitCategoryRepairManifest(
   return { ...body, manifestFingerprint: categoryRepairManifestFingerprint(body) };
 }
 
-function isPlainObject(value: unknown): value is Record<string, unknown> {
+export function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function hasExactKeys(value: Record<string, unknown>, expected: readonly string[]): boolean {
+export function hasExactKeys(value: Record<string, unknown>, expected: readonly string[]): boolean {
   const actual = Object.keys(value).sort();
   const sortedExpected = [...expected].sort();
   return actual.length === sortedExpected.length
     && actual.every((key, index) => key === sortedExpected[index]);
+}
+
+export function proposalsExactlyEqual(left: CategoryRepairProposal, right: CategoryRepairProposal): boolean {
+  return migrationFingerprint(left) === migrationFingerprint(right);
 }
 
 const MANIFEST_ENTRY_KEYS = [
