@@ -1,0 +1,80 @@
+1
+00:00:00,000 --> 00:00:03,800
+ Your cards come with perks, keeping tracks shouldn't be another
+
+2
+00:00:03,800 --> 00:00:04,240
+ job.
+
+3
+00:00:04,240 --> 00:00:08,100
+ Meet perks reminder, add your cards and bring your benefits into
+
+4
+00:00:08,100 --> 00:00:08,960
+ one place.
+
+5
+00:00:08,960 --> 00:00:12,560
+ See what's available, what's already used, and what's coming up.
+
+6
+00:00:12,560 --> 00:00:15,760
+ Filter by card or find exactly what you need.
+
+7
+00:00:15,760 --> 00:00:18,240
+ Used part of a credit? Record the amount.
+
+8
+00:00:18,240 --> 00:00:20,400
+ Finished it? Market claimed.
+
+9
+00:00:20,400 --> 00:00:24,040
+ Your card calendar brings benefit deadlines and annual fees into
+
+10
+00:00:24,040 --> 00:00:24,480
+ view.
+
+11
+00:00:24,480 --> 00:00:28,080
+ And step-by-step guides help you put those perks to work.
+
+12
+00:00:28,080 --> 00:00:30,240
+ Now there's less to enter by hand.
+
+13
+00:00:30,240 --> 00:00:33,620
+ The new AMX extension reads benefit progress from your signed-in
+
+14
+00:00:33,620 --> 00:00:34,240
+ account.
+
+15
+00:00:34,240 --> 00:00:37,700
+ Review the amounts and cycles, then preview your sync in perks
+
+16
+00:00:37,700 --> 00:00:38,480
+ reminder.
+
+17
+00:00:38,480 --> 00:00:41,840
+ See the value you've claimed alongside your annual fees.
+
+18
+00:00:41,840 --> 00:00:44,640
+ Less tracking? More enjoying your perks.
+
+19
+00:00:44,640 --> 00:00:47,600
+ Get started at perks-reminder.com.
+
+20
+00:00:47,600 --> 00:00:49,120
+ Free and open source.
+

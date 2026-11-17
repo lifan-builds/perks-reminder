@@ -1,0 +1,23 @@
+{
+  "technical_pass": true,
+  "errors": [],
+  "perceptual_review": "not assessed",
+  "video": {
+    "codec_name": "h264",
+    "pix_fmt": "yuv420p",
+    "width": 1920,
+    "height": 1080,
+    "nb_read_frames": "1770",
+    "fps": 30.0,
+    "duration_seconds": 59.0
+  },
+  "audio": {
+    "codec_name": "aac",
+    "sample_rate": "48000",
+    "channels": 2,
+    "integrated_lufs": -16.09,
+    "true_peak_dbtp": -1.5,
+    "end_seconds": 59.008
+  },
+  "full_decode_pass": true
+}

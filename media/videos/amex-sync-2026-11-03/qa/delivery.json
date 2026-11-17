@@ -1,0 +1,22 @@
+{
+  "output/perks-reminder-amex-zh-v2.mp4": {
+    "bytes": 4057158,
+    "sha256": "7c14dbd6b333f362e0a3d3b75941e6bbd6d4da016eb520453ee5429a5a49e088"
+  },
+  "output/captions-zh.srt": {
+    "bytes": 1643,
+    "sha256": "1894574c61fee6143fd3ae60112b451a7789581aadb5cea9f53399f9c3eba287"
+  },
+  "output/captions-zh.vtt": {
+    "bytes": 1591,
+    "sha256": "ea46a4769cff48fb3bfd54605385e0e8039c24d1f81ac3dfe3ba1a9663514607"
+  },
+  "output/perks-reminder-amex-cover-v2.jpg": {
+    "bytes": 92396,
+    "sha256": "b5b6b61cae335db49bc831fe4d7e43c2ff1231a33b3d92ff5e4112a1e297d3e7"
+  },
+  "audio-source/narration-take-01.mp3": {
+    "bytes": 900920,
+    "sha256": "6f512402b6bc0f8f66a7e73d17e1d26aae15f690fa534517cabdc31559ab4628"
+  }
+}

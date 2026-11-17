@@ -1,0 +1,18 @@
+{
+  "output/perks-reminder-walkthrough-en-v3.mp4": {
+    "bytes": 5179351,
+    "sha256": "3a7a0a1a47aeb42375815256981eabbd05531858ccd25d7cef6259a1ed458dbe"
+  },
+  "output/captions-en.srt": {
+    "bytes": 1293,
+    "sha256": "47f715875f746a7559eb59f9b82a242841336494f6ae7f7665d19c397702f239"
+  },
+  "output/captions-en.vtt": {
+    "bytes": 1265,
+    "sha256": "c35fe03c18175c93b3375419793862761deeb8020a427596fb7926d89e1bac01"
+  },
+  "audio-source/narration-en-jessica-take-01.mp3": {
+    "bytes": 804790,
+    "sha256": "af930d86cd4b073d90dd608c5d179578cf32689c8f8d5f7d252ad1ad94629716"
+  }
+}

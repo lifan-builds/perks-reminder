@@ -1,0 +1,129 @@
+**11/4 更新：加了 Amex 扩展，附两个演示视频**
+
+最近又折腾了一下，做了 Chrome 扩展和油猴脚本，reader 更新到了 1.5.0。
+
+主要是自己也嫌麻烦：在 Amex 查完 credit 用了多少，还得回来手动记一遍。现在装好扩展，登录 Amex、打开支持的页面，就会自动读出福利进度。先把 Amex 这个大头搞定，其他银行的福利照常手动记。
+
+安装链接：[Chrome 扩展](https://chromewebstore.google.com/detail/idpcieaeladegdoelljadhcggjndclpk) · [油猴脚本](https://greasyfork.org/en/scripts/591349-perks-reminder-amex-benefit-reader)
+
+放两个视频，都是一分钟左右：
+
+**中文版：主要看 Amex 扩展**
+
+https://www.youtube.com/watch?v=xInlVHWstWY
+
+**英文版：把整个网站的功能过一遍**
+
+https://www.youtube.com/watch?v=XAi-jHfMNuM
+
+油猴版已发布，新版 Chrome 扩展已提交审核。视频里也演示了同步到网站的预览流程。这里读的是福利 credit，开卡奖励的消费进度暂时还不包括。
+
+大家用下来有什么没读到、哪里不顺手，直接回帖告诉我，我接着改。
+
+---
+
+相信大家或多或少都有几张 Coupon 卡，尤其是 Amex / Chase / Citi 这类年费卡。年费交得很爽快，结果 Uber、Saks、Dining Credit、Hotel Credit 一忙就忘用，年底一算发现不是在薅银行，而是被银行反薅了。
+
+之前我做了一个小工具 CouponCycle，用来追踪信用卡福利周期、到期提醒和年费回血。最开始只是自己用，后来发到坛里之后收到很多反馈，也一路从 0.x 改到了 1.x。
+
+现在算是把它重新整理了一轮，发布 **2.0 版本**：
+
+网站：
+https://www.perks-reminder.com
+
+开源：https://github.com/lifan-builds/perks-reminder
+
+重点预览：
+![image|685x500](upload://fbGcPE33wD5OwlUma1awaWdZAPA.jpeg)
+
+![image|685x500](upload://fWSbo2tyNUKHjV9945OGVADE7Ma.jpeg)
+
+手机版
+![image|231x500](upload://sCFfyCcwLNWFcZorAuzJRX4zKsm.jpeg)
+![image|231x500](upload://uYyjMwqH4WgnPC4IbwlXC9jpxTq.jpeg)
+
+
+## 2.0 主要更新
+
+### 1. UI 整体重做，尤其是手机端
+
+这次最大的改动是 UI。之前功能能用，但手机上信息密度、按钮位置、卡片排版都比较随意。
+
+2.0 里我重点重新做了移动端体验：
+
+* 福利列表更适合手机浏览
+* 即将过期的 Benefit 更醒目
+* 完成 / 部分完成 / 添加备注这些操作更顺手
+* 按信用卡、类别、到期时间查看更清楚
+* 首页可以更快看到今年到底回血了多少
+* PWA 继续支持添加到手机主屏幕，当成一个轻量 App 用
+
+如果你平时主要是在手机上查“这个月还有什么没用”，现在应该会舒服很多。
+
+### 2. Benefit 使用手册上线
+
+之前很多朋友的问题不是“不知道有什么福利”，而是：
+
+* 这个 credit 到底怎么触发？
+* 买 gift card 算不算？
+* 哪些商家能报销？
+* 什么时候 post？
+* 有没有什么坑？
+
+所以 2.0 加了一个 **Benefit 使用手册**。
+
+这些手册是我根据论坛里常见攻略、DP、以及大家平时讨论最多的问题整理出来的步骤化指南。目标是让每个 Benefit 不只是一个待办事项，而是能点进去看到“怎么用比较稳”。
+
+比如：
+
+* Amex Saks Credit 怎么用
+* Uber / Uber Eats Credit 怎么消耗
+* Airline Fee Credit 常见思路
+* Hotel / Dining / Travel Credit 的触发方式
+* 哪些福利适合月底前检查
+
+后续我也会继续补充更多卡和更多 Benefit 的使用说明。如果有写得不准或者 DP 更新了，也欢迎直接回帖提醒我。
+
+### 3. 继续保留核心追踪功能
+
+目前仍然是围绕几个核心功能：
+
+* 添加自己持有的信用卡
+* 自动生成每月 / 每季 / 每年循环的 Benefit
+* 到期前邮件提醒
+* 标记已完成或部分完成
+* 记录每张卡的年费 ROI
+* 支持导入 / 导出数据
+* 支持自定义提醒
+* 支持信用卡昵称、尾号、开卡日期等信息
+
+它不是想做一个全自动抓取银行账户的工具，而是更偏“轻量、透明、自己可控”的 tracker。
+
+## Loyalty Points 到期提醒
+
+如果你还想追踪航空/酒店积分的活动日期和过期提醒，也可以用这个：
+
+https://loyalty.perks-reminder.com/
+
+两个网站登录体系是共享的。主站追踪信用卡福利，loyalty 子站追踪里程/积分活动日期。
+
+## 后续计划
+
+如果使用的人继续变多，我后面会考虑做一个 **iOS 原生 App**。
+
+现在 PWA 已经可以添加到主屏幕，用起来比较接近 App；但原生 App 可以做更好的推送通知、手机端交互和本地体验。这个目前还在规划阶段，想先看看大家对 2.0 的反馈。
+
+## 还是免费 + 开源
+
+项目目前继续免费，也继续开源。服务器和邮件服务目前是自己在承担成本。
+
+如果觉得有用，最好的支持方式还是：
+
+* 给 GitHub 点个 star
+* 给这个帖子点个赞
+* 回帖告诉我哪些卡 / 哪些 Benefit 需要补充
+* 帮忙纠错福利信息和使用手册里的 DP
+
+信用卡福利变化太快，我一个人肯定维护不完，所以非常欢迎大家一起补充。
+
+有任何 bug、体验问题、卡片缺失、Benefit 信息不准，直接回帖告诉我。

@@ -1,0 +1,163 @@
+{
+  "fps": 30,
+  "frames": 1800,
+  "voiceOffset": 0.8,
+  "pauseEdits": [
+    [
+      4.14,
+      0.6
+    ],
+    [
+      8.88,
+      0.65
+    ],
+    [
+      15.6,
+      0.7
+    ],
+    [
+      20.25,
+      1
+    ],
+    [
+      24.4,
+      0.7
+    ],
+    [
+      27.9,
+      0.65
+    ],
+    [
+      38.4,
+      1
+    ],
+    [
+      41.7,
+      0.5
+    ]
+  ],
+  "captions": [
+    {
+      "start": 0.8,
+      "end": 5.64,
+      "text": "Your cards come with perks. Keeping track shouldn't be another job."
+    },
+    {
+      "start": 5.64,
+      "end": 11.01,
+      "text": "Meet Perks Reminder. Add your cards and bring your benefits into one place."
+    },
+    {
+      "start": 11.01,
+      "end": 14.61,
+      "text": "See what's available, what's already used, and what's coming up."
+    },
+    {
+      "start": 14.61,
+      "end": 18.51,
+      "text": "Filter by card or find exactly what you need."
+    },
+    {
+      "start": 18.51,
+      "end": 20.99,
+      "text": "Used part of a credit? Record the amount."
+    },
+    {
+      "start": 20.99,
+      "end": 24.15,
+      "text": "Finished it? Mark it claimed."
+    },
+    {
+      "start": 24.15,
+      "end": 28.93,
+      "text": "Your card calendar brings benefit deadlines and annual fees into view."
+    },
+    {
+      "start": 28.93,
+      "end": 33.18,
+      "text": "And step-by-step guides help you put those perks to work."
+    },
+    {
+      "start": 33.18,
+      "end": 35.34,
+      "text": "Now there's less to enter by hand."
+    },
+    {
+      "start": 35.34,
+      "end": 39.34,
+      "text": "The new Amex extension reads benefit progress from your signed-in account."
+    },
+    {
+      "start": 39.34,
+      "end": 44.58,
+      "text": "Review the amounts and cycles, then preview your sync in Perks Reminder."
+    },
+    {
+      "start": 44.58,
+      "end": 48.44,
+      "text": "See the value you've claimed alongside your annual fees."
+    },
+    {
+      "start": 48.44,
+      "end": 51.24,
+      "text": "Less tracking. More enjoying your perks."
+    },
+    {
+      "start": 51.24,
+      "end": 54.2,
+      "text": "Get started at perks-reminder.com."
+    },
+    {
+      "start": 54.2,
+      "end": 55.72,
+      "text": "Free and open source."
+    }
+  ],
+  "scenes": [
+    {
+      "id": "opening",
+      "start": 0,
+      "end": 5.5
+    },
+    {
+      "id": "cards",
+      "start": 5.5,
+      "end": 11
+    },
+    {
+      "id": "benefits",
+      "start": 11,
+      "end": 18.4
+    },
+    {
+      "id": "track",
+      "start": 18.4,
+      "end": 24.1
+    },
+    {
+      "id": "calendar",
+      "start": 24.1,
+      "end": 28.9
+    },
+    {
+      "id": "guides",
+      "start": 28.9,
+      "end": 33.1
+    },
+    {
+      "id": "amex",
+      "start": 33.1,
+      "end": 44.5
+    },
+    {
+      "id": "roi",
+      "start": 44.5,
+      "end": 49
+    },
+    {
+      "id": "close",
+      "start": 49,
+      "end": 60
+    }
+  ]
+}

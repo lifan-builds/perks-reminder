@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-04",
+  "videos": [
+    {
+      "language": "zh",
+      "url": "https://www.youtube.com/watch?v=xInlVHWstWY",
+      "visibility": "Unlisted",
+      "playbackVerified": true
+    },
+    {
+      "language": "en",
+      "url": "https://www.youtube.com/watch?v=XAi-jHfMNuM",
+      "visibility": "Unlisted",
+      "playbackVerified": true
+    }
+  ],
+  "forum": {
+    "url": "https://www.uscardforum.com/t/topic/388701",
+    "status": "unsaved edit draft ready for user review",
+    "originalPreserved": true,
+    "preview": "both YouTube thumbnails rendered; in-editor playback unavailable",
+    "published": false
+  }
+}

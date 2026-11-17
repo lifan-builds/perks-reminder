@@ -1,0 +1,16 @@
+node_modules/
+.venv/
+output/
+qa/*.png
+qa/*.jpg
+audio-source/
+public/audio/*.wav
+public/audio/*.mp3
+
+qa/models/
+qa/narration-16k.wav
+qa/fixture/
+
+scripts/fixture/.render-*.mjs
+qa/*-pcm.wav
+qa/*-16k.wav

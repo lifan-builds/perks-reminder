@@ -1,0 +1,54 @@
+{
+  "draft": "forum-update-draft-v2.md",
+  "thread": "https://www.uscardforum.com/t/topic/388701",
+  "attachments": [
+    {
+      "language": "zh",
+      "path": "/Users/lfan/Project/credit-card-tracker/media/videos/amex-sync-2026-11-03/output/perks-reminder-amex-zh-v2.mp4",
+      "bytes": 4057158,
+      "sha256": "7c14dbd6b333f362e0a3d3b75941e6bbd6d4da016eb520453ee5429a5a49e088",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1920,
+            "height": 1080
+          },
+          {
+            "codec_name": "aac"
+          }
+        ],
+        "format": {
+          "duration": "59.008000"
+        }
+      },
+      "uploaded": false
+    },
+    {
+      "language": "en",
+      "path": "/Users/lfan/Project/credit-card-tracker/media/videos/amex-sync-2026-11-03/output/perks-reminder-walkthrough-en-v3.mp4",
+      "bytes": 5179351,
+      "sha256": "3a7a0a1a47aeb42375815256981eabbd05531858ccd25d7cef6259a1ed458dbe",
+      "probe": {
+        "programs": [],
+        "stream_groups": [],
+        "streams": [
+          {
+            "codec_name": "h264",
+            "width": 1920,
+            "height": 1080
+          },
+          {
+            "codec_name": "aac"
+          }
+        ],
+        "format": {
+          "duration": "60.011000"
+        }
+      },
+      "uploaded": false
+    }
+  ]
+}
