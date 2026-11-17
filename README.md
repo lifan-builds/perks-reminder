@@ -2,7 +2,7 @@
 
 Perks Reminder is a free, open-source credit card benefit tracker. It tracks recurring credits, Benefit Cycles, claimed value, annual fees, loyalty expirations, and practical Benefit Usage Guides without connecting to bank accounts.
 
-[Open Perks Reminder](https://www.perks-reminder.com/)
+[Open Perks Reminder](https://www.perks-reminder.com/) · [Portfolio Overview (`clifan.com/perks-reminder`)](https://clifan.com/perks-reminder/)
 
 ## Product model
 
