@@ -972,7 +972,7 @@ export const predefinedCardsData = [
       name: 'Southwest Rapid Rewards Performance Business Card',
       issuer: 'Chase',
       annualFee: 299,
-      imageUrl: null,
+      imageUrl: '/images/cards/southwest-rapid-rewards-performance-business-card.png',
       benefits: [
         {
           catalogKey: 'benefit:southwest-performance-business:9000-anniversary-points',
@@ -1013,7 +1013,7 @@ export const predefinedCardsData = [
       name: 'Sapphire Reserve for Business',
       issuer: 'Chase',
       annualFee: 795,
-      imageUrl: null,
+      imageUrl: '/images/cards/sapphire-reserve-for-business.png',
       benefits: [
         {
           catalogKey: 'benefit:sapphire-reserve-business:300-annual-travel-credit',
@@ -1147,7 +1147,7 @@ export const predefinedCardsData = [
       name: 'American Airlines AAdvantage MileUp Card',
       issuer: 'Citi',
       annualFee: 0,
-      imageUrl: null,
+      imageUrl: '/images/cards/american-airlines-aadvantage-mileup-card.webp',
       benefits: [],
     },
     {
@@ -1155,7 +1155,7 @@ export const predefinedCardsData = [
       name: 'Citi / AAdvantage Platinum Select World Elite Mastercard',
       issuer: 'Citi',
       annualFee: 99,
-      imageUrl: null,
+      imageUrl: '/images/cards/citi-aadvantage-platinum-select-world-elite-mastercard.webp',
       benefits: [],
     },
     {
@@ -1163,7 +1163,7 @@ export const predefinedCardsData = [
       name: 'Citi / AAdvantage Executive World Elite Mastercard',
       issuer: 'Citi',
       annualFee: 595,
-      imageUrl: null,
+      imageUrl: '/images/cards/citi-aadvantage-executive-world-elite-mastercard.webp',
       benefits: [
         {
           catalogKey: 'benefit:citi-aadvantage-executive:120-global-entry-or-tsa-precheck-credit-every-4-years',
@@ -1183,7 +1183,7 @@ export const predefinedCardsData = [
       name: 'Citi / AAdvantage Business World Elite Mastercard',
       issuer: 'Citi',
       annualFee: 99,
-      imageUrl: null,
+      imageUrl: '/images/cards/citi-aadvantage-business-world-elite-mastercard.webp',
       benefits: [
         {
           catalogKey: 'benefit:citi-aadvantage-business:annual-companion-certificate-after-30000-spend',
@@ -1201,7 +1201,7 @@ export const predefinedCardsData = [
       name: 'Citi / AAdvantage Globe Mastercard',
       issuer: 'Citi',
       annualFee: 350,
-      imageUrl: null,
+      imageUrl: '/images/cards/citi-aadvantage-globe-mastercard.webp',
       benefits: [
         {
           catalogKey: 'benefit:citi-aadvantage-globe:4-admirals-club-globe-passes',

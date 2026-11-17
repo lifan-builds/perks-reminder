@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-05-16T20:15:50.608Z",
+  "updatedAt": "2026-09-20T21:41:44.205Z",
   "images": [
     {
       "cardName": "alaska-airlines-visa-signature-credit-card",
@@ -14,6 +14,21 @@
       "sha256": "abd9e1e34c869c17e07857a328e9677e17794cc86dc20bc067bb1c8e765e43c4",
       "duplicates": [],
       "validatedAt": "2026-05-16T20:15:50.583Z"
+    },
+    {
+      "cardName": "American Airlines AAdvantage MileUp Card",
+      "filename": "american-airlines-aadvantage-mileup-card.webp",
+      "path": "/images/cards/american-airlines-aadvantage-mileup-card.webp",
+      "source": "direct-url",
+      "sourceUrl": "https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/aadvantage-mile-up-credit-card/aadvantage-mile-up-credit-card_306x192.webp",
+      "width": 760,
+      "height": 480,
+      "type": "webp",
+      "sizeBytes": 27098,
+      "sha256": "5972a77fa3b86a5c0fe44e0c9db3fb0485da923354bb22bd97d29bd76b5fec4c",
+      "duplicates": [],
+      "overwritten": true,
+      "ingestedAt": "2026-09-20T21:41:24.683Z"
     },
     {
       "cardName": "american-express-business-gold-card",
@@ -282,6 +297,66 @@
       "validatedAt": "2026-05-16T20:15:50.595Z"
     },
     {
+      "cardName": "Citi / AAdvantage Business World Elite Mastercard",
+      "filename": "citi-aadvantage-business-world-elite-mastercard.webp",
+      "path": "/images/cards/citi-aadvantage-business-world-elite-mastercard.webp",
+      "source": "direct-url",
+      "sourceUrl": "https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/citi-aadvantage-business-credit-card/AA-Business.webp",
+      "width": 812,
+      "height": 512,
+      "type": "webp",
+      "sizeBytes": 43048,
+      "sha256": "0e13fa3c528f4314abfa4b996c49dd5457990a83f07f6fb650ec890a9f3e3015",
+      "duplicates": [],
+      "overwritten": true,
+      "ingestedAt": "2026-09-20T21:41:25.939Z"
+    },
+    {
+      "cardName": "Citi / AAdvantage Executive World Elite Mastercard",
+      "filename": "citi-aadvantage-executive-world-elite-mastercard.webp",
+      "path": "/images/cards/citi-aadvantage-executive-world-elite-mastercard.webp",
+      "source": "direct-url",
+      "sourceUrl": "https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/citi-aadvantage-executive-world-legend-mastercard/citi-aadvantage-executive-world-legend-mastercard_306x192.webp",
+      "width": 306,
+      "height": 192,
+      "type": "webp",
+      "sizeBytes": 11168,
+      "sha256": "234048d1fba3f68a5b1932e3f87a379de49adcae05824bcdd48457cf376d0733",
+      "duplicates": [],
+      "overwritten": true,
+      "ingestedAt": "2026-09-20T21:41:25.527Z"
+    },
+    {
+      "cardName": "Citi / AAdvantage Globe Mastercard",
+      "filename": "citi-aadvantage-globe-mastercard.webp",
+      "path": "/images/cards/citi-aadvantage-globe-mastercard.webp",
+      "source": "direct-url",
+      "sourceUrl": "https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/citi-aadvantage-globe-mastercard/citi-aadvantage-globe-mastercard_306x192.webp",
+      "width": 306,
+      "height": 192,
+      "type": "webp",
+      "sizeBytes": 35790,
+      "sha256": "aa870d9500f2f3f066b5f9d1a17c473c391bd337e096493e08777177b8250f54",
+      "duplicates": [],
+      "overwritten": true,
+      "ingestedAt": "2026-09-20T21:41:26.245Z"
+    },
+    {
+      "cardName": "Citi / AAdvantage Platinum Select World Elite Mastercard",
+      "filename": "citi-aadvantage-platinum-select-world-elite-mastercard.webp",
+      "path": "/images/cards/citi-aadvantage-platinum-select-world-elite-mastercard.webp",
+      "source": "direct-url",
+      "sourceUrl": "https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/citi-aadvantage-platinum-elite-credit-card/citi-aadvantage-platinum-elite-credit-card_306x192.webp",
+      "width": 306,
+      "height": 192,
+      "type": "webp",
+      "sizeBytes": 27926,
+      "sha256": "974aaaba46babed070bd23bff6698ca9905e86b0babea3f42d8d176059978242",
+      "duplicates": [],
+      "overwritten": true,
+      "ingestedAt": "2026-09-20T21:41:25.098Z"
+    },
+    {
       "cardName": "citi-strata-elite",
       "filename": "citi-strata-elite.png",
       "path": "/images/cards/citi-strata-elite.png",
@@ -476,6 +551,36 @@
       "sha256": "99594f0603220ef960e6aa233c19ee4590e0ee35998bd96982acce9310bd2123",
       "duplicates": [],
       "validatedAt": "2026-05-16T20:15:50.600Z"
+    },
+    {
+      "cardName": "Sapphire Reserve for Business",
+      "filename": "sapphire-reserve-for-business.png",
+      "path": "/images/cards/sapphire-reserve-for-business.png",
+      "source": "direct-url",
+      "sourceUrl": "https://creditcards.chase.com/content/dam/jpmc-marketplace/card-art/sapphire_reserve_biz_card.png",
+      "width": 289,
+      "height": 181,
+      "type": "png",
+      "sizeBytes": 126459,
+      "sha256": "0f34b5628222bfe3773b9c155af5846efc943be02929fe02417654b7959386ff",
+      "duplicates": [],
+      "overwritten": true,
+      "ingestedAt": "2026-09-20T21:41:24.280Z"
+    },
+    {
+      "cardName": "Southwest Rapid Rewards Performance Business Card",
+      "filename": "southwest-rapid-rewards-performance-business-card.png",
+      "path": "/images/cards/southwest-rapid-rewards-performance-business-card.png",
+      "source": "direct-url",
+      "sourceUrl": "https://creditcards.chase.com/content/dam/jpmc-ecm/cccswa/2026/a600-0059/cards/business.png",
+      "width": 374,
+      "height": 235,
+      "type": "png",
+      "sizeBytes": 53391,
+      "sha256": "174d8ca59b136cc05b06b150b8a574cfd6bb206459874a7e5370921bfcf4d3a8",
+      "duplicates": [],
+      "overwritten": true,
+      "ingestedAt": "2026-09-20T21:41:44.195Z"
     },
     {
       "cardName": "the-ritz-carlton-credit-card",

@@ -24,3 +24,17 @@ Source thread: https://www.uscardforum.com/t/topic/29408
 | `public/images/cards/hilton-honors-american-express-aspire-card.png` | https://www.uscardforum.com/t/topic/29408/483 |
 | `public/images/cards/hilton-honors-american-express-surpass-card.png` | https://www.uscardforum.com/t/topic/29408/455 |
 | `public/images/cards/marriott-bonvoy-business-american-express-card.png` | https://www.uscardforum.com/t/topic/29408/491 |
+
+## September 2026 catalog additions
+
+These assets were downloaded from the issuer-hosted product pages on 2026-09-20 and validated into `public/images/cards/manifest.json`.
+
+| Local image | Source |
+| --- | --- |
+| `public/images/cards/southwest-rapid-rewards-performance-business-card.png` | https://creditcards.chase.com/content/dam/jpmc-ecm/cccswa/2026/a600-0059/cards/business.png |
+| `public/images/cards/sapphire-reserve-for-business.png` | https://creditcards.chase.com/content/dam/jpmc-marketplace/card-art/sapphire_reserve_biz_card.png |
+| `public/images/cards/american-airlines-aadvantage-mileup-card.webp` | https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/aadvantage-mile-up-credit-card/aadvantage-mile-up-credit-card_306x192.webp |
+| `public/images/cards/citi-aadvantage-platinum-select-world-elite-mastercard.webp` | https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/citi-aadvantage-platinum-elite-credit-card/citi-aadvantage-platinum-elite-credit-card_306x192.webp |
+| `public/images/cards/citi-aadvantage-executive-world-elite-mastercard.webp` | https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/citi-aadvantage-executive-world-legend-mastercard/citi-aadvantage-executive-world-legend-mastercard_306x192.webp |
+| `public/images/cards/citi-aadvantage-business-world-elite-mastercard.webp` | https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/citi-aadvantage-business-credit-card/AA-Business.webp |
+| `public/images/cards/citi-aadvantage-globe-mastercard.webp` | https://aemapi.citi.com/content/dam/cfs/uspb/usmkt/cards/en/static/images/citi-aadvantage-globe-mastercard/citi-aadvantage-globe-mastercard_306x192.webp |
