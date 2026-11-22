@@ -122,19 +122,33 @@ export const authOptions: NextAuthOptions = {
       : undefined,
   callbacks: {
     async redirect({ url, baseUrl }) {
+      if (url.startsWith('/') && !url.startsWith('//')) return `${baseUrl}${url}`;
+      let target: URL;
+      let baseOrigin: string;
+      try {
+        target = new URL(url);
+        baseOrigin = new URL(baseUrl).origin;
+      } catch {
+        return baseUrl;
+      }
+      if (target.origin === baseOrigin) return url;
       // Allow redirects to loyalty subdomain (same app, shared auth)
       if (process.env.NEXTAUTH_URL) {
         try {
-          const base = new URL(process.env.NEXTAUTH_URL);
-          base.hostname = base.hostname.replace(/^(www\.)?/, 'loyalty.');
-          if (url.startsWith(base.origin)) return url;
+          const loyaltyBase = new URL(process.env.NEXTAUTH_URL);
+          loyaltyBase.hostname = loyaltyBase.hostname.replace(/^(www\.)?/, 'loyalty.');
+          if (target.origin === loyaltyBase.origin) return url;
         } catch {
-          // ignore
+          // invalid NEXTAUTH_URL
         }
       }
-      if (url.startsWith('http://loyalty.localhost')) return url;
-      if (url.startsWith('/')) return `${baseUrl}${url}`;
-      if (url.startsWith(baseUrl)) return url;
+      if (
+        process.env.NODE_ENV !== 'production' &&
+        target.protocol === 'http:' &&
+        target.hostname === 'loyalty.localhost'
+      ) {
+        return url;
+      }
       return baseUrl;
     },
     async jwt({ token, user }) {
