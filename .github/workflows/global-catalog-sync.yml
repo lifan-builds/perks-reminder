@@ -9,7 +9,8 @@ on:
       - src/lib/catalog/**
       - scripts/sync-global-catalog.ts
       - scripts/verify-catalog-sync-target.ts
-      - package.json
+      - scripts/validate-catalog-sync-report.mjs
+      - scripts/append-catalog-sync-summary.mjs
       - package-lock.json
   workflow_dispatch:
 
