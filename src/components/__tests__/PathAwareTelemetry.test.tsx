@@ -11,22 +11,23 @@ jest.mock("@vercel/analytics/next", () => ({ Analytics: () => <span data-testid=
 describe("pathname-aware telemetry", () => {
   beforeEach(() => mockPathname.mockReturnValue("/"));
 
-  it("loads configured analytics outside the private handoff", () => {
-    render(<PathAwareTelemetry googleAnalyticsId="G-SYNTHETIC" />);
-    expect(screen.getByTestId("google-analytics-loader")).toHaveAttribute("data-src", expect.stringContaining("G-SYNTHETIC"));
-    expect(screen.getByTestId("google-analytics-config")).toBeInTheDocument();
+  it("loads cookieless first-party telemetry outside the private handoff without Google gtag", () => {
+    render(<PathAwareTelemetry />);
+    expect(screen.getByTestId("clifan-telemetry")).toHaveAttribute("data-src", "https://clifan-umami.vercel.app/script.js");
+    expect(screen.queryByTestId("google-analytics-loader")).not.toBeInTheDocument();
     expect(screen.getByTestId("vercel-analytics")).toBeInTheDocument();
   });
 
-  it("loads no Google or Vercel analytics on the exact handoff path", () => {
+  it("loads zero telemetry scripts on the exact handoff path", () => {
     mockPathname.mockReturnValue("/integrations/amex-sync");
-    const { container } = render(<PathAwareTelemetry googleAnalyticsId="G-SYNTHETIC" />);
+    const { container } = render(<PathAwareTelemetry />);
     expect(container).toBeEmptyDOMElement();
   });
 
   it("does not suppress telemetry on a lookalike path", () => {
     mockPathname.mockReturnValue("/integrations/amex-sync-history");
     render(<PathAwareTelemetry />);
+    expect(screen.getByTestId("clifan-telemetry")).toBeInTheDocument();
     expect(screen.getByTestId("vercel-analytics")).toBeInTheDocument();
   });
 });

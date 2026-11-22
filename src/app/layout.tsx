@@ -168,7 +168,7 @@ export default async function RootLayout({
                 {children}
               </main>
               <Footer />
-              <PathAwareTelemetry googleAnalyticsId={process.env.GOOGLE_ANALYTICS_ID} />
+              <PathAwareTelemetry />
             </div>
             <IosInstallPrompt />
           </ErrorBoundary>
