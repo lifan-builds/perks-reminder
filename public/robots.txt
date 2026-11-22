@@ -1,11 +1,7 @@
+# Search indexing allowed on public pages; API & bulk extraction disallowed
 User-agent: *
 Allow: /
-
-# Allow all search engines to crawl the entire site
-Allow: /api/predefined-cards
-Allow: /api/predefined-cards-with-benefits
-
-# Disallow sensitive areas
+Disallow: /api/
 Disallow: /api/auth/
 Disallow: /api/user-cards/
 Disallow: /api/cron/
@@ -14,8 +10,47 @@ Disallow: /settings/
 Disallow: /cards/new
 Disallow: /cards/*/edit
 
-# Sitemap location
-Sitemap: https://www.perks-reminder.com/sitemap.xml
+# Automated AI training, scraping & clone agents disallowed
+User-agent: GPTBot
+Disallow: /
 
-# Crawl delay (optional - be nice to servers)
-Crawl-delay: 1
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: OAI-SearchBot
+Disallow: /
+
+User-agent: ClaudeBot
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
+
+User-agent: Diffbot
+Disallow: /
+
+User-agent: FirecrawlAgent
+Disallow: /
+
+User-agent: JinaBot
+Disallow: /
+
+User-agent: omgili
+Disallow: /
+
+Sitemap: https://www.perks-reminder.com/sitemap.xml

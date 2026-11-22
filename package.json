@@ -112,5 +112,6 @@
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
-  }
+  },
+  "license": "SEE LICENSE IN LICENSE"
 }

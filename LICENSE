@@ -1,21 +1,49 @@
-MIT License
+lifan-builds Source-Available License (Personal Use & Pull Requests Only)
+SPDX-License-Identifier: LicenseRef-lifan-builds-Proprietary
 
-Copyright (c) 2024 Perks Reminder
+Copyright (c) 2026 lifan-builds (https://github.com/lifan-builds). All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Ownership & Reservation of Rights
+All source code, documentation, visual assets, curated datasets, and build artifacts in this
+repository (the "Work") are proprietary to lifan-builds. Except for the limited permissions
+expressly granted in Section 2, all rights under copyright, patent, trademark, and trade secret
+law are strictly reserved.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+2. Limited Permissions (Personal Use & Upstream Pull Requests Only)
+Subject to full compliance with Section 3 and Section 4, lifan-builds grants you a limited,
+personal, revocable, non-exclusive, non-transferable, non-sublicensable license to:
+  (a) View, download, install, and run unmodified copies of the Work on devices you personally
+      control solely for your own personal, non-commercial evaluation and use; and
+  (b) Fork this repository on GitHub and modify a local branch solely to develop, test, and
+      submit a Pull Request back to the canonical upstream repository under
+      https://github.com/lifan-builds.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE. 
+3. Strict Prohibitions
+Without a separate prior written commercial license from lifan-builds, you may NOT:
+  (a) Use the Work, in whole or in part, for any commercial, business, workplace, revenue-
+      generating, monetization, or consulting purpose;
+  (b) Offer the Work (or any modified, wrapped, rebranded, or translated version) as a hosted
+      service, SaaS, API, paid download, plugin, or competing product;
+  (c) Publish, distribute, mirror, or maintain any standalone fork, clone, package release, or
+      derivative repository outside of a temporary branch used solely for an upstream Pull Request;
+  (d) Scrape, bulk-extract, or mirror HTML, UI templates, media assets, or curated datasets for
+      redistribution, competing services, or commercial model/dataset creation; or
+  (e) Remove, obscure, or alter any copyright notice, license file, attribution link, or
+      SPDX-License-Identifier header (17 U.S.C. § 1202 Copyright Management Information).
+
+4. Inbound Contributions
+By submitting a Pull Request, patch, issue snippet, or other contribution ("Contribution") to
+this repository, you represent that you have the legal right to do so and grant lifan-builds
+(and its successors and assigns) a perpetual, worldwide, irrevocable, royalty-free, transferable,
+sublicensable license—including full commercial and relicensing rights—to use, reproduce, modify,
+distribute, and commercialize your Contribution as part of the Work or any derivative or
+commercial edition thereof.
+
+5. Termination & Disclaimer
+Any breach of this License terminates your permissions under Section 2 immediately and
+automatically. THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY
+ARISING FROM OR IN CONNECTION WITH THE WORK.
+
+Commercial licensing inquiries: open an issue or reach out via https://github.com/lifan-builds.

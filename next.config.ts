@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
   // SEO and Performance optimizations
   compress: true,
   poweredByHeader: false,
+  productionBrowserSourceMaps: false,
   generateEtags: true,
   
   // Image optimization

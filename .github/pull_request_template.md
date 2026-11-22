@@ -1,15 +1,7 @@
 ## Summary
 
-Describe the user-visible or domain change and why it was made.
+- 
 
-## Related Issue
+## Contributor Agreement
 
-Closes #
-
-## Verification
-
-- [ ] `npm test -- --runInBand`
-- [ ] `npx tsc --noEmit`
-- [ ] `npm run check:public-db`
-- [ ] `npm run card-template:validate`
-- [ ] `npm run check:amex-userscripts` / `npm run check:amex-reader-extension` (if reader changed)
+- [x] I have read [CONTRIBUTING.md](CONTRIBUTING.md) and grant `lifan-builds` the inbound license in **Section 4 of [LICENSE](LICENSE)** for this contribution.

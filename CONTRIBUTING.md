@@ -1,102 +1,19 @@
-# Contributing to Perks Reminder
+# Contributing
 
-Thank you for helping improve Perks Reminder. See [AGENTS.md](AGENTS.md) for repository invariants.
+Bug fixes, documentation improvements, and focused Pull Requests are welcome.
 
-## Development
+## Forking & Pull Request Scope
 
-With an already configured local environment:
+Per [LICENSE](LICENSE) (`LicenseRef-lifan-builds-Proprietary`), you may fork this repository on GitHub and modify a branch
+locally **solely** to prepare, test, and submit a Pull Request back to the canonical
+`https://github.com/lifan-builds` repository. Publishing or maintaining standalone forks, mirrors,
+rebranded copies, or commercial derivatives is not permitted.
 
-```bash
-npm install
-npm run dev
-```
+## Inbound Contribution License
 
-The repository uses strict TypeScript, Next.js App Router, React Server and Client modules, Prisma, Jest, and Playwright.
+By submitting a Pull Request, patch, or other contribution, you confirm that:
 
-## Repository structure
-
-```text
-src/app/          routes, pages, server actions, and cron entrypoints
-src/components/   shared UI modules
-src/lib/          reusable domain and application logic
-src/userscripts/  AMEX userscript entry and runtime modules
-prisma/           schema and migration history
-scripts/          explicit operational or verification tooling
-card-templates/   contributor-facing Catalog intake
-docs/             current runbooks, provenance, and archived history
-AGENTS.md         durable engineering contracts
-```
-
-## Catalog and benefit updates
-
-Use `card-templates/` for structured contribution intake and `src/lib/static-catalog.ts` as the checked-in DB-free Catalog source.
-
-```bash
-npm run card-template:validate
-```
-
-Every Standard Card Definition and Standard Benefit Definition has an immutable `catalogKey`. Do not rename or reuse keys, infer identity from mutable text, or treat a seed edit as an existing-user rollout.
-
-A complete Catalog change addresses:
-
-1. verified source terms and provenance;
-2. the key-preserving static Catalog edit;
-3. global synchronization disposition;
-4. missing Benefit Status propagation for existing active Physical Cards;
-5. Benefit Usage Guide and retired/prior-status disposition.
-
-Database-backed synchronization remains separately authorized even in dry-run mode; preserve the catalog and data-safety rules in the current docs.
-
-## Card images
-
-Use the documented ingestion and provenance process:
-
-- [docs/card-image-ingestion.md](docs/card-image-ingestion.md)
-- [docs/card-image-sources.md](docs/card-image-sources.md)
-
-Do not download or replace images without recording an approved source.
-
-## Code changes
-
-- Keep domain behavior behind its owning module.
-- Prefer deep modules with a small interface and test through that interface.
-- Search before changing constants, payload fields, shared types, or helper logic.
-- Preserve authenticated ownership checks and server-side validation for durable mutations.
-- Keep anonymous public Catalog routes DB-free.
-- Keep Physical Cards distinct by `CreditCard.id`.
-- Add explicit types at wire and caller-branching interfaces.
-- Preserve accessibility, loading, error, empty, and populated states for changed UI.
-
-## Tests and safe checks
-
-Choose checks from the current repository guidance. Common safe checks include:
-
-```bash
-npm test -- --runInBand
-npx tsc --noEmit --pretty false --incremental false
-npm run check:public-db
-npm run card-template:validate
-npm run check:amex-userscripts
-git diff --check
-```
-
-Run focused tests first, then the broader safe suite appropriate to the change. Do not substitute a production-affecting command for a static check.
-
-## Pull requests
-
-Describe:
-
-- the user-visible or domain outcome;
-- the owning modules and interfaces changed;
-- relevant invariants and safety constraints;
-- tests run and checks intentionally skipped;
-- Catalog provenance or migration disposition when applicable;
-- rollback considerations for risky changes.
-
-Keep changes scoped. Unrelated cleanup belongs in a separate task unless it is required for the selected implementation.
-
-## Reporting data issues
-
-Use the correction links on card, benefit, and Benefit Usage Guide surfaces, or open a GitHub issue with the affected card/benefit, current source, expected terms, and supporting issuer/community evidence.
-
-See [docs/community-data-quality-loop.md](docs/community-data-quality-loop.md) for the maintainer review flow.
+1. The contribution is your original work (or you have full legal authority to submit it); and
+2. You grant `lifan-builds` (and its successors and assigns) the perpetual, worldwide,
+   irrevocable, royalty-free, transferable, sublicensable commercial and relicensing rights set
+   forth in **Section 4 of [LICENSE](LICENSE)**.
