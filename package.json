@@ -60,7 +60,8 @@
     "ios:sync": "cap sync ios",
     "ios:open": "cap open ios",
     "catalog:freshness": "tsx scripts/audit-catalog-freshness.ts",
-    "card-art:generate": "tsx scripts/generate-card-art.mjs"
+    "card-art:generate": "tsx scripts/generate-card-art.mjs",
+    "test:e2e:app": "playwright test --config playwright.app.config.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",

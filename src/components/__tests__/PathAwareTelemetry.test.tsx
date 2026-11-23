@@ -9,7 +9,21 @@ jest.mock("next/script", () => function MockScript(props: { id?: string; src?: s
 jest.mock("@vercel/analytics/next", () => ({ Analytics: () => <span data-testid="vercel-analytics" /> }));
 
 describe("pathname-aware telemetry", () => {
-  beforeEach(() => mockPathname.mockReturnValue("/"));
+  const originalEnv = process.env.NEXT_PUBLIC_VERCEL_ENV;
+  beforeEach(() => {
+    mockPathname.mockReturnValue("/");
+    process.env.NEXT_PUBLIC_VERCEL_ENV = "production";
+  });
+  afterAll(() => {
+    process.env.NEXT_PUBLIC_VERCEL_ENV = originalEnv;
+  });
+
+  it.each([undefined, "preview", "development"])("loads zero telemetry outside a Vercel production deployment (%p)", (environment) => {
+    if (environment === undefined) delete process.env.NEXT_PUBLIC_VERCEL_ENV;
+    else process.env.NEXT_PUBLIC_VERCEL_ENV = environment;
+    const { container } = render(<PathAwareTelemetry />);
+    expect(container).toBeEmptyDOMElement();
+  });
 
   it("loads cookieless first-party telemetry outside the private handoff without Google gtag", () => {
     render(<PathAwareTelemetry />);

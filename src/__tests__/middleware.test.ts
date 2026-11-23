@@ -10,6 +10,20 @@ function requestFor(url: string): NextRequest {
 }
 
 describe('middleware', () => {
+  it.each(['/cards', '/cards/new'])('sends anonymous visitors on %s to sign-in instead of a 401 fetch', (path) => {
+    const response = middleware(requestFor(`https://www.perks-reminder.com${path}`));
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      `https://www.perks-reminder.com/auth/signin?callbackUrl=${encodeURIComponent(path)}`
+    );
+  });
+
+  it('keeps the public catalog paths open', () => {
+    for (const path of ['/cards/browse', '/cards/browse/Chase%20Sapphire%20Reserve']) {
+      expect(middleware(requestFor(`https://www.perks-reminder.com${path}`)).headers.get('location') ?? null).toBeNull();
+    }
+  });
+
   it('redirects loyalty auth pages to the canonical www auth host', () => {
     const response = middleware(
       requestFor('https://loyalty.perks-reminder.com/auth/signin')

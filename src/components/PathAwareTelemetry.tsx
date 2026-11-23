@@ -8,7 +8,9 @@ const AMEX_HANDOFF_PATH = "/integrations/amex-sync";
 
 export default function PathAwareTelemetry() {
   const pathname = usePathname();
-  if (pathname === AMEX_HANDOFF_PATH) return null;
+  // Only a Vercel production deployment serves /_vercel/insights and should count visits;
+  // local, preview, self-hosted, and E2E runs load nothing.
+  if (process.env.NEXT_PUBLIC_VERCEL_ENV !== "production" || pathname === AMEX_HANDOFF_PATH) return null;
 
   return (
     <>

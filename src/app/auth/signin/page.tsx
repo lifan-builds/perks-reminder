@@ -50,9 +50,9 @@ function SignInContent() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4 py-12 dark:bg-gray-950 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-900">
         <div>
-          <h2 className="text-center text-2xl font-semibold tracking-tight text-gray-950 dark:text-white">
+          <h1 className="font-display text-center text-4xl leading-tight text-foreground">
             Sign in to your account
-          </h2>
+          </h1>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             Don&apos;t have an account?{' '}
             <Link href="/auth/signup" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
