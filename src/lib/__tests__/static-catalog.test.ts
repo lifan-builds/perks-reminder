@@ -26,9 +26,17 @@ describe('static catalog', () => {
   });
 
   it('reuses every shared Amex card without changing its website catalog data', () => {
-    expect(predefinedCardsData.filter((card) => card.issuer === 'American Express')).toEqual(
-      Object.values(americanExpressCardCatalog),
-    );
+    // Provenance metadata stays website-side so the reader bundles never embed issuer URLs.
+    const withoutProvenance = predefinedCardsData
+      .filter((card) => card.issuer === 'American Express')
+      .map((card) => {
+        const { issuerSourceUrl: _source, lastVerifiedAt: _verified, ...canonical } = card as typeof card & {
+          issuerSourceUrl?: string;
+          lastVerifiedAt?: string;
+        };
+        return canonical;
+      });
+    expect(withoutProvenance).toEqual(Object.values(americanExpressCardCatalog));
   });
 
   it('keys and classifies all 12 Amex cards and 56 benefits without duplicate destination tuples', () => {
@@ -58,7 +66,7 @@ describe('static catalog', () => {
     ['card:sapphire-reserve-business', 'Sapphire Reserve for Business', 'Chase', 795],
     ['card:citi-aadvantage-mileup', 'American Airlines AAdvantage MileUp Card', 'Citi', 0],
     ['card:citi-aadvantage-platinum-select', 'Citi / AAdvantage Platinum Select World Elite Mastercard', 'Citi', 99],
-    ['card:citi-aadvantage-executive', 'Citi / AAdvantage Executive World Elite Mastercard', 'Citi', 595],
+    ['card:citi-aadvantage-executive', 'Citi / AAdvantage Executive World Elite Mastercard', 'Citi', 695],
     ['card:citi-aadvantage-business', 'Citi / AAdvantage Business World Elite Mastercard', 'Citi', 99],
     ['card:citi-aadvantage-globe', 'Citi / AAdvantage Globe Mastercard', 'Citi', 350],
   ])('exposes requested product %s through the public catalog', (catalogKey, name, issuer, annualFee) => {

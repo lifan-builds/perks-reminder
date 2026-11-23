@@ -1,11 +1,12 @@
 import { inferBenefitUsageWaySlug } from './benefit-usage-matching';
 import { americanExpressCardCatalog } from './american-express-card-catalog';
 import { validateStaticCatalog } from './catalog/validation';
+import type { CatalogLifecycleMetadata } from './catalog/lifecycle';
 
 export type StaticBenefitFrequency = 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'YEARLY' | 'ONE_TIME';
 export type StaticBenefitCycleAlignment = 'CARD_ANNIVERSARY' | 'CALENDAR_FIXED';
 
-export interface StaticPredefinedBenefit {
+export interface StaticPredefinedBenefit extends CatalogLifecycleMetadata {
   catalogKey: string;
   parentCatalogKey: string;
   productKey?: string;
@@ -22,7 +23,7 @@ export interface StaticPredefinedBenefit {
   occurrencesInCycle?: number;
 }
 
-export interface StaticPredefinedCard {
+export interface StaticPredefinedCard extends CatalogLifecycleMetadata {
   catalogKey: string;
   productKey?: string;
   name: string;
@@ -52,11 +53,13 @@ export interface PublicStaticCard extends Omit<StaticPredefinedCard, 'benefits'>
   updatedAt: string;
 }
 
-export const STATIC_CATALOG_UPDATED_AT = '2026-09-20';
+export const STATIC_CATALOG_UPDATED_AT = '2026-11-22';
 
 export const predefinedCardsData = [
     {
       catalogKey: 'card:csp',
+      issuerSourceUrl: 'https://www.chase.com/sapphire-cards/personal/preferred',
+      lastVerifiedAt: '2026-11-22',
       name: 'Chase Sapphire Preferred',
       issuer: 'Chase',
       annualFee: 95,
@@ -94,9 +97,11 @@ export const predefinedCardsData = [
         },
       ],
     },
-    americanExpressCardCatalog["American Express Gold Card"],
+    { ...americanExpressCardCatalog["American Express Gold Card"], issuerSourceUrl: 'https://www.americanexpress.com/us/credit-cards/card/gold-card/', lastVerifiedAt: '2026-11-22' },
     {
       catalogKey: 'card:venture-x',
+      issuerSourceUrl: 'https://www.capitalone.com/credit-cards/venture-x/',
+      lastVerifiedAt: '2026-11-22',
       name: 'Capital One Venture X',
       issuer: 'Capital One',
       annualFee: 395,
@@ -120,10 +125,23 @@ export const predefinedCardsData = [
           frequency: 'YEARLY',
           percentage: 0,
         },
+        {
+          catalogKey: 'benefit:venture-x:120-global-entry-or-tsa-precheck-credit-every-4-years',
+          parentCatalogKey: 'card:venture-x',
+          description: '$120 Global Entry or TSA PreCheck Credit (every 4 years)',
+          category: 'Travel',
+          maxAmount: 120,
+          frequency: 'YEARLY',
+          percentage: 0,
+          cycleAlignment: 'CARD_ANNIVERSARY',
+          fixedCycleDurationMonths: 48,
+        },
       ],
     },
     {
       catalogKey: 'card:csr',
+      issuerSourceUrl: 'https://www.chase.com/sapphire-cards/personal/reserve',
+      lastVerifiedAt: '2026-11-22',
       name: 'Chase Sapphire Reserve',
       issuer: 'Chase',
       annualFee: 795,
@@ -165,6 +183,9 @@ export const predefinedCardsData = [
         },
         {
           catalogKey: 'benefit:csr:250-the-edit-credit-up-to-2-prepaid-bookings-annually',
+          openDrift: 'Chase now grants The Edit credits per calendar year; this definition still resets on the card anniversary. Moving to CALENDAR_FIXED needs a reviewed status migration so stored anniversary cycles do not collide with the new calendar window.',
+          issuerSourceUrl: 'https://www.chase.com/travel/guide/hotels/the-edit-chase-travel-credits-benefits',
+          lastVerifiedAt: '2026-11-22',
           parentCatalogKey: 'card:csr',
           description: '$250 The Edit Credit (up to 2 prepaid bookings annually)',
           category: 'Travel',
@@ -176,6 +197,7 @@ export const predefinedCardsData = [
         },
         {
           catalogKey: 'benefit:csr:250-select-chase-travel-hotel-credit-through-12-31-2026',
+          sunsetAfter: '2026-12-31',
           parentCatalogKey: 'card:csr',
           description: '$250 Select Chase Travel Hotel Credit (through 12/31/2026)',
           category: 'Travel',
@@ -212,10 +234,13 @@ export const predefinedCardsData = [
         },
         {
           catalogKey: 'benefit:csr:25-monthly-doordash-promo-credits',
+          effectiveFrom: '2026-10-01',
+          issuerSourceUrl: 'https://help.doordash.com/en-us/consumers/article/chase-partnership',
+          lastVerifiedAt: '2026-11-22',
           parentCatalogKey: 'card:csr',
-          description: '$25 Monthly DoorDash Promo Credits',
+          description: '$35 Monthly DoorDash Promos ($15 general + two $10 non-restaurant; DashPass required)',
           category: 'Food Delivery',
-          maxAmount: 25,
+          maxAmount: 35,
           frequency: 'MONTHLY',
           percentage: 0,
         },
@@ -276,15 +301,15 @@ export const predefinedCardsData = [
       imageUrl: '/images/cards/chase-ink-business-preferred.jpg',
       benefits: [],
     },
-    americanExpressCardCatalog["American Express Platinum Card"],
-    americanExpressCardCatalog["American Express Business Platinum Card"],
+    { ...americanExpressCardCatalog["American Express Platinum Card"], issuerSourceUrl: 'https://www.americanexpress.com/us/credit-cards/card/platinum/', lastVerifiedAt: '2026-11-22' },
+    { ...americanExpressCardCatalog["American Express Business Platinum Card"], issuerSourceUrl: 'https://www.americanexpress.com/us/credit-cards/business/business-credit-cards/american-express-business-platinum-credit-card-amex/', lastVerifiedAt: '2026-11-22' },
     americanExpressCardCatalog["American Express Business Gold Card"],
-    americanExpressCardCatalog["Hilton Honors American Express Aspire Card"],
+    { ...americanExpressCardCatalog["Hilton Honors American Express Aspire Card"], issuerSourceUrl: 'https://www.americanexpress.com/us/credit-cards/card/hilton-honors-aspire/', lastVerifiedAt: '2026-11-22' },
     americanExpressCardCatalog["Hilton Honors American Express Surpass Card"],
     americanExpressCardCatalog["Hilton Honors American Express Business Card"],
     americanExpressCardCatalog["Delta SkyMiles Gold American Express Card"],
     americanExpressCardCatalog["Delta SkyMiles Platinum American Express Card"],
-    americanExpressCardCatalog["Delta SkyMiles Reserve American Express Card"],
+    { ...americanExpressCardCatalog["Delta SkyMiles Reserve American Express Card"], issuerSourceUrl: 'https://www.americanexpress.com/us/credit-cards/card/delta-skymiles-reserve-american-express-card/', lastVerifiedAt: '2026-11-22' },
     {
       catalogKey: 'card:ihg-premier',
       name: 'IHG One Rewards Premier Credit Card',
@@ -321,7 +346,7 @@ export const predefinedCardsData = [
         },
       ],
     },
-    americanExpressCardCatalog["Marriott Bonvoy Brilliant American Express Card"],
+    { ...americanExpressCardCatalog["Marriott Bonvoy Brilliant American Express Card"], issuerSourceUrl: 'https://www.americanexpress.com/us/credit-cards/card/marriott-bonvoy-brilliant/', lastVerifiedAt: '2026-11-22' },
     {
       catalogKey: 'card:united-explorer',
       name: 'Chase United Explorer Card',
@@ -577,6 +602,8 @@ export const predefinedCardsData = [
     },
     {
       catalogKey: 'card:atmos-summit',
+      issuerSourceUrl: 'https://www.alaskaair.com/atmosrewards/content/credit-card',
+      lastVerifiedAt: '2026-11-22',
       name: 'Atmos Rewards Summit Visa Infinite Card',
       issuer: 'Bank of America',
       annualFee: 395,
@@ -658,6 +685,8 @@ export const predefinedCardsData = [
     },
     {
       catalogKey: 'card:hsbc-elite',
+      issuerSourceUrl: 'https://www.us.hsbc.com/credit-cards/products/elite/',
+      lastVerifiedAt: '2026-11-22',
       name: 'HSBC Elite Credit Card',
       issuer: 'HSBC',
       annualFee: 495,
@@ -796,6 +825,8 @@ export const predefinedCardsData = [
     },
     {
       catalogKey: 'card:ritz-carlton',
+      issuerSourceUrl: 'https://marriott.chase.com/ritz-carlton/benefits',
+      lastVerifiedAt: '2026-11-22',
       name: 'The Ritz-Carlton Credit Card',
       issuer: 'Chase',
       annualFee: 450,
@@ -888,7 +919,32 @@ export const predefinedCardsData = [
       ],
     },
     {
+      catalogKey: 'card:citi-strata-premier',
+      issuerSourceUrl: 'https://www.citi.com/credit-cards/citi-strata-premier-credit-card',
+      lastVerifiedAt: '2026-11-22',
+      name: 'Citi Strata Premier',
+      issuer: 'Citi',
+      annualFee: 95,
+      imageUrl: '/images/cards/citi-strata-premier.png',
+      benefits: [
+        {
+          catalogKey: 'benefit:citi-strata-premier:100-annual-hotel-benefit',
+          parentCatalogKey: 'card:citi-strata-premier',
+          description: '$100 Annual Hotel Benefit (single $500+ stay via Citi Travel)',
+          category: 'Travel',
+          maxAmount: 100,
+          frequency: 'YEARLY',
+          percentage: 0,
+          cycleAlignment: 'CALENDAR_FIXED',
+          fixedCycleStartMonth: 1,
+          fixedCycleDurationMonths: 12,
+        },
+      ],
+    },
+    {
       catalogKey: 'card:citi-strata-elite',
+      issuerSourceUrl: 'https://www.citi.com/credit-cards/citi-strata-elite-credit-card',
+      lastVerifiedAt: '2026-11-22',
       name: 'Citi Strata Elite',
       issuer: 'Citi',
       annualFee: 595,
@@ -1010,6 +1066,8 @@ export const predefinedCardsData = [
     },
     {
       catalogKey: 'card:sapphire-reserve-business',
+      issuerSourceUrl: 'https://creditcards.chase.com/business-credit-cards/sapphire/reserve',
+      lastVerifiedAt: '2026-11-22',
       name: 'Sapphire Reserve for Business',
       issuer: 'Chase',
       annualFee: 795,
@@ -1027,6 +1085,7 @@ export const predefinedCardsData = [
         },
         {
           catalogKey: 'benefit:sapphire-reserve-business:250-select-chase-travel-hotel-credit-through-2026-12-31',
+          sunsetAfter: '2026-12-31',
           parentCatalogKey: 'card:sapphire-reserve-business',
           description: '$250 Select Chase Travel Hotel Credit (prepaid 2+ nights; through 12/31/2026)',
           category: 'Travel',
@@ -1039,6 +1098,14 @@ export const predefinedCardsData = [
         },
         {
           catalogKey: 'benefit:sapphire-reserve-business:500-the-edit-credit',
+          upcomingChanges: [
+            {
+              effectiveOn: '2027-01-01',
+              summary: 'The Edit annual credit rises from $500 to $1,000 (still up to $250 per prepaid 2+ night booking).',
+              maxAmount: 1000,
+              sourceUrl: 'https://www.businesswire.com/news/home/20261105070160/en/Chase-Travel-Unveils-27-Trips-to-Take-in-2027-and-Previews-Expanded-Luxury-Vacation-Homes-Offering',
+            },
+          ],
           parentCatalogKey: 'card:sapphire-reserve-business',
           description: '$500 Annual The Edit Credit (prepaid 2+ nights; up to $250 per transaction)',
           category: 'Travel',
@@ -1062,6 +1129,7 @@ export const predefinedCardsData = [
         },
         {
           catalogKey: 'benefit:sapphire-reserve-business:200-annual-google-workspace-credit',
+          sunsetAfter: '2027-12-31',
           parentCatalogKey: 'card:sapphire-reserve-business',
           description: '$200 Annual Google Workspace Credit (direct purchases; through 12/31/2027)',
           category: 'Business Services',
@@ -1074,6 +1142,7 @@ export const predefinedCardsData = [
         },
         {
           catalogKey: 'benefit:sapphire-reserve-business:200-ziprecruiter-credit-jan-jun',
+          sunsetAfter: '2027-12-31',
           parentCatalogKey: 'card:sapphire-reserve-business',
           description: '$200 ZipRecruiter Credit (Jan-Jun; through 12/31/2027)',
           category: 'Business Services',
@@ -1086,6 +1155,7 @@ export const predefinedCardsData = [
         },
         {
           catalogKey: 'benefit:sapphire-reserve-business:200-ziprecruiter-credit-jul-dec',
+          sunsetAfter: '2027-12-31',
           parentCatalogKey: 'card:sapphire-reserve-business',
           description: '$200 ZipRecruiter Credit (Jul-Dec; through 12/31/2027)',
           category: 'Business Services',
@@ -1098,6 +1168,7 @@ export const predefinedCardsData = [
         },
         {
           catalogKey: 'benefit:sapphire-reserve-business:10-monthly-lyft-credit',
+          sunsetAfter: '2027-09-30',
           parentCatalogKey: 'card:sapphire-reserve-business',
           description: '$10 Monthly Lyft Credit (through 9/30/2027)',
           category: 'Transportation',
@@ -1108,6 +1179,7 @@ export const predefinedCardsData = [
         },
         {
           catalogKey: 'benefit:sapphire-reserve-business:25-monthly-doordash-promos',
+          sunsetAfter: '2027-12-31',
           parentCatalogKey: 'card:sapphire-reserve-business',
           description: '$25 Monthly DoorDash Promos ($5 restaurant + two $10 non-restaurant; DashPass required; through 12/31/2027)',
           category: 'Food Delivery',
@@ -1118,6 +1190,7 @@ export const predefinedCardsData = [
         },
         {
           catalogKey: 'benefit:sapphire-reserve-business:50-curated-gift-card-credit-jan-jun',
+          sunsetAfter: '2028-10-31',
           parentCatalogKey: 'card:sapphire-reserve-business',
           description: '$50 Curated Gift Card Credit (direct purchases at giftcards.com/reservebusiness; Jan-Jun; through 10/31/2028)',
           category: 'Shopping',
@@ -1130,6 +1203,7 @@ export const predefinedCardsData = [
         },
         {
           catalogKey: 'benefit:sapphire-reserve-business:50-curated-gift-card-credit-jul-dec',
+          sunsetAfter: '2028-10-31',
           parentCatalogKey: 'card:sapphire-reserve-business',
           description: '$50 Curated Gift Card Credit (direct purchases at giftcards.com/reservebusiness; Jul-Dec; through 10/31/2028)',
           category: 'Shopping',
@@ -1160,11 +1234,75 @@ export const predefinedCardsData = [
     },
     {
       catalogKey: 'card:citi-aadvantage-executive',
+      effectiveFrom: '2026-08-23',
+      issuerSourceUrl: 'https://www.citi.com/credit-cards/citi-aadvantage-executive-credit-card',
+      lastVerifiedAt: '2026-11-22',
       name: 'Citi / AAdvantage Executive World Elite Mastercard',
       issuer: 'Citi',
-      annualFee: 595,
+      annualFee: 695,
       imageUrl: '/images/cards/citi-aadvantage-executive-world-elite-mastercard.webp',
       benefits: [
+        {
+          catalogKey: 'benefit:citi-aadvantage-executive:american-airlines-vacations-credit:calendar-half-h1',
+          parentCatalogKey: 'card:citi-aadvantage-executive',
+          effectiveFrom: '2026-08-23',
+          description: '$250 American Airlines Vacations Credit (Jan-Jun; 2+ travel components)',
+          category: 'Travel',
+          maxAmount: 250,
+          frequency: 'YEARLY',
+          percentage: 0,
+          cycleAlignment: 'CALENDAR_FIXED',
+          fixedCycleStartMonth: 1,
+          fixedCycleDurationMonths: 6,
+        },
+        {
+          catalogKey: 'benefit:citi-aadvantage-executive:american-airlines-vacations-credit:calendar-half-h2',
+          parentCatalogKey: 'card:citi-aadvantage-executive',
+          effectiveFrom: '2026-08-23',
+          description: '$250 American Airlines Vacations Credit (Jul-Dec; 2+ travel components)',
+          category: 'Travel',
+          maxAmount: 250,
+          frequency: 'YEARLY',
+          percentage: 0,
+          cycleAlignment: 'CALENDAR_FIXED',
+          fixedCycleStartMonth: 7,
+          fixedCycleDurationMonths: 6,
+        },
+        {
+          catalogKey: 'benefit:citi-aadvantage-executive:inflight-and-admirals-club-credit:calendar-year',
+          parentCatalogKey: 'card:citi-aadvantage-executive',
+          effectiveFrom: '2026-08-23',
+          description: '$100 Annual Inflight and Admirals Club Purchase Credit',
+          category: 'Travel',
+          maxAmount: 100,
+          frequency: 'YEARLY',
+          percentage: 0,
+          cycleAlignment: 'CALENDAR_FIXED',
+          fixedCycleStartMonth: 1,
+          fixedCycleDurationMonths: 12,
+        },
+        {
+          catalogKey: 'benefit:citi-aadvantage-executive:lyft-credit:calendar-month',
+          parentCatalogKey: 'card:citi-aadvantage-executive',
+          effectiveFrom: '2026-08-23',
+          description: '$15 Monthly Lyft Credit (after 3 eligible rides in the calendar month)',
+          category: 'Transportation',
+          maxAmount: 15,
+          frequency: 'MONTHLY',
+          percentage: 0,
+        },
+        {
+          catalogKey: 'benefit:citi-aadvantage-executive:avis-budget-prepaid-rental-credit:calendar-year',
+          parentCatalogKey: 'card:citi-aadvantage-executive',
+          description: '$120 Annual Avis or Budget Prepaid Car Rental Credit (book on avis.com or budget.com)',
+          category: 'Travel',
+          maxAmount: 120,
+          frequency: 'YEARLY',
+          percentage: 0,
+          cycleAlignment: 'CALENDAR_FIXED',
+          fixedCycleStartMonth: 1,
+          fixedCycleDurationMonths: 12,
+        },
         {
           catalogKey: 'benefit:citi-aadvantage-executive:120-global-entry-or-tsa-precheck-credit-every-4-years',
           parentCatalogKey: 'card:citi-aadvantage-executive',
@@ -1198,6 +1336,8 @@ export const predefinedCardsData = [
     },
     {
       catalogKey: 'card:citi-aadvantage-globe',
+      issuerSourceUrl: 'https://www.citi.com/credit-cards/citi-aadvantage-globe-mastercard',
+      lastVerifiedAt: '2026-11-22',
       name: 'Citi / AAdvantage Globe Mastercard',
       issuer: 'Citi',
       annualFee: 350,
@@ -1275,6 +1415,8 @@ export const predefinedCardsData = [
     },
     {
       catalogKey: 'card:bilt-blue',
+      issuerSourceUrl: 'https://www.bilt.com/card',
+      lastVerifiedAt: '2026-11-22',
       name: 'Bilt Blue Card',
       issuer: 'Bilt',
       annualFee: 0,
@@ -1283,6 +1425,8 @@ export const predefinedCardsData = [
     },
     {
       catalogKey: 'card:bilt-obsidian',
+      issuerSourceUrl: 'https://www.bilt.com/card',
+      lastVerifiedAt: '2026-11-22',
       name: 'Bilt Obsidian Card',
       issuer: 'Bilt',
       annualFee: 95,
@@ -1316,6 +1460,8 @@ export const predefinedCardsData = [
     },
     {
       catalogKey: 'card:bilt-palladium',
+      issuerSourceUrl: 'https://www.bilt.com/card',
+      lastVerifiedAt: '2026-11-22',
       name: 'Bilt Palladium Card',
       issuer: 'Bilt',
       annualFee: 495,

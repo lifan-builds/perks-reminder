@@ -43,3 +43,24 @@ The live reader exposed three annual usage credits missing from the source catal
 | Business Platinum | ChatGPT Business | $300 | Calendar year | [Amex Business Platinum benefits](https://global.americanexpress.com/card-benefits/view-all/business-platinum) |
 
 The provider's live trackers also exposed January 1–December 31 ranges and usage fields for these credits. No private amounts or account identifiers are retained here. The catalog now has 59 Amex definitions, including 50 writable destination tuples; existing keys and terms are unchanged by these three additions. This is source code only: production catalog synchronization and materializing statuses for existing owned cards still require a reviewed, separately authorized plan. Do not treat browser coverage as proof of a saved destination status.
+
+## Flagship terms audit and lifecycle metadata — 2026-11-22
+
+Definitions now carry optional, sync-inert lifecycle metadata (`src/lib/catalog/lifecycle.ts`): `issuerSourceUrl`, `lastVerifiedAt`, `effectiveFrom`, `sunsetAfter` (inclusive UTC day), `upcomingChanges`, and `openDrift`. The global synchronizer copies only canonical fields, so this metadata never reaches the database. Amex provenance is attached in `static-catalog.ts`, not in the shared Amex catalog, so the reader bundles never embed issuer URLs.
+
+`npm run catalog:freshness` replaces the prose reminders above with dated checks: an expired `sunsetAfter` or a due `upcomingChanges` entry is an error (exit 1), anything inside the 45-day horizon is a warning, a description stating "through M/D/YYYY" without a matching `sunsetAfter` is an error, and premium cards without provenance or verified more than 120 days ago are warnings. `--fetch` diffs each `issuerSourceUrl` page for stated fees and credit amounts and writes `build/catalog-freshness/report.{json,md}` plus card-template proposals under `proposals/` (`npm run card-template:validate -- build/catalog-freshness/proposals/*.json`). It never writes to the database.
+
+| Card | Change | Source |
+| --- | --- | --- |
+| Chase Sapphire Reserve | DoorDash promos $25 → $35/month ($15 general promo replaced the $5 restaurant promo on 2026-10-01); select-hotel credit `sunsetAfter` 2026-12-31 | [DoorDash Chase partnership](https://help.doordash.com/en-us/consumers/article/chase-partnership) |
+| Sapphire Reserve for Business | `sunsetAfter` on every dated partner offer; The Edit $500 → $1,000 scheduled for 2027-01-01 (not applied early) | [Chase Travel, 2026-11-05](https://www.businesswire.com/news/home/20261105070160/en/Chase-Travel-Unveils-27-Trips-to-Take-in-2027-and-Previews-Expanded-Luxury-Vacation-Homes-Offering) |
+| Citi / AAdvantage Executive | Annual fee $595 → $695 (new cardmembers from 2026-08-23; existing at their next anniversary); added AA Vacations $250 Jan–Jun and Jul–Dec, $100 inflight/Admirals Club, $15 monthly Lyft, $120 Avis/Budget. Product renamed World Legend by Citi; the catalog name is kept because it is the public route identity | [Citi product page](https://www.citi.com/credit-cards/citi-aadvantage-executive-credit-card) |
+| Hilton Honors Aspire | CLEAR+ credit $189 → $219 per calendar year | [Aspire terms](https://www.americanexpress.com/us/credit-cards/card-application/apply/member/terms/hilton-honors-aspire-credit-card/36182-11-0/) |
+| Capital One Venture X | Added the $120 Global Entry/TSA PreCheck credit (every 4 years) | [Capital One](https://www.capitalone.com/credit-cards/venture-x/) |
+| Citi Strata Premier | New product: $95 fee, $100 Annual Hotel Benefit (single $500+ stay via Citi Travel, calendar year) | [Citi product page](https://www.citi.com/credit-cards/citi-strata-premier-credit-card) |
+
+Verified unchanged: Sapphire Preferred ($95; $100 hotel, GE/TSA, $10 DoorDash), Amex Gold ($325), Platinum and Business Platinum ($895), Venture X ($395), Delta Reserve and Bonvoy Brilliant ($650), HSBC Elite ($495), Atmos Summit ($395).
+
+Open drift (reported by the audit, not applied): Chase grants Sapphire Reserve The Edit credits per calendar year, while the definition resets on the card anniversary. Changing `cycleAlignment` in place would collide with stored anniversary Benefit Statuses (the cron skips and reports the discrepancy), so it needs a reviewed status migration first.
+
+Rollout: these are source changes only. Run the guarded `npm run sync:global-catalog -- --dry-run`; relative to the previous source it should add Citi Strata Premier and seven benefits (five AAdvantage Executive, one Venture X, one Strata Premier) and update the changed fee/amount/description fields, with zero retirements and zero conflicts (dev-database dry run on 2026-11-22: 0 conflicts, 0 retirements). Existing statuses are untouched; new cycles pick up the new amounts.

@@ -5161,9 +5161,9 @@
             {
               catalogKey: "benefit:hilton-honors-american-express-aspire-card:clear-plus:calendar-year",
               parentCatalogKey: "card:hilton-honors-american-express-aspire-card",
-              description: "$189 CLEAR Plus Credit",
+              description: "$219 CLEAR+ Credit",
               category: "Travel",
-              maxAmount: 189,
+              maxAmount: 219,
               frequency: "YEARLY",
               percentage: 0,
               cycleAlignment: "CALENDAR_FIXED",

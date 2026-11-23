@@ -374,7 +374,7 @@ describe('materialization coordinates', () => {
               { userId: 'u', creditCardId: 'c' },
               { referenceDate, cardOpenedDate, validateCycles: true }
             );
-            expect(rows).toHaveLength(benefit.occurrencesInCycle ?? 1);
+            expect(rows).toHaveLength((benefit as { occurrencesInCycle?: number }).occurrencesInCycle ?? 1);
             for (const row of rows) {
               expect(row.cycleEndDate > row.cycleStartDate).toBe(true);
               if (benefit.frequency !== 'ONE_TIME') expect(row.cycleEndDate >= referenceDate).toBe(true);

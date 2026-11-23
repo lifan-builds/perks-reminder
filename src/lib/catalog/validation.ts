@@ -4,6 +4,7 @@ import {
   type AmexSourceSemantics,
 } from "../amex-catalog/catalog-registry";
 import type { StaticPredefinedBenefit, StaticPredefinedCard } from "../static-catalog";
+import { assertCatalogLifecycle } from "./lifecycle";
 
 const CATALOG_KEY_PATTERN = /^(?:card|benefit):[a-z0-9]+(?:[a-z0-9-]*)(?::[a-z0-9]+(?:[a-z0-9-]*))*$/;
 const POSITIONAL_KEY_SEGMENT_PATTERN = /^(?:benefit|card|item|row)?-?\d+$/;
@@ -56,6 +57,7 @@ export function validateStaticCatalog(
     assertCatalogKey(card.catalogKey, "card");
     if (allKeys.has(card.catalogKey)) throw new Error(`Duplicate catalog key: ${card.catalogKey}.`);
     allKeys.add(card.catalogKey);
+    assertCatalogLifecycle(card.catalogKey, card);
     if (cardNames.has(card.name)) throw new Error(`Duplicate catalog card name: ${card.name}.`);
     cardNames.add(card.name);
 
@@ -89,6 +91,7 @@ export function validateStaticCatalog(
       assertCatalogKey(benefit.catalogKey, "benefit");
       if (allKeys.has(benefit.catalogKey)) throw new Error(`Duplicate catalog key: ${benefit.catalogKey}.`);
       allKeys.add(benefit.catalogKey);
+      assertCatalogLifecycle(benefit.catalogKey, benefit);
       if (benefit.parentCatalogKey !== card.catalogKey) {
         throw new Error(`Catalog parent mismatch for ${benefit.catalogKey}.`);
       }
