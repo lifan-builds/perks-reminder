@@ -8,7 +8,7 @@ Reviewed 2026-09-20 for the public static catalog. Issuer pages are the authorit
 | Sapphire Reserve for Business | https://creditcards.chase.com/business-credit-cards/sapphire/reserve | Travel, hotel, security-screening, business-service, rideshare, delivery, and gift-card credits with their stated windows |
 | American Airlines AAdvantage cards | https://www.citi.com/credit-cards/credit-card-miles/which-aadvantage-credit-card-should-you-get | Citi MileUp, Platinum Select, Executive, Business, and Globe products; recurring credits and certificates only where listed |
 
-Card art for these additions is stored locally with issuer-hosted source receipts:
+Card art for these additions was originally stored locally with issuer-hosted source receipts (retired 2026-11-22 in favor of self-owned studio art; see `docs/card-image-sources.md`):
 
 | Card | Local asset | Image source |
 | --- | --- | --- |
@@ -64,3 +64,5 @@ Verified unchanged: Sapphire Preferred ($95; $100 hotel, GE/TSA, $10 DoorDash), 
 Open drift (reported by the audit, not applied): Chase grants Sapphire Reserve The Edit credits per calendar year, while the definition resets on the card anniversary. Changing `cycleAlignment` in place would collide with stored anniversary Benefit Statuses (the cron skips and reports the discrepancy), so it needs a reviewed status migration first.
 
 Rollout: these are source changes only. Run the guarded `npm run sync:global-catalog -- --dry-run`; relative to the previous source it should add Citi Strata Premier and seven benefits (five AAdvantage Executive, one Venture X, one Strata Premier) and update the changed fee/amount/description fields, with zero retirements and zero conflicts (dev-database dry run on 2026-11-22: 0 conflicts, 0 retirements). Existing statuses are untouched; new cycles pick up the new amounts.
+
+The studio-art switch also changes `imageUrl` for the seven former `.jpg` cards and the three Bilt cards (previously null); the dry run reports these as card updates. Old `.jpg` paths keep rendering regenerated art until then.

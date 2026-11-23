@@ -145,7 +145,7 @@ export const predefinedCardsData = [
       name: 'Chase Sapphire Reserve',
       issuer: 'Chase',
       annualFee: 795,
-      imageUrl: '/images/cards/chase-sapphire-reserve.jpg',
+      imageUrl: '/images/cards/chase-sapphire-reserve.png',
       benefits: [
         {
           catalogKey: 'benefit:csr:300-annual-travel-credit',
@@ -298,7 +298,7 @@ export const predefinedCardsData = [
       name: 'Chase Ink Business Preferred',
       issuer: 'Chase',
       annualFee: 95,
-      imageUrl: '/images/cards/chase-ink-business-preferred.jpg',
+      imageUrl: '/images/cards/chase-ink-business-preferred.png',
       benefits: [],
     },
     { ...americanExpressCardCatalog["American Express Platinum Card"], issuerSourceUrl: 'https://www.americanexpress.com/us/credit-cards/card/platinum/', lastVerifiedAt: '2026-11-22' },
@@ -315,7 +315,7 @@ export const predefinedCardsData = [
       name: 'IHG One Rewards Premier Credit Card',
       issuer: 'Chase',
       annualFee: 99,
-      imageUrl: '/images/cards/ihg-one-rewards-premier-credit-card.jpg',
+      imageUrl: '/images/cards/ihg-one-rewards-premier-credit-card.png',
       benefits: [
         {
           catalogKey: 'benefit:ihg-premier:annual-anniversary-free-night-up-to-40k-points',
@@ -333,7 +333,7 @@ export const predefinedCardsData = [
       name: 'IHG One Rewards Premier Business Credit Card',
       issuer: 'Chase',
       annualFee: 99,
-      imageUrl: '/images/cards/ihg-one-rewards-premier-business-credit-card.jpg',
+      imageUrl: '/images/cards/ihg-one-rewards-premier-business-credit-card.png',
       benefits: [
         {
           catalogKey: 'benefit:ihg-premier-business:annual-anniversary-free-night-up-to-40k-points',
@@ -569,7 +569,7 @@ export const predefinedCardsData = [
       name: 'Marriott Bonvoy Boundless Credit Card',
       issuer: 'Chase',
       annualFee: 95,
-      imageUrl: '/images/cards/chase-marriott-bonvoy-boundless.jpg',
+      imageUrl: '/images/cards/chase-marriott-bonvoy-boundless.png',
       benefits: [
         {
           catalogKey: 'benefit:marriott-boundless:annual-free-night-award-up-to-35k-points',
@@ -690,7 +690,7 @@ export const predefinedCardsData = [
       name: 'HSBC Elite Credit Card',
       issuer: 'HSBC',
       annualFee: 495,
-      imageUrl: '/images/cards/hsbc-elite-world-elite-mastercard.jpg',
+      imageUrl: '/images/cards/hsbc-elite-world-elite-mastercard.png',
       benefits: [
         {
           catalogKey: 'benefit:hsbc-elite:400-annual-travel-credit-hsbc-travel-bookings',
@@ -830,7 +830,7 @@ export const predefinedCardsData = [
       name: 'The Ritz-Carlton Credit Card',
       issuer: 'Chase',
       annualFee: 450,
-      imageUrl: '/images/cards/the-ritz-carlton-credit-card.jpg',
+      imageUrl: '/images/cards/the-ritz-carlton-credit-card.png',
       benefits: [
         {
           catalogKey: 'benefit:ritz-carlton:300-annual-travel-credit',
@@ -1420,7 +1420,7 @@ export const predefinedCardsData = [
       name: 'Bilt Blue Card',
       issuer: 'Bilt',
       annualFee: 0,
-      imageUrl: null,
+      imageUrl: '/images/cards/bilt-blue.png',
       benefits: [],
     },
     {
@@ -1430,7 +1430,7 @@ export const predefinedCardsData = [
       name: 'Bilt Obsidian Card',
       issuer: 'Bilt',
       annualFee: 95,
-      imageUrl: null,
+      imageUrl: '/images/cards/bilt-obsidian.png',
       benefits: [
         {
           catalogKey: 'benefit:bilt-obsidian:50-semi-annual-bilt-travel-hotel-credit-jan-jun',
@@ -1465,7 +1465,7 @@ export const predefinedCardsData = [
       name: 'Bilt Palladium Card',
       issuer: 'Bilt',
       annualFee: 495,
-      imageUrl: null,
+      imageUrl: '/images/cards/bilt-palladium.png',
       benefits: [
         {
           catalogKey: 'benefit:bilt-palladium:200-semi-annual-bilt-travel-hotel-credit-jan-jun',
