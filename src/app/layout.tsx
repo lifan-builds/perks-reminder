@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
+import localFont from "next/font/local";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Providers from "@/components/Providers"; // Reinstate original Providers
@@ -16,6 +17,12 @@ import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 
 const geistSans = GeistSans;
 const geistMono = GeistMono;
+const displayFace = localFont({
+  src: "../../node_modules/@fontsource-variable/bodoni-moda/files/bodoni-moda-latin-opsz-normal.woff2",
+  variable: "--font-display-face",
+  weight: "400 900",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   applicationName: SITE_NAME,
@@ -114,7 +121,10 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   userScalable: true,
-  themeColor: "#3b82f6",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f8f5ee" },
+    { media: "(prefers-color-scheme: dark)", color: "#121a2b" },
+  ],
   viewportFit: "cover",
 };
 
@@ -134,7 +144,7 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content={SITE_NAME} />
         <meta name="application-name" content={SITE_NAME} />
-        <meta name="msapplication-TileColor" content="#3b82f6" />
+        <meta name="msapplication-TileColor" content="#1f2a4d" />
         <meta name="msapplication-tap-highlight" content="no" />
         <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
         <link rel="shortcut icon" href="/favicon.png" />
@@ -149,14 +159,14 @@ export default async function RootLayout({
         )}
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-full`}
+        className={`${geistSans.variable} ${geistMono.variable} ${displayFace.variable} antialiased h-full`}
       >
         {/* <ThemeProviders> */}
         <Providers session={session}>{/* Use original Providers */}
           <ErrorBoundary>
             <ServiceWorkerRegistrar />
             <SkipLink />
-            <div className="app-shell flex min-h-full flex-col bg-gray-50 dark:bg-gray-950">
+            <div className="app-shell flex min-h-full flex-col bg-background">
               <Navbar />
               <main 
                 id="main-content" 

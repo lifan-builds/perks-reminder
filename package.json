@@ -65,6 +65,7 @@
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
     "@capacitor/core": "^8.3.4",
+    "@fontsource-variable/bodoni-moda": "5.3.0",
     "@heroicons/react": "^2.2.0",
     "@prisma/client": "^6.19.3",
     "@radix-ui/react-slot": "^1.2.2",
