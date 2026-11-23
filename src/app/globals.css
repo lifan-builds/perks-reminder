@@ -83,6 +83,33 @@
   --color-blue-800: oklch(0.32 0.095 262);
   --color-blue-900: oklch(0.26 0.075 262);
   --color-blue-950: oklch(0.2 0.055 262);
+
+
+
+
+  --color-green-50: oklch(0.97 0.02 160);
+  --color-green-100: oklch(0.935 0.04 160);
+  --color-green-200: oklch(0.87 0.07 160);
+  --color-green-300: oklch(0.79 0.1 160);
+  --color-green-400: oklch(0.7 0.12 160);
+  --color-green-500: oklch(0.6 0.12 160);
+  --color-green-600: oklch(0.5 0.105 160);
+  --color-green-700: oklch(0.43 0.09 160);
+  --color-green-800: oklch(0.36 0.075 160);
+  --color-green-900: oklch(0.3 0.06 160);
+  --color-green-950: oklch(0.22 0.045 160);
+
+  --color-emerald-50: oklch(0.97 0.02 160);
+  --color-emerald-100: oklch(0.935 0.04 160);
+  --color-emerald-200: oklch(0.87 0.07 160);
+  --color-emerald-300: oklch(0.79 0.1 160);
+  --color-emerald-400: oklch(0.7 0.12 160);
+  --color-emerald-500: oklch(0.6 0.12 160);
+  --color-emerald-600: oklch(0.5 0.105 160);
+  --color-emerald-700: oklch(0.43 0.09 160);
+  --color-emerald-800: oklch(0.36 0.075 160);
+  --color-emerald-900: oklch(0.3 0.06 160);
+  --color-emerald-950: oklch(0.22 0.045 160);
 }
 
 :root {
@@ -234,10 +261,10 @@
   /* Display voice: engraved, high-contrast, optical-size aware. */
   .font-display {
     font-family: var(--font-display);
-    font-optical-sizing: auto;
-    font-weight: 520;
+    font-variation-settings: "opsz" 36;
+    font-weight: 560;
     font-kerning: normal;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.035em;
   }
 
   /* Small engraved capitals used for document field labels (VALID UNTIL, ISSUED). */
@@ -261,6 +288,76 @@
   .dark .security-paper {
     background-blend-mode: screen;
   }
+
+
+  /* Read surfaces: an engraved document page with a 68ch measure. */
+  .prose {
+    color: var(--foreground);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    max-width: 68ch;
+  }
+  .prose > * + * { margin-top: 1.1em; }
+  .prose h1 {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 36;
+    font-weight: 560;
+    letter-spacing: -0.035em;
+    font-size: clamp(2.5rem, 5vw, 3.75rem);
+    line-height: 1.04;
+  }
+  .prose h2 {
+    font-family: var(--font-display);
+    font-variation-settings: "opsz" 36;
+    font-weight: 560;
+    letter-spacing: -0.025em;
+    font-size: clamp(1.75rem, 3vw, 2.25rem);
+    line-height: 1.15;
+    margin-top: 2.4em;
+    padding-top: 0.9em;
+    border-top: 1px solid var(--border);
+  }
+  .prose h3 {
+    font-size: 1.125rem;
+    font-weight: 650;
+    line-height: 1.4;
+    margin-top: 2em;
+  }
+  .prose h2 + *, .prose h3 + * { margin-top: 0.6em; }
+  .prose .lead { font-size: 1.25rem; line-height: 1.65; color: var(--muted-foreground); }
+  .prose p, .prose li { color: color-mix(in oklch, var(--foreground) 88%, var(--muted-foreground)); }
+  .prose strong { color: var(--foreground); font-weight: 650; }
+  .prose a { color: var(--primary); text-decoration: underline; text-decoration-color: color-mix(in oklch, var(--primary) 40%, transparent); }
+  .prose a:hover { text-decoration-color: currentColor; }
+  .prose ul, .prose ol { padding-left: 1.35em; }
+  .prose ul { list-style: none; }
+  .prose ul > li { position: relative; }
+  .prose ul > li::before {
+    content: "";
+    position: absolute;
+    left: -1.05em;
+    top: 0.72em;
+    width: 0.4em;
+    height: 1px;
+    background: var(--primary);
+  }
+  .prose ol { list-style: decimal; }
+  .prose ol > li::marker { color: var(--muted-foreground); font-variant-numeric: tabular-nums; }
+  .prose li + li { margin-top: 0.4em; }
+  .prose blockquote {
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 0.9em 0;
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    line-height: 1.5;
+  }
+  .prose code { font-family: var(--font-mono); font-size: 0.9em; background: var(--muted); padding: 0.1em 0.35em; border-radius: 4px; }
+  .prose table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
+  .prose th, .prose td { border-bottom: 1px solid var(--border); padding: 0.55em 0.6em; text-align: left; vertical-align: top; }
+  .prose th { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted-foreground); }
+  .prose hr { border: 0; border-top: 1px solid var(--border); margin: 2.5em 0; }
+  .prose .not-prose, .prose .not-prose * { max-width: none; }
 
   /* A document page edge: hairline frame with an inset rule. */
   .document-frame {

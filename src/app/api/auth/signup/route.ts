@@ -78,7 +78,7 @@ export async function POST(request: Request) {
       to: normalizedEmail,
       subject: `Verify your ${SITE_NAME} email`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="font-family: Georgia, 'Times New Roman', serif, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #4F46E5;">Welcome to ${SITE_NAME}!</h1>
           <p>Please verify your email address by clicking the button below:</p>
           <a href="${verifyUrl}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin: 16px 0;">

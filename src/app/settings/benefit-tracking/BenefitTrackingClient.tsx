@@ -61,7 +61,7 @@ export default function BenefitTrackingClient({
         </p>
         <Link
           href="/benefits"
-          className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+          className="mt-4 inline-block text-sm font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
         >
           Go to benefits
         </Link>

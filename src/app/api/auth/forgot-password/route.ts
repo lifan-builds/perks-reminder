@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       to: normalizedEmail,
       subject: `Reset your ${SITE_NAME} password`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="font-family: Georgia, 'Times New Roman', serif, sans-serif; max-width: 600px; margin: 0 auto;">
           <h1 style="color: #4F46E5;">Password Reset</h1>
           <p>You requested a password reset for your ${SITE_NAME} account. Click the button below to set a new password:</p>
           <a href="${resetUrl}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin: 16px 0;">

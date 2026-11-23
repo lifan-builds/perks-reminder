@@ -30,10 +30,9 @@ describe('static catalog', () => {
     const withoutProvenance = predefinedCardsData
       .filter((card) => card.issuer === 'American Express')
       .map((card) => {
-        const { issuerSourceUrl: _source, lastVerifiedAt: _verified, ...canonical } = card as typeof card & {
-          issuerSourceUrl?: string;
-          lastVerifiedAt?: string;
-        };
+        const canonical: Record<string, unknown> = { ...card };
+        delete canonical.issuerSourceUrl;
+        delete canonical.lastVerifiedAt;
         return canonical;
       });
     expect(withoutProvenance).toEqual(Object.values(americanExpressCardCatalog));

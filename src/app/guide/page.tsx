@@ -1,6 +1,9 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { PRIMARY_SITE_URL, SITE_NAME } from '@/lib/site';
+import { calculateAnnualBenefitValue, getPublicStaticCards } from '@/lib/static-catalog';
+
+const FEATURED_CARDS = ['card:csr', 'card:american-express-platinum-card', 'card:venture-x'];
 
 export const metadata: Metadata = {
   title: "Credit Card Benefits Guide - How to Maximize Your Rewards",
@@ -39,67 +42,80 @@ export default function GuidePage() {
     mainEntityOfPage: `${PRIMARY_SITE_URL}/guide`,
   };
 
+  const featured = getPublicStaticCards()
+    .filter((card) => FEATURED_CARDS.includes(card.catalogKey))
+    .sort((left, right) => FEATURED_CARDS.indexOf(left.catalogKey) - FEATURED_CARDS.indexOf(right.catalogKey));
+
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="mx-auto max-w-3xl px-1 py-6 sm:py-10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
       />
-      <article className="prose prose-lg max-w-none">
+      <article className="prose">
         <h1>Complete Guide to Maximizing Credit Card Benefits</h1>
-        
+
         <p className="lead">
-          Learn how to track, optimize, and maximize your credit card rewards to ensure you never miss valuable benefits again. 
-          This comprehensive guide covers strategies for all major credit card issuers.
+          How to track, time, and actually use the credits a premium card charges you for, so the annual fee pays for
+          itself instead of quietly expiring.
         </p>
 
         <h2>Why Credit Card Benefit Tracking Matters</h2>
         <p>
-          The average credit card user loses $300-600 annually by forgetting to use benefits that expire. 
-          Premium cards like Chase Sapphire Reserve ($550 annual fee) and Amex Platinum ($695 annual fee) 
-          offer thousands of dollars in annual benefits, but only if you actually use them.
+          Premium cards now carry annual fees in the $500–$900 range and pay them back through a long list of small,
+          use-it-or-lose-it credits. Each one has its own window, merchant rules, and enrollment step, and an unused
+          window does not roll over.
         </p>
 
         <h2>Understanding Credit Card Benefit Cycles</h2>
         <p>
-          Most credit card benefits operate on annual cycles that reset on your card&apos;s anniversary date. 
-          Key benefit types include:
+          Credits reset on different clocks, often several on the same card:
         </p>
-        
         <ul>
-          <li><strong>Travel Credits:</strong> Annual airline, hotel, or general travel credits</li>
-          <li><strong>Dining Credits:</strong> Monthly or annual restaurant and delivery credits</li>
-          <li><strong>Ride Share Credits:</strong> Uber, Lyft, or general transportation credits</li>
-          <li><strong>Lounge Access:</strong> Priority Pass, Centurion Lounge, and airline lounges</li>
-          <li><strong>Statement Credits:</strong> Various merchant-specific credits</li>
+          <li><strong>Calendar month:</strong> streaming, rideshare, and delivery credits (reset on the 1st)</li>
+          <li><strong>Calendar quarter:</strong> dining and retail credits (Jan–Mar, Apr–Jun, Jul–Sep, Oct–Dec)</li>
+          <li><strong>Half year:</strong> hotel, shopping, and event credits split Jan–Jun and Jul–Dec</li>
+          <li><strong>Calendar year:</strong> airline-fee, membership, and business-software credits (reset Jan 1)</li>
+          <li><strong>Card anniversary:</strong> travel credits, free nights, and anniversary points tied to your open date</li>
+          <li><strong>Multi-year:</strong> Global Entry, TSA PreCheck, or NEXUS credits every four or four-and-a-half years</li>
         </ul>
+        <p>
+          Many of these windows close together on Dec 31, and a credit counts by the date the purchase <em>posts</em>,
+          not the day you buy. The <Link href="/expiring">Year-End Rescue</Link> lists every Dec 31 credit with a safe
+          charge-by date.
+        </p>
 
         <h2>Top Credit Cards and Their Benefits</h2>
-        
-        <h3>Chase Sapphire Reserve</h3>
-        <ul>
-          <li>$300 annual travel credit</li>
-          <li>Priority Pass Select membership</li>
-          <li>$5 monthly DoorDash credit</li>
-          <li>3x points on dining and travel</li>
-        </ul>
+        <p>
+          Straight from the Perks Reminder catalog, so these stay current. Issuer terms are the authority; each card page
+          links its usage guides.
+        </p>
 
-        <h3>American Express Platinum</h3>
-        <ul>
-          <li>$200 annual airline fee credit</li>
-          <li>$200 annual hotel credit</li>
-          <li>$240 annual digital entertainment credit</li>
-          <li>Centurion Lounge access</li>
-          <li>$15 monthly Uber credit</li>
-        </ul>
-
-        <h3>Capital One Venture X</h3>
-        <ul>
-          <li>$300 annual travel credit</li>
-          <li>10,000 bonus miles on anniversary</li>
-          <li>Priority Pass Select membership</li>
-          <li>2x miles on all purchases</li>
-        </ul>
+        {featured.map((card) => {
+          const credits = [...card.benefits]
+            .filter((benefit) => benefit.maxAmount > 0)
+            .sort((left, right) =>
+              calculateAnnualBenefitValue(right.maxAmount, right.frequency, right.fixedCycleDurationMonths)
+              - calculateAnnualBenefitValue(left.maxAmount, left.frequency, left.fixedCycleDurationMonths))
+            .slice(0, 6);
+          return (
+            <section key={card.catalogKey}>
+              <h3>
+                <Link href={`/cards/browse/${encodeURIComponent(card.name)}`}>{card.name}</Link>
+                <span className="not-prose ml-2 align-middle text-sm font-sans font-medium text-muted-foreground">${card.annualFee} annual fee</span>
+              </h3>
+              <ul>
+                {credits.map((benefit) => (
+                  <li key={benefit.catalogKey}>
+                    {benefit.usageWay ? (
+                      <Link href={`/benefits/how-to-use/${benefit.usageWay.slug}`}>{benefit.description}</Link>
+                    ) : benefit.description}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
 
         <h2>How to Calculate Your Credit Card ROI</h2>
         <p>
@@ -114,31 +130,31 @@ export default function GuidePage() {
         </ol>
 
         <p>
-          <strong>Example:</strong> If you use $800 worth of benefits and earn $200 in cash back on a $550 annual fee card, 
-          your net value is $450, giving you an 82% ROI.
+          <strong>Example:</strong> If you use $1,100 worth of credits and earn $300 in points value on a $795 annual fee card,
+          your net value is $605, a 76% return on the fee.
         </p>
 
         <h2>Best Practices for Benefit Tracking</h2>
         
-        <h3>1. Set Up Automated Tracking</h3>
+        <h3>Set Up Automated Tracking</h3>
         <p>
           Use tools like Perks Reminder to automatically track your benefit cycles and get notifications 
           before benefits expire. Manual tracking often leads to missed opportunities.
         </p>
 
-        <h3>2. Calendar Your Benefits</h3>
+        <h3>Calendar Your Benefits</h3>
         <p>
           Add benefit expiration dates to your calendar with reminders set 30 days before expiration. 
           This gives you time to plan usage.
         </p>
 
-        <h3>3. Track Usage Throughout the Year</h3>
+        <h3>Track Usage Throughout the Year</h3>
         <p>
           Don&apos;t wait until the end of the year to use benefits. Plan ahead and use credits consistently 
           throughout your benefit cycle.
         </p>
 
-        <h3>4. Understand Benefit Categories</h3>
+        <h3>Understand Benefit Categories</h3>
         <p>
           Some benefits are more flexible than others. Travel credits often have broad usage, 
           while dining credits may be limited to specific merchants.
@@ -186,19 +202,18 @@ export default function GuidePage() {
           <li>Creating a plan to use benefits throughout the year</li>
         </ol>
 
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
-          <h3>Start Tracking Your Benefits Today</h3>
-          <p>
-            Perks Reminder makes it easy to track all your credit card benefits in one place. 
-            Get smart notifications, calculate ROI, and never miss a valuable benefit again.
+        <aside className="not-prose document-frame mt-12 rounded-xl p-6 sm:p-8">
+          <h2 className="font-display text-3xl leading-tight text-foreground">Start tracking your benefits</h2>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
+            Every card, every reset window, and a reminder before each one closes. Free, open source, no bank connection.
           </p>
           <Link
             href="/auth/signup?callbackUrl=%2Fcards%2Fnew"
-            className="inline-block bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            className="mt-5 inline-flex min-h-11 items-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Get Started Free
+            Start tracking free
           </Link>
-        </div>
+        </aside>
       </article>
     </div>
   );

@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  getLoyaltyTypeIcon,
   LoyaltyAccountFormFields,
   LoyaltyModalShell,
   LoyaltyProgramSummaryCard,
@@ -58,12 +57,12 @@ export function AddLoyaltyAccountModal({
               setCertificateRows([]);
             }
           }}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         >
           <option value="">Choose a program...</option>
           {availablePrograms.map((program) => (
             <option key={program.id} value={program.id}>
-              {getLoyaltyTypeIcon(program.type)} {program.displayName} ({program.company})
+              {program.displayName} ({program.company})
             </option>
           ))}
         </select>

@@ -59,7 +59,7 @@ function PredefinedCardForm({ card, matchedFields }: { card: CardWithBenefits; m
   return (
     <form onSubmit={handleSubmit}>
       <input type="hidden" name="predefinedCardId" value={card.id} />
-      <div className="flex h-full flex-col justify-between overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-indigo-600">
+      <div className="flex h-full flex-col justify-between overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-600">
         <div>
           {/* Card Image - Slightly Smaller */}
           <CardImageWell
@@ -75,7 +75,7 @@ function PredefinedCardForm({ card, matchedFields }: { card: CardWithBenefits; m
           {/* Card Name and Match Badges */}
           <div className="space-y-3 p-4 pb-3">
             <div className="flex items-start justify-between gap-3">
-              <h2 className={`text-lg font-semibold leading-snug text-gray-950 dark:text-gray-100 ${matchedFields?.includes('name') ? 'bg-yellow-200 dark:bg-yellow-800 px-1 rounded' : ''}`}>
+              <h2 className={`text-lg font-semibold leading-snug text-gray-950 dark:text-gray-100 ${matchedFields?.includes('name') ? 'bg-stamp-wash !text-foreground px-1 rounded' : ''}`}>
                 {card.name}
               </h2>
               {matchedFields && matchedFields.length > 0 && (
@@ -91,10 +91,10 @@ function PredefinedCardForm({ card, matchedFields }: { card: CardWithBenefits; m
 
             {/* Issuer and Annual Fee - More Compact */}
             <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3 dark:border-gray-700">
-              <p className={`text-xs text-gray-500 dark:text-gray-400 ${matchedFields?.includes('issuer') ? 'bg-yellow-200 dark:bg-yellow-800 px-1 rounded' : ''}`}>
+              <p className={`text-xs text-gray-500 dark:text-gray-400 ${matchedFields?.includes('issuer') ? 'bg-stamp-wash !text-foreground px-1 rounded' : ''}`}>
                 {card.issuer}
               </p>
-              <p className={`rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300 ${matchedFields?.includes('annual fee') ? 'bg-yellow-200 dark:bg-yellow-800 px-1 rounded' : ''}`}>
+              <p className={`rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700 dark:bg-gray-700 dark:text-gray-300 ${matchedFields?.includes('annual fee') ? 'bg-stamp-wash !text-foreground px-1 rounded' : ''}`}>
                 ${card.annualFee}/year
               </p>
             </div>
@@ -123,7 +123,7 @@ function PredefinedCardForm({ card, matchedFields }: { card: CardWithBenefits; m
               {showBenefits && (
                 <div className="mt-2 space-y-1 border-l-2 border-emerald-200 pl-2 dark:border-emerald-800">
                   {card.benefits.map((benefit, index) => (
-                    <div key={index} className={`text-xs text-gray-600 dark:text-gray-400 ${matchedFields?.includes('benefit') || matchedFields?.includes('category') ? 'bg-yellow-200 dark:bg-yellow-800 px-1 rounded' : ''}`}>
+                    <div key={index} className={`text-xs text-gray-600 dark:text-gray-400 ${matchedFields?.includes('benefit') || matchedFields?.includes('category') ? 'bg-stamp-wash !text-foreground px-1 rounded' : ''}`}>
                       - {benefit.description} {benefit.maxAmount && `($${benefit.maxAmount})`}
                     </div>
                   ))}
@@ -144,7 +144,7 @@ function PredefinedCardForm({ card, matchedFields }: { card: CardWithBenefits; m
               name="nickname"
               maxLength={50}
               placeholder="My Travel Card, Work Card..."
-              className="block w-full px-3 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500 dark:placeholder-gray-400"
+              className="block w-full px-3 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 dark:placeholder-gray-400"
             />
           </div>
 
@@ -161,7 +161,7 @@ function PredefinedCardForm({ card, matchedFields }: { card: CardWithBenefits; m
               maxLength={maxLength}
               pattern={pattern}
               placeholder={placeholder}
-              className="block w-full px-3 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500 dark:placeholder-gray-400"
+              className="block w-full px-3 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 dark:placeholder-gray-400"
               onInput={(e) => {
                 const target = e.target as HTMLInputElement;
                 const cleaned = target.value.replace(/[^0-9]/g, '');
@@ -190,7 +190,7 @@ function PredefinedCardForm({ card, matchedFields }: { card: CardWithBenefits; m
               <select
                 id={`openedMonth-${card.id}`}
                 name="openedMonth"
-                className="block w-1/2 px-2 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
+                className="block w-1/2 px-2 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 defaultValue=""
               >
                 <option value="" disabled>Month...</option>
@@ -201,7 +201,7 @@ function PredefinedCardForm({ card, matchedFields }: { card: CardWithBenefits; m
               <select
                 id={`openedYear-${card.id}`}
                 name="openedYear"
-                className="block w-1/2 px-2 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
+                className="block w-1/2 px-2 py-1.5 text-sm border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                 defaultValue=""
               >
                 <option value="" disabled>Year...</option>
@@ -217,7 +217,7 @@ function PredefinedCardForm({ card, matchedFields }: { card: CardWithBenefits; m
         <button
           type="submit"
           disabled={isPending}
-          className={`mt-auto w-full border-t border-indigo-500 bg-indigo-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo-700 dark:border-indigo-500 dark:bg-indigo-600 dark:hover:bg-indigo-700 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`mt-auto w-full border-t border-blue-500 bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 dark:border-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           {isPending ? 'Adding...' : 'Add Card'}
         </button>
@@ -327,7 +327,7 @@ export default function AddNewCardPage() {
         description="Search the predefined catalog, add optional identifiers, and Perks Reminder will create the trackable benefits."
       />
 
-      <div className="mb-6 rounded-lg border border-indigo-200 bg-indigo-50 p-4 shadow-sm dark:border-indigo-800 dark:bg-indigo-950/20">
+      <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 shadow-sm dark:border-blue-800 dark:bg-blue-950/20">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-950 dark:text-white">Bulk add cards</h2>
@@ -339,7 +339,7 @@ export default function AddNewCardPage() {
             type="button"
             onClick={parseBulkInput}
             disabled={isLoading || bulkInput.trim().length === 0}
-            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             Parse wallet
           </button>
@@ -348,7 +348,7 @@ export default function AddNewCardPage() {
           value={bulkInput}
           onChange={(event) => setBulkInput(event.target.value)}
           rows={3}
-          className="mt-4 w-full rounded-lg border border-indigo-200 bg-white p-3 text-sm text-gray-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:border-indigo-800 dark:bg-gray-900 dark:text-white"
+          className="mt-4 w-full rounded-lg border border-blue-200 bg-white p-3 text-sm text-gray-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-blue-800 dark:bg-gray-900 dark:text-white"
           placeholder="plat x2, gold, csr, aspire x3"
         />
 
@@ -463,7 +463,7 @@ export default function AddNewCardPage() {
           <input
             type="text"
             placeholder="Search by card name, issuer, benefits, or try 'amex', 'travel', 'dining', 'uber'..."
-            className="w-full rounded-lg border border-gray-300 p-3 pr-10 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:placeholder-gray-400"
+            className="w-full rounded-lg border border-gray-300 p-3 pr-10 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:placeholder-gray-400"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -504,7 +504,7 @@ export default function AddNewCardPage() {
             id="groupByIssuer"
             checked={groupByIssuer}
             onChange={(e) => setGroupByIssuer(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-indigo-600 focus:ring-2 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-indigo-600"
+            className="h-4 w-4 rounded border-gray-300 bg-gray-100 text-blue-600 focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:ring-offset-gray-800 dark:focus:ring-blue-600"
           />
           <label htmlFor="groupByIssuer" className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Group by Issuing Bank

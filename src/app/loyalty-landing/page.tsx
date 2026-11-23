@@ -6,6 +6,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { SITE_NAME } from '@/lib/site';
 import { buildLoyaltyCallbackUrl } from '@/lib/loyalty-links';
+import GuillocheRosette from '@/components/art/GuillocheRosette';
 
 /** Build sign-in/sign-up callback URL so users stay on loyalty subdomain after login. */
 async function getLoyaltyCallbackUrl(): Promise<string | null> {
@@ -47,22 +48,20 @@ export default async function LoyaltyLandingPage() {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-gray-100 dark:bg-gray-900">
-        <div className="container mx-auto grid min-h-[70vh] max-w-screen-xl px-4 py-8 lg:grid-cols-12 lg:gap-8 lg:py-16 xl:gap-0">
+      <section className="security-paper relative -mx-4 -mt-8 overflow-hidden border-b border-border">
+        <GuillocheRosette className="absolute -left-56 -bottom-64 h-[46rem] w-[46rem] text-primary/20 dark:text-foil/15" seed={2.1} petals={13} />
+        <div className="relative container mx-auto grid min-h-[70vh] max-w-screen-xl px-4 py-10 lg:grid-cols-12 lg:gap-8 lg:py-16 xl:gap-0">
           <div className="mr-auto place-self-center lg:col-span-7">
-            <div className="mb-4 inline-flex items-center rounded-full bg-purple-100 px-3 py-1 text-sm font-medium text-purple-800 dark:bg-purple-900/30 dark:text-purple-300">
-              Loyalty Program Tracker
-            </div>
-            <h1 className="mb-4 max-w-2xl text-4xl font-extrabold leading-none tracking-tight text-gray-900 dark:text-white md:text-5xl xl:text-6xl">
+            <h1 className="font-display mb-5 max-w-2xl text-5xl leading-[1.03] text-foreground md:text-6xl xl:text-7xl">
               Stop Losing Points &amp; Miles to Expiration
             </h1>
-            <p className="mb-6 max-w-2xl font-light text-gray-500 dark:text-gray-300 md:text-lg lg:mb-8 lg:text-xl">
+            <p className="mb-6 max-w-2xl text-base leading-7 text-muted-foreground md:text-lg lg:mb-8">
               Airlines, hotels, and loyalty programs quietly expire your hard-earned points. {SITE_NAME} tracks every program, sends timely alerts, and helps you keep your rewards alive.
             </p>
             <div className="flex flex-col gap-4 sm:flex-row">
               <Link
                 href={signUpHref}
-                className="inline-flex items-center justify-center rounded-lg bg-purple-600 px-5 py-3 text-center text-base font-medium text-white hover:bg-purple-700 focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-900"
+                className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-3 text-center text-base font-medium text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900"
               >
                 Get Started Free
                 <svg
@@ -87,9 +86,9 @@ export default async function LoyaltyLandingPage() {
 
             {/* Trust Badges */}
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <div className="inline-flex items-center gap-3 rounded-xl border border-purple-200 bg-purple-50 px-4 py-3 dark:border-purple-700 dark:bg-purple-900/20">
+              <div className="inline-flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 dark:border-blue-700 dark:bg-blue-900/20">
                 <svg
-                  className="h-6 w-6 flex-shrink-0 text-purple-600 dark:text-purple-400"
+                  className="h-6 w-6 flex-shrink-0 text-blue-600 dark:text-blue-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -102,10 +101,10 @@ export default async function LoyaltyLandingPage() {
                   />
                 </svg>
                 <div>
-                  <p className="text-sm font-semibold text-purple-800 dark:text-purple-200">
+                  <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">
                     Smart Alerts
                   </p>
-                  <p className="text-xs text-purple-600 dark:text-purple-400">
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
                     Email notifications before points expire
                   </p>
                 </div>
@@ -158,7 +157,7 @@ export default async function LoyaltyLandingPage() {
                   </div>
                   <div className="mt-2 h-1.5 w-full rounded-full bg-gray-200 dark:bg-gray-700">
                     <div
-                      className="h-1.5 rounded-full bg-purple-500"
+                      className="h-1.5 rounded-full bg-blue-500"
                       style={{
                         width: `${Math.floor(Math.random() * 60 + 30)}%`,
                       }}
@@ -174,7 +173,7 @@ export default async function LoyaltyLandingPage() {
       {/* How It Works */}
       <section className="border-y border-gray-200 bg-white py-16 dark:border-gray-700 dark:bg-gray-800">
         <div className="container mx-auto max-w-screen-xl px-4">
-          <h2 className="mb-12 text-center text-3xl font-bold text-gray-900 dark:text-white">
+          <h2 className="mb-12 text-center font-display text-4xl text-foreground">
             How It Works
           </h2>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
@@ -223,9 +222,9 @@ export default async function LoyaltyLandingPage() {
               },
             ].map((item) => (
               <div key={item.step} className="text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/30">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
                   <svg
-                    className="h-7 w-7 text-purple-600 dark:text-purple-400"
+                    className="h-7 w-7 text-blue-600 dark:text-blue-400"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -248,7 +247,7 @@ export default async function LoyaltyLandingPage() {
       {/* Supported Programs */}
       <section className="py-16">
         <div className="container mx-auto max-w-screen-xl px-4">
-          <h2 className="mb-4 text-center text-3xl font-bold text-gray-900 dark:text-white">
+          <h2 className="mb-4 text-center font-display text-4xl text-foreground">
             Programs We Track
           </h2>
           <p className="mx-auto mb-12 max-w-2xl text-center text-gray-600 dark:text-gray-400">
@@ -284,24 +283,24 @@ export default async function LoyaltyLandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-purple-600 py-16 dark:bg-purple-800">
+      <section className="bg-blue-600 py-16 dark:bg-blue-800">
         <div className="container mx-auto max-w-screen-xl px-4 text-center">
-          <h2 className="mb-4 text-3xl font-bold text-white">
+          <h2 className="font-display mb-4 text-4xl text-white">
             Start Protecting Your Points Today
           </h2>
-          <p className="mx-auto mb-8 max-w-xl text-purple-100">
+          <p className="mx-auto mb-8 max-w-xl text-blue-100">
             Join {SITE_NAME} and never lose another mile or point to expiration. It&apos;s free forever.
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               href={signUpHref}
-              className="inline-flex items-center justify-center rounded-lg bg-white px-6 py-3 text-base font-medium text-purple-600 hover:bg-purple-50 focus:ring-4 focus:ring-purple-300"
+              className="inline-flex items-center justify-center rounded-lg bg-white px-6 py-3 text-base font-medium text-blue-600 hover:bg-blue-50 focus:ring-4 focus:ring-blue-300"
             >
               Create Free Account
             </Link>
             <Link
               href={signInHref}
-              className="inline-flex items-center justify-center rounded-lg border border-white px-6 py-3 text-base font-medium text-white hover:bg-purple-700 focus:ring-4 focus:ring-purple-300"
+              className="inline-flex items-center justify-center rounded-lg border border-white px-6 py-3 text-base font-medium text-white hover:bg-blue-700 focus:ring-4 focus:ring-blue-300"
             >
               Sign In with Google or GitHub
             </Link>
@@ -316,7 +315,7 @@ export default async function LoyaltyLandingPage() {
             {SITE_NAME} also helps you{' '}
             <Link
               href="/"
-              className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+              className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400"
             >
               track credit card benefits
             </Link>{' '}

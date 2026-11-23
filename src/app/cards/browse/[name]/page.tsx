@@ -128,7 +128,7 @@ export default async function CardDetailPage({ params }: PageProps) {
       />
       {/* Breadcrumb */}
       <nav className="mb-8 flex items-center text-sm text-gray-600 dark:text-gray-400">
-        <Link href="/cards/browse" className="hover:text-indigo-600 dark:hover:text-indigo-400">
+        <Link href="/cards/browse" className="hover:text-blue-600 dark:hover:text-blue-400">
           Browse Cards
         </Link>
         <svg className="h-4 w-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -156,11 +156,11 @@ export default async function CardDetailPage({ params }: PageProps) {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">{card.issuer}</p>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
+                <h1 className="font-display text-3xl leading-tight text-foreground md:text-4xl">
                   {card.name}
                 </h1>
               </div>
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                 {card.benefits.length} benefits
               </span>
             </div>
@@ -204,7 +204,7 @@ export default async function CardDetailPage({ params }: PageProps) {
               )}
               <Link
                 href="/auth/signup?callbackUrl=%2Fcards%2Fnew"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-sm font-medium"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors text-sm font-medium"
               >
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -259,7 +259,7 @@ export default async function CardDetailPage({ params }: PageProps) {
                               ${benefit.maxAmount}
                             </span>
                           )}
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                             {getFrequencyLabel(benefit.frequency)}
                           </span>
                         </div>
@@ -315,7 +315,7 @@ export default async function CardDetailPage({ params }: PageProps) {
                 href={`/cards/browse/${encodeURIComponent(relatedCard.name)}`}
                 className="group block"
               >
-                <div className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white transition-all hover:border-indigo-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-indigo-600">
+                <div className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white transition-all hover:border-blue-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-600">
                   <CardImageWell
                     imageUrl={relatedCard.imageUrl}
                     alt={relatedCard.name}
@@ -324,7 +324,7 @@ export default async function CardDetailPage({ params }: PageProps) {
                     sizes="140px"
                   />
                   <div className="p-4">
-                    <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors text-sm truncate">
+                    <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors text-sm truncate">
                       {relatedCard.name}
                     </h3>
                     <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -340,7 +340,7 @@ export default async function CardDetailPage({ params }: PageProps) {
       )}
 
       {/* CTA */}
-      <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-8 text-center dark:border-indigo-800 dark:bg-indigo-950/20">
+      <div className="rounded-lg border border-blue-200 bg-blue-50 p-8 text-center dark:border-blue-800 dark:bg-blue-950/20">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
           Track Your {card.name} Benefits
         </h2>
@@ -349,7 +349,7 @@ export default async function CardDetailPage({ params }: PageProps) {
         </p>
         <Link
           href="/auth/signup?callbackUrl=%2Fcards%2Fnew"
-          className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl"
+          className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
         >
           Start Tracking Free
           <svg className="h-5 w-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -36,18 +36,18 @@ function SettingsCard({ href, icon, title, description, badge }: SettingsCardPro
   return (
     <Link
       href={href}
-      className="group relative flex items-start gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-indigo-600"
+      className="group relative flex items-start gap-4 rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-600"
     >
-      <div className="flex-shrink-0 rounded-lg bg-indigo-50 p-3 transition-colors group-hover:bg-indigo-100 dark:bg-indigo-900/30 dark:group-hover:bg-indigo-900/50">
+      <div className="flex-shrink-0 rounded-lg bg-blue-50 p-3 transition-colors group-hover:bg-blue-100 dark:bg-blue-900/30 dark:group-hover:bg-blue-900/50">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
             {title}
           </h3>
           {badge && (
-            <span className="px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 rounded-full">
+            <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 rounded-full">
               {badge}
             </span>
           )}
@@ -57,7 +57,7 @@ function SettingsCard({ href, icon, title, description, badge }: SettingsCardPro
         </p>
       </div>
       <div className="flex-shrink-0 self-center">
-        <svg className="h-5 w-5 text-gray-400 group-hover:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="h-5 w-5 text-gray-400 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </div>
@@ -75,25 +75,25 @@ export default async function SettingsPage() {
   const settingsItems = [
     {
       href: '/settings/notifications',
-      icon: <BellIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />,
+      icon: <BellIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />,
       title: 'Notifications',
       description: 'Configure email alerts for expiring benefits and new cycles.',
     },
     {
       href: '/settings/data',
-      icon: <ArrowDownTrayIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />,
+      icon: <ArrowDownTrayIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />,
       title: 'Import & Export Data',
       description: 'Backup your data or import from a previous export.',
     },
     {
       href: '/settings/benefit-tracking',
-      icon: <AdjustmentsHorizontalIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />,
+      icon: <AdjustmentsHorizontalIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />,
       title: 'Benefit Tracking',
       description: 'Review benefits you auto-claim or ignore, and return them to normal tracking.',
     },
     {
       href: '/integrations/amex-sync/setup',
-      icon: <PuzzlePieceIcon className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />,
+      icon: <PuzzlePieceIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />,
       title: 'Amex reader setup',
       description: 'Install the Greasy Fork reader and review the manual, local-only scan flow.',
       badge: 'Optional',
@@ -129,7 +129,7 @@ export default async function SettingsPage() {
       {/* Account and Access */}
       <div className="mb-8 rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
         <div className="mb-5 flex items-center gap-2">
-          <SparklesIcon className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+          <SparklesIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
             Account
           </h2>
@@ -145,7 +145,7 @@ export default async function SettingsPage() {
                 className="h-16 w-16 rounded-full ring-4 ring-white dark:ring-gray-800"
               />
             ) : (
-              <UserCircleIcon className="h-16 w-16 text-indigo-400" />
+              <UserCircleIcon className="h-16 w-16 text-blue-400" />
             )}
           </div>
           <div className="flex-1 min-w-0">
@@ -163,14 +163,14 @@ export default async function SettingsPage() {
                 Verified
               </span>
             </div>
-            <div className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center gap-2">
-              <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+            <div className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center gap-2">
+              <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
                 Free Access
               </span>
             </div>
           </div>
         </div>
-        <div className="mt-5 grid gap-3 border-t border-indigo-100 pt-5 text-sm dark:border-indigo-800 sm:grid-cols-3">
+        <div className="mt-5 grid gap-3 border-t border-blue-100 pt-5 text-sm dark:border-blue-800 sm:grid-cols-3">
           <div>
             <p className="font-medium text-gray-900 dark:text-white">Access</p>
             <p className="mt-1 text-gray-600 dark:text-gray-400">Free</p>
@@ -225,7 +225,7 @@ export default async function SettingsPage() {
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Your data is stored securely and never shared with third parties.
               Read our{' '}
-              <Link href="/privacy" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+              <Link href="/privacy" className="text-blue-600 dark:text-blue-400 hover:underline">
                 Privacy Policy
               </Link>{' '}
               to learn more.

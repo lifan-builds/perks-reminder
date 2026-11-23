@@ -11,7 +11,7 @@ describe('PricingSection', () => {
     render(<PricingSection />);
 
     expect(screen.getByRole('heading', { name: 'Completely free' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Create Free Account' })).toHaveAttribute('href', '/auth/signup');
+    expect(screen.getByRole('link', { name: 'Create free account' })).toHaveAttribute('href', '/auth/signup');
     expect(screen.queryByText(/\bPro\b/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/beta/i)).not.toBeInTheDocument();
   });

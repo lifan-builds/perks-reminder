@@ -53,22 +53,22 @@ export function LoyaltyAccountsClient({ userAccounts, availablePrograms }: Loyal
 
   const getDateStatus = (expirationDate: Date | null, neverExpires = false) => {
     if (neverExpires) {
-      return { status: 'never', color: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200', border: 'border-l-emerald-500' };
+      return { status: 'never', color: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200' };
     }
 
     const daysUntilExpiration = calculateDaysUntilExpiration(expirationDate);
-    if (daysUntilExpiration === null) return { status: 'unknown', color: 'border-border bg-muted text-muted-foreground', border: 'border-l-muted-foreground' };
+    if (daysUntilExpiration === null) return { status: 'unknown', color: 'border-border bg-muted text-muted-foreground' };
 
     if (daysUntilExpiration <= 0) {
-      return { status: 'expired', color: 'border-red-200 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200', border: 'border-l-red-500' };
+      return { status: 'expired', color: 'border-red-200 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200' };
     }
     if (daysUntilExpiration <= 30) {
-      return { status: `${daysUntilExpiration} days`, color: 'border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-200', border: 'border-l-orange-500' };
+      return { status: `${daysUntilExpiration} days`, color: 'border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-900/60 dark:bg-orange-950/30 dark:text-orange-200' };
     }
     if (daysUntilExpiration <= 90) {
-      return { status: `${daysUntilExpiration} days`, color: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200', border: 'border-l-amber-500' };
+      return { status: `${daysUntilExpiration} days`, color: 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200' };
     }
-    return { status: `${daysUntilExpiration} days`, color: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200', border: 'border-l-emerald-500' };
+    return { status: `${daysUntilExpiration} days`, color: 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-200' };
   };
 
   const getPointsExpirationStatus = (account: LoyaltyAccount) => {
@@ -245,7 +245,7 @@ export function LoyaltyAccountsClient({ userAccounts, availablePrograms }: Loyal
               .sort((a, b) => new Date(a.expirationDate).getTime() - new Date(b.expirationDate).getTime());
 
             return (
-              <Card key={account.id} className={`relative border-l-4 ${cardStatus.border}`}>
+              <Card key={account.id} className="relative">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">

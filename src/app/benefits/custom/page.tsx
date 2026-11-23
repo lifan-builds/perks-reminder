@@ -1,17 +1,18 @@
 'use client';
 
+import CategoryIcon from '@/components/ui/CategoryIcon';
 import React, { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { ArrowLeftIcon, SparklesIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { createCustomBenefitAction } from '../actions';
 
 const categories = [
-  { value: 'Travel', label: 'Travel', icon: '✈️' },
-  { value: 'Dining', label: 'Dining', icon: '🍽️' },
-  { value: 'Shopping', label: 'Shopping', icon: '🛍️' },
-  { value: 'Entertainment', label: 'Entertainment', icon: '🎬' },
-  { value: 'Transportation', label: 'Transportation', icon: '🚗' },
-  { value: 'Other', label: 'Other', icon: '📦' },
+  { value: 'Travel', label: 'Travel' },
+  { value: 'Dining', label: 'Dining' },
+  { value: 'Shopping', label: 'Shopping' },
+  { value: 'Entertainment', label: 'Entertainment' },
+  { value: 'Transportation', label: 'Transportation' },
+  { value: 'Other', label: 'Other' },
 ];
 
 const frequencies = [
@@ -62,11 +63,11 @@ export default function AddCustomBenefitPage() {
         </Link>
         
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-lg">
+          <div className="p-2 bg-primary text-primary-foreground rounded-lg">
             <SparklesIcon className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="font-display text-3xl text-foreground">
               Add Custom Benefit
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -101,7 +102,7 @@ export default function AddCustomBenefitPage() {
               required
               maxLength={200}
               placeholder="e.g., Walmart+ Monthly Delivery Credit, Starbucks Stars Reward"
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
             />
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Enter a descriptive name for your benefit
@@ -121,14 +122,14 @@ export default function AddCustomBenefitPage() {
                   onClick={() => setSelectedCategory(cat.value)}
                   className={`flex flex-col items-center p-3 rounded-lg border-2 transition-all ${
                     selectedCategory === cat.value
-                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                       : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
                 >
-                  <span className="text-2xl mb-1">{cat.icon}</span>
+                  <CategoryIcon category={cat.value} className="mb-1 h-6 w-6" />
                   <span className={`text-xs font-medium ${
                     selectedCategory === cat.value 
-                      ? 'text-indigo-600 dark:text-indigo-400' 
+                      ? 'text-blue-600 dark:text-blue-400' 
                       : 'text-gray-600 dark:text-gray-400'
                   }`}>
                     {cat.label}
@@ -159,7 +160,7 @@ export default function AddCustomBenefitPage() {
                 min="0"
                 step="0.01"
                 placeholder="0.00"
-                className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+                className="w-full pl-8 pr-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
               />
             </div>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -178,7 +179,7 @@ export default function AddCustomBenefitPage() {
                   key={freq.value}
                   className={`flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${
                     selectedFrequency === freq.value
-                      ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                       : 'border-gray-200 dark:border-gray-600 hover:border-gray-300 dark:hover:border-gray-500'
                   }`}
                 >
@@ -193,7 +194,7 @@ export default function AddCustomBenefitPage() {
                   <div className="flex-1">
                     <span className={`font-medium ${
                       selectedFrequency === freq.value 
-                        ? 'text-indigo-600 dark:text-indigo-400' 
+                        ? 'text-blue-600 dark:text-blue-400' 
                         : 'text-gray-700 dark:text-gray-300'
                     }`}>
                       {freq.label}
@@ -204,7 +205,7 @@ export default function AddCustomBenefitPage() {
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 ${
                     selectedFrequency === freq.value
-                      ? 'border-indigo-500 bg-indigo-500'
+                      ? 'border-blue-500 bg-blue-500'
                       : 'border-gray-300 dark:border-gray-500'
                   }`}>
                     {selectedFrequency === freq.value && (
@@ -231,7 +232,7 @@ export default function AddCustomBenefitPage() {
               id="startDate"
               name="startDate"
               defaultValue={getDefaultStartDate()}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
             />
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               When does this benefit start? Defaults to today.
@@ -250,7 +251,7 @@ export default function AddCustomBenefitPage() {
           <button
             type="submit"
             disabled={isPending || !selectedCategory}
-            className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors ${
+            className={`inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors ${
               isPending || !selectedCategory ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >

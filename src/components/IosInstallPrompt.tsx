@@ -46,9 +46,9 @@ export default function IosInstallPrompt() {
   if (!isVisible) return null;
 
   return (
-    <div className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-lg border border-indigo-100 bg-white p-3 text-sm shadow-lg dark:border-indigo-900 dark:bg-gray-900 sm:bottom-4">
+    <div className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-md rounded-lg border border-blue-100 bg-white p-3 text-sm shadow-lg dark:border-blue-900 dark:bg-gray-900 sm:bottom-4">
       <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-indigo-600 text-base font-semibold text-white">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-blue-600 text-base font-semibold text-white">
           PR
         </div>
         <div className="min-w-0 flex-1">
@@ -58,7 +58,7 @@ export default function IosInstallPrompt() {
         <button
           type="button"
           onClick={dismiss}
-          className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
+          className="rounded-md p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200"
         >
           <span className="sr-only">Dismiss install prompt</span>
           <XMarkIcon className="h-5 w-5" aria-hidden="true" />

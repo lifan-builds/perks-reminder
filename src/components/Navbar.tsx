@@ -20,6 +20,7 @@ const mainNavigation: NavItem[] = [
   { name: 'Dashboard', href: '/' },
   { name: 'Cards', href: '/cards' },
   { name: 'Benefits', href: '/benefits' },
+  { name: 'Dec 31', href: '/expiring' },
   { name: 'Notifications', href: '/settings/notifications', authRequired: true },
   { name: 'Account', href: '/settings', authRequired: true },
 ];

@@ -49,7 +49,10 @@ export default function AmexReaderSetupPage() {
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
       <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm shadow-black/[0.04]">
         <div className="border-b border-border bg-muted/35 px-6 py-8 sm:px-10 sm:py-10">
-          <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-muted-foreground">
+          <h1 className="font-display max-w-3xl text-4xl leading-tight text-foreground sm:text-5xl">
+            Set up the Perks Reminder Amex benefit reader
+          </h1>
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm font-medium text-muted-foreground">
             <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1">
               <ShieldCheckIcon className="h-4 w-4" aria-hidden="true" />
               Read-only browser setup
@@ -58,9 +61,6 @@ export default function AmexReaderSetupPage() {
               Greasy Fork
             </span>
           </div>
-          <h1 className="mt-5 max-w-3xl text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Set up the Perks Reminder Amex benefit reader
-          </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-muted-foreground sm:text-lg">
             Use the published userscript to read normalized benefit progress from
             your signed-in American Express session. You choose every scan, and

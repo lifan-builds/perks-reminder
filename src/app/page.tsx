@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import type { ReactNode } from 'react';
 import {
   ArrowRightIcon,
@@ -11,23 +10,18 @@ import {
   CreditCardIcon,
   ExclamationTriangleIcon,
   PlusIcon,
-  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 import SupportedCreditCards from '@/components/SupportedCreditCards';
+import GuillocheRosette from '@/components/art/GuillocheRosette';
+import InkStamp from '@/components/art/InkStamp';
+import CardLookup from '@/components/home/CardLookup';
+import CycleLedger from '@/components/home/CycleLedger';
+import { buildYearEndRescue, chargeByDate, DEFAULT_POSTING_BUFFER_DAYS, isRescueSeason } from '@/lib/year-end-rescue';
 import DashboardBenefitRow from '@/components/DashboardBenefitRow';
 import FAQ from '@/components/FAQ';
 import { PRIMARY_SITE_URL, SITE_NAME } from '@/lib/site';
 import { buildFaqJsonLd } from '@/lib/faq-data';
 import { getPublicStaticCards } from '@/lib/static-catalog';
-
-function Differentiator({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="rounded-xl border border-border bg-card p-5">
-      <h3 className="text-base font-semibold text-foreground">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-muted-foreground">{children}</p>
-    </div>
-  );
-}
 
 function DashboardMetric({
   icon,
@@ -74,6 +68,16 @@ export default async function Home() {
   const session = await getServerSession(authOptions);
   const publicCards = getPublicStaticCards();
   const publicBenefitCount = publicCards.reduce((total, card) => total + (card.benefits?.length ?? 0), 0);
+  const now = new Date();
+  const ledgerCard = publicCards.find((card) => card.catalogKey === 'card:american-express-platinum-card');
+  const lookupCards = publicCards.map((card) => ({ name: card.name, issuer: card.issuer, credits: card.benefits.length }));
+  const rescueSummary = isRescueSeason(now)
+    ? {
+        year: now.getUTCFullYear(),
+        count: buildYearEndRescue(publicCards, now.getUTCFullYear()).credits.length,
+        chargeBy: chargeByDate(now.getUTCFullYear(), DEFAULT_POSTING_BUFFER_DAYS),
+      }
+    : null;
 
   const structuredData = {
     "@context": "https://schema.org",
@@ -117,103 +121,107 @@ export default async function Home() {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(buildFaqJsonLd()) }}
         />
 
-        <section className="border-b border-border bg-background">
-          <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-16">
-            <div>
-              <h1 className="max-w-2xl text-4xl font-semibold leading-tight tracking-tight text-foreground md:text-5xl">
-                Replace your credit-card benefits spreadsheet.
+        <section className="security-paper relative -mx-4 -mt-8 overflow-hidden border-b border-border">
+          <GuillocheRosette className="absolute -right-48 -top-40 h-[52rem] w-[52rem] text-primary/20 dark:text-foil/15 max-sm:-right-72" seed={1.3} />
+          <div className="relative mx-auto max-w-7xl px-4 pb-14 pt-10 sm:px-6 lg:px-8 lg:pb-20 lg:pt-14">
+            <div className="flex items-start justify-between gap-8">
+              <h1 className="font-display max-w-[16ch] text-5xl leading-[1.02] text-foreground sm:text-6xl lg:text-[5.25rem]">
+                Every credit you pay for, used before it resets.
               </h1>
-              <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
-                Track recurring credits, reset windows, free-night certificates, loyalty expirations, and annual-fee ROI without connecting bank accounts.
-              </p>
-
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Link
-                  href="/auth/signup?callbackUrl=%2Fcards%2Fnew"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:ring-offset-2 focus:ring-offset-background"
-                >
-                  Get started free
-                  <ArrowRightIcon className="ml-2 h-4 w-4" aria-hidden="true" />
-                </Link>
-                <Link
-                  href="/benefits/how-to-use"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-                >
-                  Benefit usage guides
-                </Link>
-                <a
-                  href="https://github.com/lifan-builds/perks-reminder"
-                  className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
-                >
-                  GitHub ↗
-                </a>
-              </div>
-
-              <p className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-muted-foreground tabular-nums">
-                <span className="inline-flex items-center gap-1.5 text-foreground">
-                  <ShieldCheckIcon className="h-4 w-4 text-primary" aria-hidden="true" />
-                  No Plaid or bank login
-                </span>
-                <span aria-hidden="true">·</span>
-                <span>{publicCards.length} popular cards</span>
-                <span aria-hidden="true">·</span>
-                <span>{publicBenefitCount}+ tracked benefits</span>
-                <span aria-hidden="true">·</span>
-                <Link href="/pricing" className="underline underline-offset-4 hover:text-foreground">
-                  $0 forever (open source)
-                </Link>
-              </p>
+              <InkStamp rim="ISSUED FREE" center="$0" caption="NO BANK LOGIN" tone="visa" rotate={9} className="mt-2 hidden h-32 w-32 md:block" />
             </div>
 
-            <div className="overflow-hidden rounded-2xl border border-border bg-card p-3">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
-                <Image
-                  src="/hero-image.jpg"
-                  alt={`${SITE_NAME} benefit tracking overview`}
-                  fill
-                  sizes="(min-width: 1024px) 44rem, 100vw"
-                  className="object-contain p-3"
-                  priority
-                />
+            <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:items-end">
+              <p className="max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg">
+                Perks Reminder replaces the benefits spreadsheet. It knows every monthly, quarterly, half-year,
+                anniversary, and four-year window on {publicCards.length} cards, reminds you before each one closes,
+                and shows how to trigger the credit. No Plaid, no bank credentials.
+              </p>
+              <div className="flex flex-col gap-4">
+                <div className="grid gap-3 sm:flex sm:flex-wrap">
+                  <Link
+                    href="/auth/signup?callbackUrl=%2Fcards%2Fnew"
+                    className="inline-flex min-h-12 items-center justify-center rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-sm shadow-black/10 transition-colors hover:bg-primary/90"
+                  >
+                    Start tracking free
+                    <ArrowRightIcon className="ml-2 h-4 w-4" aria-hidden="true" />
+                  </Link>
+                  <Link
+                    href="/expiring"
+                    className="inline-flex min-h-12 items-center justify-center rounded-lg border border-border bg-card px-5 text-sm font-semibold text-foreground transition-colors hover:bg-accent"
+                  >
+                    What expires Dec 31
+                  </Link>
+                </div>
+                <CardLookup cards={lookupCards} />
               </div>
             </div>
+
+            {ledgerCard && (
+              <div className="document-frame mt-12 rounded-xl px-5 pb-10 pt-5 sm:px-7 sm:pt-6">
+                <CycleLedger card={ledgerCard} now={now} />
+              </div>
+            )}
+
+            <p className="mt-6 flex flex-wrap gap-x-5 gap-y-1 text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              <span>{publicCards.length} cards</span>
+              <span>{publicBenefitCount} tracked credits</span>
+              <span>Open source</span>
+              <Link href="/pricing" className="underline hover:text-foreground">$0 forever</Link>
+            </p>
           </div>
         </section>
 
-        <section className="border-b border-border bg-background py-14">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div className="max-w-2xl">
-                <h2 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-                  Built for serious card stacks
-                </h2>
-                <p className="mt-2 text-base leading-7 text-muted-foreground">
-                  Keep the privacy of a manual spreadsheet while automating reset windows, reminders, and annual-fee ROI.
-                </p>
+        {rescueSummary && (
+          <section className="-mx-4 bg-ink text-paper dark:bg-card dark:text-foreground">
+            <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+              <div className="flex items-center gap-5">
+                <InkStamp rim="CHARGE BY" center={rescueSummary.chargeBy.slice(8)} caption={`DEC ${rescueSummary.year}`} className="hidden h-24 w-24 text-stamp sm:block" />
+                <div>
+                  <h2 className="font-display text-3xl leading-tight sm:text-4xl">
+                    {rescueSummary.count} catalog credits close on Dec 31.
+                  </h2>
+                  <p className="mt-2 max-w-xl text-sm leading-6 opacity-80">
+                    Charge by Dec {rescueSummary.chargeBy.slice(8)} so the statement post date clears before Jan 1. Pick your cards and see exactly what is left.
+                  </p>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-4 text-sm font-semibold">
-                <Link href="/benefits/how-to-use" className="underline underline-offset-4 hover:text-primary">
-                  Read usage guides →
-                </Link>
-                <Link href="/integrations/amex-sync/setup" className="underline underline-offset-4 hover:text-primary">
-                  Local Amex reader →
-                </Link>
+              <Link
+                href="/expiring"
+                className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-lg bg-stamp px-5 text-sm font-semibold text-stamp-foreground transition-colors hover:bg-stamp/90"
+              >
+                Open Year-End Rescue
+                <ArrowRightIcon className="ml-2 h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+          </section>
+        )}
+
+        <section className="border-b border-border py-16">
+          <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-[minmax(0,20rem)_minmax(0,1fr)] lg:px-8">
+            <div>
+              <h2 className="font-display text-4xl leading-tight text-foreground">Built for a stack of premium cards</h2>
+              <p className="mt-3 text-base leading-7 text-muted-foreground">
+                The privacy of a spreadsheet, with the reset math, reminders, and how-to notes done for you.
+              </p>
+              <div className="mt-5 flex flex-col gap-2 text-sm font-semibold">
+                <Link href="/benefits/how-to-use" className="text-primary underline-offset-4 hover:underline">Read the usage guides →</Link>
+                <Link href="/integrations/amex-sync/setup" className="text-primary underline-offset-4 hover:underline">Local Amex reader →</Link>
               </div>
             </div>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Differentiator title="Reset dates handled">
-                Monthly, quarterly, annual, and card-anniversary cycles calculated automatically.
-              </Differentiator>
-              <Differentiator title="No bank connection">
-                Never asks for bank credentials, Plaid links, card numbers, or transaction feeds.
-              </Differentiator>
-              <Differentiator title="Usage guides included">
-                Practical trigger notes, enrollment reminders, and timing caveats for each credit.
-              </Differentiator>
-              <Differentiator title="Multiple copies & export">
-                Supports duplicate physical cards, custom labels, annual-fee ROI, and full JSON/CSV export.
-              </Differentiator>
-            </div>
+            <dl className="divide-y divide-border border-y border-border">
+              {[
+                ['Exact Benefit Cycles', 'Calendar months, quarters, Jan–Jun and Jul–Dec halves, card anniversaries, and four- or five-year credits each reset on their own date, in UTC, the way issuers count them.'],
+                ['How to use, not just how much', 'Every credit links to a usage guide: what qualifies, enrollment, posting timing, and the ways people get denied.'],
+                ['No bank connection', 'Never asks for bank credentials, Plaid links, card numbers, or transaction feeds. You record what you used.'],
+                ['Every physical card', 'Two copies of the same product stay separate, with their own open dates, labels, ROI, and full JSON/CSV export.'],
+              ].map(([term, detail]) => (
+                <div key={term} className="grid gap-2 py-5 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] sm:gap-8">
+                  <dt className="font-semibold text-foreground">{term}</dt>
+                  <dd className="text-sm leading-6 text-muted-foreground">{detail}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </section>
 
@@ -241,7 +249,7 @@ export default async function Home() {
       <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+            <h1 className="font-display text-3xl leading-tight text-foreground sm:text-4xl">
               Dashboard
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -380,7 +388,7 @@ function DashboardUnavailable() {
       <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">
         <ExclamationTriangleIcon className="h-6 w-6" aria-hidden="true" />
       </div>
-      <h1 className="text-2xl font-semibold text-foreground">
+      <h1 className="font-display text-3xl text-foreground">
         Dashboard temporarily unavailable
       </h1>
       <p className="mt-3 text-sm leading-6 text-muted-foreground">

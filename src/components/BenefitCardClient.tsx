@@ -470,7 +470,7 @@ export default function BenefitCardClient({ status, onStatusChange, onDelete, on
                 aria-label={`Tracking mode: ${trackingModeLabel}. ${showTrackingMenu ? 'Close' : 'Choose'} tracking mode`}
                 className={`w-full sm:w-auto px-4 py-2 rounded-lg text-sm font-medium border transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 ${
                   showTrackingMenu || trackingMode !== 'TRACK'
-                    ? 'border-indigo-400 bg-indigo-50 text-indigo-950 shadow-sm dark:border-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-100'
+                    ? 'border-blue-400 bg-blue-50 text-blue-950 shadow-sm dark:border-blue-600 dark:bg-blue-950/40 dark:text-blue-100'
                     : 'border-border bg-card text-foreground hover:bg-accent'
                 } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
@@ -533,7 +533,7 @@ export default function BenefitCardClient({ status, onStatusChange, onDelete, on
                         onClick={() => handleTrackingModeChange(option.mode)}
                         className={`w-full rounded-md border px-3 py-2 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
                           isActive
-                            ? 'border-indigo-400 bg-indigo-50 shadow-sm dark:border-indigo-600 dark:bg-indigo-950/40'
+                            ? 'border-blue-400 bg-blue-50 shadow-sm dark:border-blue-600 dark:bg-blue-950/40'
                             : 'border-transparent hover:bg-accent'
                         } ${isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
@@ -543,7 +543,7 @@ export default function BenefitCardClient({ status, onStatusChange, onDelete, on
                               aria-hidden="true"
                               className={`mr-2 flex h-4 w-4 items-center justify-center rounded-full border ${
                                 isActive
-                                  ? 'border-indigo-600 bg-indigo-600 text-white dark:border-indigo-400 dark:bg-indigo-400 dark:text-indigo-950'
+                                  ? 'border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-blue-950'
                                   : 'border-muted-foreground/50'
                               }`}
                             >
@@ -556,7 +556,7 @@ export default function BenefitCardClient({ status, onStatusChange, onDelete, on
                             {option.label}
                           </span>
                           {isActive && (
-                            <span className="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-300">
+                            <span className="text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
                               Current
                             </span>
                           )}

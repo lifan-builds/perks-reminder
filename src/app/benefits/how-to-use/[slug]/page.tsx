@@ -210,13 +210,13 @@ export default async function UsageWayDetailPage({ params }: PageProps) {
     <div className="mx-auto w-full max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
       {/* Breadcrumb */}
       <nav className="mb-8 flex items-center text-sm text-gray-600 dark:text-gray-400">
-        <Link href="/benefits" className="hover:text-indigo-600 dark:hover:text-indigo-400">
+        <Link href="/benefits" className="hover:text-blue-600 dark:hover:text-blue-400">
           Benefits
         </Link>
         <svg className="h-4 w-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
-        <Link href="/benefits/how-to-use" className="hover:text-indigo-600 dark:hover:text-indigo-400">
+        <Link href="/benefits/how-to-use" className="hover:text-blue-600 dark:hover:text-blue-400">
           How to Use
         </Link>
         <svg className="h-4 w-4 mx-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -230,7 +230,7 @@ export default async function UsageWayDetailPage({ params }: PageProps) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             {usageWay.category && (
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300">
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
                 {usageWay.category}
               </span>
             )}
@@ -238,7 +238,7 @@ export default async function UsageWayDetailPage({ params }: PageProps) {
           {/* Share Button */}
           <ShareButton title={usageWay.title} description={usageWay.description || undefined} />
         </div>
-        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+        <h1 className="font-display mb-4 text-4xl leading-tight text-foreground sm:text-5xl">
           {usageWay.title}
         </h1>
         {usageWay.description && (
@@ -260,11 +260,11 @@ export default async function UsageWayDetailPage({ params }: PageProps) {
         </div>
       </div>
 
-      <div className="mb-8 rounded-lg border border-indigo-200 bg-indigo-50 p-5 dark:border-indigo-800 dark:bg-indigo-950/20">
+      <div className="mb-8 rounded-lg border border-blue-200 bg-blue-50 p-5 dark:border-blue-800 dark:bg-blue-950/20">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white">Quick read checklist</h2>
         <div className="mt-3 grid gap-2 text-sm text-gray-700 dark:text-gray-300 sm:grid-cols-5">
           {['What qualifies', 'How to trigger', 'Posting timing', 'DP caveats', 'What to avoid'].map((item) => (
-            <div key={item} className="rounded-lg bg-white/70 px-3 py-2 ring-1 ring-indigo-100 dark:bg-gray-900/40 dark:ring-indigo-900">
+            <div key={item} className="rounded-lg bg-white/70 px-3 py-2 ring-1 ring-blue-100 dark:bg-gray-900/40 dark:ring-blue-900">
               {item}
             </div>
           ))}
@@ -317,7 +317,7 @@ export default async function UsageWayDetailPage({ params }: PageProps) {
               <Link
                 key={card.id}
                 href={`/cards/browse/${encodeURIComponent(card.name)}`}
-                className="group rounded-lg border border-gray-200 bg-white p-4 transition-all hover:border-indigo-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-indigo-600"
+                className="group rounded-lg border border-gray-200 bg-white p-4 transition-all hover:border-blue-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-600"
               >
                 <div className="flex items-start gap-4">
                   {/* Card Image */}
@@ -332,7 +332,7 @@ export default async function UsageWayDetailPage({ params }: PageProps) {
                     <div className="text-sm text-gray-500 dark:text-gray-400 mb-0.5">
                       {card.issuer}
                     </div>
-                    <div className="font-semibold text-gray-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+                    <div className="font-semibold text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
                       {card.name}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-500 mt-1">
@@ -360,7 +360,7 @@ export default async function UsageWayDetailPage({ params }: PageProps) {
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                       {benefit.category}
                     </span>
                     {benefit.maxAmount && (
@@ -407,7 +407,7 @@ export default async function UsageWayDetailPage({ params }: PageProps) {
       <div className="mt-12 flex flex-col sm:flex-row gap-4 justify-between items-center pt-8 border-t border-gray-200 dark:border-gray-700">
         <Link
           href="/benefits/how-to-use"
-          className="inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+          className="inline-flex items-center text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
         >
           <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -416,7 +416,7 @@ export default async function UsageWayDetailPage({ params }: PageProps) {
         </Link>
         <Link
           href="/benefits"
-          className="inline-flex items-center px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl"
+          className="inline-flex items-center px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
         >
           Track Your Benefits
           <svg className="h-5 w-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

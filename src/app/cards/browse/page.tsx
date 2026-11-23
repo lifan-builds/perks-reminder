@@ -64,15 +64,15 @@ export default async function BrowseCardsPage() {
       >
         <div className="grid w-full grid-cols-3 gap-3 sm:w-auto sm:min-w-[22rem]">
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{predefinedCards.length}</span>
+            <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{predefinedCards.length}</span>
             <span className="text-gray-600 dark:text-gray-400">Cards</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{sortedIssuers.length}</span>
+            <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{sortedIssuers.length}</span>
             <span className="text-gray-600 dark:text-gray-400">Issuers</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+            <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
               {predefinedCards.reduce((total, card) => total + card.benefits.length, 0)}
             </span>
             <span className="text-gray-600 dark:text-gray-400">Benefits</span>
@@ -102,7 +102,7 @@ export default async function BrowseCardsPage() {
                     href={`/cards/browse/${encodeURIComponent(card.name)}`}
                     className="group block"
                   >
-                    <div className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-indigo-600">
+                    <div className="h-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:hover:border-blue-600">
                       <CardImageWell
                         imageUrl={card.imageUrl}
                         alt={card.name}
@@ -113,7 +113,7 @@ export default async function BrowseCardsPage() {
                       
                       {/* Card Info */}
                       <div className="p-5">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                           {card.name}
                         </h3>
                         
@@ -121,7 +121,7 @@ export default async function BrowseCardsPage() {
                           <span className="text-sm text-gray-500 dark:text-gray-400">
                             ${card.annualFee} annual fee
                           </span>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
                             {card.benefits.length} benefits
                           </span>
                         </div>
@@ -154,7 +154,7 @@ export default async function BrowseCardsPage() {
       </div>
 
       {/* CTA Section */}
-      <div className="mt-16 rounded-lg border border-indigo-200 bg-indigo-50 p-8 dark:border-indigo-800 dark:bg-indigo-950/20">
+      <div className="mt-16 rounded-lg border border-blue-200 bg-blue-50 p-8 dark:border-blue-800 dark:bg-blue-950/20">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             Start Tracking Your Benefits
@@ -164,7 +164,7 @@ export default async function BrowseCardsPage() {
           </p>
           <Link
             href="/auth/signup?callbackUrl=%2Fcards%2Fnew"
-            className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors shadow-lg hover:shadow-xl"
+            className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl"
           >
             Get Started Free
             <svg className="h-5 w-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

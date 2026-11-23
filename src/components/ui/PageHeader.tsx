@@ -2,7 +2,6 @@ import { cn } from "@/lib/utils";
 import type React from "react";
 
 interface PageHeaderProps {
-  eyebrow?: string;
   title: string;
   description?: string;
   children?: React.ReactNode;
@@ -10,7 +9,6 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({
-  eyebrow,
   title,
   description,
   children,
@@ -24,12 +22,7 @@ export default function PageHeader({
       )}
     >
       <div className="min-w-0">
-        {eyebrow && (
-          <p className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground">
-            {eyebrow}
-          </p>
-        )}
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+        <h1 className="font-display text-3xl leading-tight text-foreground sm:text-4xl">
           {title}
         </h1>
         {description && (

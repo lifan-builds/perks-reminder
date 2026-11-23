@@ -159,9 +159,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
     <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       <div>
         <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Card settings</p>
-            <h1 className="text-2xl font-semibold text-gray-950 dark:text-white">Edit {card.nickname || card.name}</h1>
+          <div>            <h1 className="font-display text-3xl text-foreground">Edit {card.nickname || card.name}</h1>
             <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{card.name} · {card.issuer}</p>
           </div>
           <button
@@ -193,7 +191,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       maxLength={50}
                       placeholder="Work Card, Personal Travel..."
                       defaultValue={card.nickname || ''}
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                     />
                   </div>
 
@@ -210,7 +208,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       pattern={pattern}
                       placeholder={placeholder}
                       defaultValue={card.lastFourDigits || ''}
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                       onInput={(e) => {
                         const target = e.target as HTMLInputElement;
                         const cleaned = target.value.replace(/[^0-9]/g, '');
@@ -227,7 +225,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                     <div className="grid grid-cols-2 gap-2">
                       <select
                         name="openedMonth"
-                        className="block w-full rounded-md border-gray-300 px-2 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        className="block w-full rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                         defaultValue={openedDate ? openedDate.getUTCMonth() + 1 : ''}
                       >
                         <option value="">Month...</option>
@@ -237,7 +235,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       </select>
                       <select
                         name="openedYear"
-                        className="block w-full rounded-md border-gray-300 px-2 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                        className="block w-full rounded-md border-gray-300 px-2 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                         defaultValue={openedDate ? openedDate.getUTCFullYear() : ''}
                       >
                         <option value="">Year...</option>
@@ -260,7 +258,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       name="lifecycleStatus"
                       value={selectedStatus}
                       onChange={(event) => setSelectedStatus(event.target.value as CardLifecycleStatus)}
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     >
                       <option value="ACTIVE">Active</option>
                       <option value="CLOSED">Closed</option>
@@ -275,7 +273,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       name="closedDate"
                       defaultValue={formatDateInput(card.closedDate)}
                       disabled={selectedStatus !== 'CLOSED'}
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:disabled:bg-gray-800"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:disabled:bg-gray-800"
                     />
                   </div>
 
@@ -288,7 +286,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       step="1"
                       defaultValue={card.annualFeeAmount ?? ''}
                       placeholder="550"
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                     />
                   </div>
 
@@ -298,7 +296,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       type="date"
                       name="annualFeeDueDate"
                       defaultValue={formatDateInput(card.annualFeeDueDate)}
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
 
@@ -308,7 +306,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       type="date"
                       name="signupBonusDeadline"
                       defaultValue={formatDateInput(card.signupBonusDeadline)}
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
 
@@ -318,7 +316,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       type="date"
                       name="spendDeadline"
                       defaultValue={formatDateInput(card.spendDeadline)}
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
 
@@ -330,7 +328,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       defaultValue={card.productChangedFrom || ''}
                       disabled={selectedStatus !== 'PRODUCT_CHANGED'}
                       placeholder="Original card"
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:disabled:bg-gray-800"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:disabled:bg-gray-800"
                     />
                   </div>
 
@@ -342,7 +340,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       defaultValue={card.productChangedTo || ''}
                       disabled={selectedStatus !== 'PRODUCT_CHANGED'}
                       placeholder="New card"
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:disabled:bg-gray-800"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400 dark:disabled:bg-gray-800"
                     />
                   </div>
 
@@ -353,7 +351,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       rows={3}
                       defaultValue={card.lifecycleNotes || ''}
                       placeholder="Retention offer, downgrade plan, authorized user notes..."
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                     />
                   </div>
                 </div>
@@ -367,7 +365,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                     <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-100">Type</label>
                     <select
                       name="eventType"
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                       defaultValue="NOTE"
                     >
                       <option value="NOTE">Note</option>
@@ -384,7 +382,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                     <input
                       type="date"
                       name="eventDate"
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white"
                     />
                   </div>
                   <div>
@@ -393,7 +391,7 @@ export default function EditCardPage({ params }: { params: Promise<{ id: string 
                       type="text"
                       name="eventDescription"
                       placeholder="Called for retention offer, fee posted, bonus met..."
-                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+                      className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
                     />
                   </div>
                 </div>

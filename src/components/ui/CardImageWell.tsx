@@ -26,7 +26,7 @@ export default function CardImageWell({
   return (
     <div
       className={cn(
-        "relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-[radial-gradient(circle_at_top_left,_#ffffff,_#f3f4f6_55%,_#e5e7eb)] p-4 dark:border-gray-700 dark:bg-[radial-gradient(circle_at_top_left,_#1f2937,_#111827_58%,_#030712)]",
+        "relative flex aspect-[16/10] w-full items-center justify-center overflow-hidden rounded-lg border border-gray-200 bg-muted p-4 dark:border-gray-700",
         className
       )}
     >

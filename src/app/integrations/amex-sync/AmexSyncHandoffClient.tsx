@@ -615,7 +615,6 @@ export function AmexSyncHandoffClient({
           <div className={styles.identity}>
             <span className={styles.mark}><ShieldCheckIcon aria-hidden="true" /></span>
             <div>
-              <p className={styles.product}>American Express integration</p>
               <h1 className={styles.title}>{heading}</h1>
               <p className={styles.privacy}>
                 Review your Amex benefits and update Perks Reminder.

@@ -91,7 +91,7 @@ export default function NotificationSettingsForm({
               name="notifyNewBenefit"
               type="checkbox"
               defaultChecked={initialSettings.notifyNewBenefit}
-              className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-indigo-600 dark:focus:ring-offset-gray-800"
+              className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-blue-600 dark:focus:ring-offset-gray-800"
             />
           </div>
           <div className="ml-3 text-sm">
@@ -112,7 +112,7 @@ export default function NotificationSettingsForm({
               name="notifyBenefitExpiration"
               type="checkbox"
               defaultChecked={initialSettings.notifyBenefitExpiration}
-              className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-indigo-600 dark:focus:ring-offset-gray-800"
+              className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-blue-600 dark:focus:ring-offset-gray-800"
             />
           </div>
           <div className="ml-3 text-sm">
@@ -137,7 +137,7 @@ export default function NotificationSettingsForm({
               min="1"
               defaultValue={initialSettings.notifyExpirationDays}
               required
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm max-w-xs dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-500 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
+              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm max-w-xs dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-500 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             />
           </div>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -154,7 +154,7 @@ export default function NotificationSettingsForm({
               name="notifyPointsExpiration"
               type="checkbox"
               defaultChecked={initialSettings.notifyPointsExpiration ?? true}
-              className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-indigo-600 dark:focus:ring-offset-gray-800"
+              className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-blue-600 dark:focus:ring-offset-gray-800"
             />
           </div>
           <div className="ml-3 text-sm">
@@ -179,7 +179,7 @@ export default function NotificationSettingsForm({
               min="1"
               defaultValue={initialSettings.pointsExpirationDays ?? 30}
               required
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm max-w-xs dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-500 dark:text-white dark:focus:ring-indigo-500 dark:focus:border-indigo-500"
+              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm max-w-xs dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-500 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
             />
           </div>
           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Enter the number of days before your points/miles expire to receive the reminder.</p>
@@ -190,7 +190,7 @@ export default function NotificationSettingsForm({
           <button
             type="submit"
             disabled={isPending}
-            className="inline-flex justify-center items-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-indigo-500 dark:hover:bg-indigo-600 dark:focus:ring-offset-gray-800 transition-all duration-200"
+            className="inline-flex justify-center items-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-offset-gray-800 transition-all duration-200"
           >
             {isPending ? (
               <div className="flex items-center">

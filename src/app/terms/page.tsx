@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+      <h1 className="font-display mb-2 text-4xl text-foreground">
         Terms of Service
       </h1>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-8">
@@ -79,7 +79,7 @@ export default function TermsPage() {
             Contact
           </h2>
           <p>
-            Questions? <Link href="/contact" className="text-indigo-600 dark:text-indigo-400 hover:underline">Contact us</Link>.
+            Questions? <Link href="/contact" className="text-blue-600 dark:text-blue-400 hover:underline">Contact us</Link>.
           </p>
         </section>
       </div>
@@ -87,7 +87,7 @@ export default function TermsPage() {
       <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-700">
         <Link
           href="/"
-          className="text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium"
+          className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium"
         >
           ← Back to Home
         </Link>

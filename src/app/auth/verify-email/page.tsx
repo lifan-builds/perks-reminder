@@ -43,7 +43,7 @@ function VerifyEmailContent() {
       <div className="w-full max-w-md text-center">
         {status === 'loading' && (
           <div>
-            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-indigo-600" />
+            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               Verifying your email...
             </h2>
@@ -63,7 +63,7 @@ function VerifyEmailContent() {
             <p className="mb-6 text-gray-600 dark:text-gray-400">{message}</p>
             <Link
               href="/auth/signin"
-              className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
+              className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-500"
             >
               Sign In
             </Link>
@@ -84,13 +84,13 @@ function VerifyEmailContent() {
             <div className="space-y-3">
               <Link
                 href="/auth/signup"
-                className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-6 py-3 text-sm font-semibold text-white hover:bg-indigo-500"
+                className="inline-flex items-center justify-center rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-500"
               >
                 Try signing up again
               </Link>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 or{' '}
-                <Link href="/auth/signin" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
+                <Link href="/auth/signin" className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400">
                   sign in
                 </Link>{' '}
                 if you already have an account

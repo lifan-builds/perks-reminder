@@ -4,6 +4,7 @@ import React, { useState, type Dispatch, type SetStateAction } from 'react';
 import { Info, Plus, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import CategoryIcon from '@/components/ui/CategoryIcon';
 
 export type LoyaltyProgram = {
   id: string;
@@ -56,16 +57,6 @@ function createCertificateRow(): CertificateFormRow {
     expirationDate: '',
     notes: '',
   };
-}
-
-export function getLoyaltyTypeIcon(type: string): string {
-  switch (type) {
-    case 'AIRLINE': return '✈️';
-    case 'HOTEL': return '🏨';
-    case 'RENTAL_CAR': return '🚗';
-    case 'CREDIT_CARD': return '💳';
-    default: return '🎁';
-  }
 }
 
 export function serializeCertificateRows(
@@ -224,7 +215,9 @@ export function LoyaltyProgramSummaryCard({
       <div className="flex items-center justify-between mb-2">
         {showCompanyHeader ? (
           <div className="flex items-center space-x-3">
-            <span className="text-2xl">{getLoyaltyTypeIcon(program.type)}</span>
+            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-border text-primary">
+              <CategoryIcon category={program.type} />
+            </span>
             <div>
               <h3 className="font-medium text-gray-900 dark:text-white">{program.displayName}</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400">{program.company}</p>
@@ -395,7 +388,7 @@ export function LoyaltyAccountFormFields({
           rows={3}
           defaultValue={defaultNotes}
           placeholder="Any notes about this account..."
-          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
         />
       </div>
     </>

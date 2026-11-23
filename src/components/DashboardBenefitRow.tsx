@@ -89,7 +89,7 @@ export default function DashboardBenefitRow({
       <li
         className={`group px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 ${
           isExpiringSoon
-            ? 'border-l-4 border-l-orange-500 dark:border-l-orange-500 bg-orange-50/50 dark:bg-orange-900/10'
+            ? 'bg-stamp-wash/60'
             : ''
         }`}
       >
@@ -100,14 +100,14 @@ export default function DashboardBenefitRow({
                 className={`p-2 rounded-lg ${
                   isExpiringSoon
                     ? 'bg-orange-100 dark:bg-orange-800/30'
-                    : 'bg-indigo-100 dark:bg-indigo-800/30'
+                    : 'bg-blue-100 dark:bg-blue-800/30'
                 }`}
               >
                 <svg
                   className={`h-5 w-5 ${
                     isExpiringSoon
                       ? 'text-orange-600 dark:text-orange-400'
-                      : 'text-indigo-600 dark:text-indigo-400'
+                      : 'text-blue-600 dark:text-blue-400'
                   }`}
                   fill="none"
                   stroke="currentColor"
@@ -131,7 +131,7 @@ export default function DashboardBenefitRow({
                   {status.benefit.creditCard ? (
                     <span className="truncate">{status.benefit.creditCard.name}</span>
                   ) : (
-                    <span className="text-purple-600 dark:text-purple-400">Custom Benefit</span>
+                    <span className="text-blue-600 dark:text-blue-400">Custom Benefit</span>
                   )}
                 </div>
                 {benefitAmount > 0 && (
