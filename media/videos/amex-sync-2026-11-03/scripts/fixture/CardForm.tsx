@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 'use client'; // Make this a Client Component
 
 import React, { useState, useEffect, useTransition } from 'react'; // Import useTransition

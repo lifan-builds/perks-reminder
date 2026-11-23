@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 export const SITE_NAME = 'Perks Reminder';
 export const SITE_DESCRIPTION =
   'Credit card benefit tracker. Track recurring credits, reset windows, loyalty expirations, and annual fee ROI without connecting bank accounts.';

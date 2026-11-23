@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import { expect, type Page, type TestInfo } from "@playwright/test";
 
 export const E2E_EMAIL = "e2e-playwright@perks-reminder.test";

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import { isSupportedAmexOrigin, SELECTED_CARD_DISPLAY } from "./visible-context";
 
 /** Observe the account UI, never credentials, cookies, or intercepted traffic. */

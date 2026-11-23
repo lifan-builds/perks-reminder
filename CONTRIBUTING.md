@@ -1,19 +1,19 @@
 # Contributing
 
-Bug fixes, documentation improvements, and focused Pull Requests are welcome.
+Bug fixes, documentation, and focused pull requests are welcome. Fork the repository, make your
+change on a branch, and open a pull request against `main`.
 
-## Forking & Pull Request Scope
+## License
 
-Per [LICENSE](LICENSE) (`LicenseRef-lifan-builds-Proprietary`), you may fork this repository on GitHub and modify a branch
-locally **solely** to prepare, test, and submit a Pull Request back to the canonical
-`https://github.com/lifan-builds` repository. Publishing or maintaining standalone forks, mirrors,
-rebranded copies, or commercial derivatives is not permitted.
+Perks Reminder is open source under [AGPL-3.0-only](LICENSE) with the Section 7 attribution terms in
+[ATTRIBUTION.md](ATTRIBUTION.md). Your contribution is distributed under the same terms.
 
-## Inbound Contribution License
+## Contributor License Agreement
 
-By submitting a Pull Request, patch, or other contribution, you confirm that:
+Sign the [CLA](CLA.md) once, on your first pull request. The CLA Assistant bot comments and asks
+you to reply with:
 
-1. The contribution is your original work (or you have full legal authority to submit it); and
-2. You grant `lifan-builds` (and its successors and assigns) the perpetual, worldwide,
-   irrevocable, royalty-free, transferable, sublicensable commercial and relicensing rights set
-   forth in **Section 4 of [LICENSE](LICENSE)**.
+> I have read the CLA Document and I hereby sign the CLA
+
+You keep the copyright in your contribution. The CLA lets lifan-builds also license
+Perks Reminder under terms other than AGPL, for example commercial licenses.

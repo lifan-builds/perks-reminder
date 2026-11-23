@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import type { BenefitCycleAlignment, BenefitFrequency } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import { materializeStandardBenefitStatusRows } from '@/lib/benefit-cycle-materialization';

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import type { PublicStaticBenefit, PublicStaticCard } from './static-catalog';
 
 /** A credit family drawn across one calendar year: each window is [startMonth, endMonth], 1-12 inclusive. */

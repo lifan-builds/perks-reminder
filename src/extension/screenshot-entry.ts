@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import { mergeCardAttempt, mergeScanSummary, createEmptyStore } from "@/lib/amex-benefit-reader/storage-policy";
 import type { NormalizedBenefitObservationV3, StoreEnvelopeV1 } from "@/lib/amex-benefit-reader/contract";
 import { AmexBenefitReaderPanel } from "@/userscripts/amex-benefit-reader/panel";

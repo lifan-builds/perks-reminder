@@ -79,4 +79,8 @@ Read:
 
 ## License
 
-Copyright © 2026 [lifan-builds](https://github.com/lifan-builds). **All Rights Reserved** — source-available for **personal non-commercial use** and **upstream Pull Request contributions only** under [LICENSE](LICENSE) (`LicenseRef-lifan-builds-Proprietary`). Commercial use, hosted wrappers, rebranding, standalone forks/mirrors, and dataset/HTML extraction without prior written permission are prohibited. Pull Requests are welcome under [CONTRIBUTING.md](CONTRIBUTING.md).
+Open source under [AGPL-3.0-only](https://github.com/lifan-builds/perks-reminder/blob/main/LICENSE), with the Section 7 attribution terms in [ATTRIBUTION.md](https://github.com/lifan-builds/perks-reminder/blob/main/ATTRIBUTION.md). Copies and modified versions must keep this credit in their README and `--version` or About output, mark their changes, and may not use the Perks Reminder name:
+
+> Based on Perks Reminder by lifan-builds (https://github.com/lifan-builds/perks-reminder)
+
+Copyright © 2026 [lifan-builds](https://github.com/lifan-builds). Pull requests are welcome under [CONTRIBUTING.md](https://github.com/lifan-builds/perks-reminder/blob/main/CONTRIBUTING.md) with a one-time [CLA](https://github.com/lifan-builds/perks-reminder/blob/main/CLA.md). For licensing outside AGPL, open an issue.

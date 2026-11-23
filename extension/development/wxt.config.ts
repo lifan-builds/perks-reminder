@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import { defineConfig } from 'wxt';
 import { fileURLToPath } from 'node:url';
 import manifest from '../manifest.template.json';

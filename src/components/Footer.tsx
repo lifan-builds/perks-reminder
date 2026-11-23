@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -142,7 +144,16 @@ const Footer = () => {
 
         <div className="mt-10 border-t border-border pt-6">
           <p className="text-sm text-muted-foreground">
-            &copy; {currentYear} Perks Reminder. All rights reserved.
+            &copy; {currentYear} lifan-builds and contributors.{' '}
+            <a
+              href="https://github.com/lifan-builds/perks-reminder"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline-offset-4 transition-colors hover:text-foreground hover:underline"
+            >
+              Based on Perks Reminder by lifan-builds
+            </a>
+            , open source under AGPL-3.0.
           </p>
         </div>
       </div>

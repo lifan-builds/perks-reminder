@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import { AmexApiClient } from "@/lib/amex-benefit-reader/amex-api-client";
 import type { AmexSyncHandoffTargetName } from "@/lib/amex-benefit-reader/handoff-target";
 import { AmexBenefitScanEngine, type ScanReporter } from "@/lib/amex-benefit-reader/scan-engine";

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import accountsFixture from "../__fixtures__/accounts.json";
 import catalogFixture from "../__fixtures__/benefit-catalog.json";
 import trackersFixture from "../__fixtures__/benefit-trackers.json";

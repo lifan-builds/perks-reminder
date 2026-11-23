@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import type { StoredCardRecordV1 } from "./contract";
 
 const CARD_FINGERPRINT_DOMAIN = "amex-us-card-v1\0";

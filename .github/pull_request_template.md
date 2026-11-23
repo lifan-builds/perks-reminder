@@ -2,6 +2,6 @@
 
 - 
 
-## Contributor Agreement
+## Checklist
 
-- [x] I have read [CONTRIBUTING.md](CONTRIBUTING.md) and grant `lifan-builds` the inbound license in **Section 4 of [LICENSE](LICENSE)** for this contribution.
+- [ ] I have read [CONTRIBUTING.md](../CONTRIBUTING.md) and signed the [CLA](../CLA.md) (the CLA Assistant bot asks on your first pull request).

@@ -1,4 +1,6 @@
 /** @jest-environment-options {"url":"http://localhost:3000/integrations/amex-sync"} */
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import { render, screen, waitFor } from "@testing-library/react";
 import {
   digestAmexSyncEnvelope,

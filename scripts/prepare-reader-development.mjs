@@ -40,6 +40,8 @@ await writeFile(resolve(output, 'tampermonkey/reader-dev.user.js'), `// ==UserSc
 // @grant        unsafeWindow
 // @require      ${pathToFileURL(runtime).href}
 // ==/UserScript==
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 `, 'utf8');
 
 const options = {

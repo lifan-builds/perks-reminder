@@ -1,4 +1,6 @@
 /** @jest-environment-options {"url":"https://www.perks-reminder.com/integrations/amex-sync"} */
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import {
   AMEX_SYNC_MAX_ROWS,

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import { Prisma, type BenefitCycleAlignment, type BenefitFrequency, type PrismaClient } from '@/generated/prisma';
 import { classifyGlobalBenefitCategoryRepairAuthority } from './global-benefit-category-repair-authority';
 import type { GlobalBenefitDefinition, GlobalCardDefinition } from './global-benefit-migration';

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 export const AMEX_SYNC_HANDOFF_PATH = "/integrations/amex-sync" as const;
 
 export type AmexSyncHandoffTargetName = "production" | "local";

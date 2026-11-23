@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 """Original instrumental bed, generated without external samples. 96 BPM, D major."""
 import math,wave,array,json
 from pathlib import Path

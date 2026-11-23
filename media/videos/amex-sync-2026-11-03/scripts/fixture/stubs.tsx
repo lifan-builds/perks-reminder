@@ -1,1 +1,3 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import React from 'react'; export default function Link({href,children,...props}:any){return <a href={href} {...props}>{children}</a>}; export function Image({src,alt,fill,unoptimized,priority,sizes,...props}:any){return <img src={src} alt={alt} {...props}/>}; const deny=()=>{throw new Error('Video fixture has no server actions')}; export {deny as toggleBenefitStatusAction,deny as deleteCustomBenefitAction,deny as addPartialCompletionAction,deny as markFullCompletionAction,deny as setBenefitTrackingModeAction,deny as batchCompleteBenefitsByCategoryAction,deny as addCardAction,deny as bulkAddCardsAction};

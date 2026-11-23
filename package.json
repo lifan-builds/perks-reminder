@@ -118,5 +118,5 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
-  "license": "SEE LICENSE IN LICENSE"
+  "license": "AGPL-3.0-only"
 }

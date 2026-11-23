@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import { createHash } from "node:crypto";
 import { canonicalJson, isSyncEnvelopeFresh, type AmexSyncEnvelope, type AmexSyncRow } from "@/lib/amex-benefit-reader/sync-contract";
 

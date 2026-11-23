@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import type { Metadata } from 'next';
 import { getPublicStaticCards } from '@/lib/static-catalog';
 import { buildYearEndRescue, rescueYear } from '@/lib/year-end-rescue';
