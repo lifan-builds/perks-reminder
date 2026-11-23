@@ -23,5 +23,5 @@ jobs:
         with:
           path-to-signatures: signatures/cla.json
           path-to-document: https://github.com/lifan-builds/perks-reminder/blob/main/CLA.md
-          branch: main
+          branch: cla-signatures
           allowlist: lifan-builds,dependabot[bot],github-actions[bot]
