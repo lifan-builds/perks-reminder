@@ -28,6 +28,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: catalog-sync-preview
+    outputs:
+      has_changes: ${{ steps.plan.outputs.has_changes }}
     steps:
       - name: Check out merged source
         uses: actions/checkout@v4
@@ -46,6 +48,7 @@ jobs:
           CATALOG_SYNC_EXPECTED_FINGERPRINT: ${{ secrets.CATALOG_SYNC_EXPECTED_FINGERPRINT }}
         run: npx tsx scripts/verify-catalog-sync-target.ts
       - name: Generate and validate dry-run plan
+        id: plan
         env:
           DATABASE_URL: ${{ secrets.CATALOG_SYNC_DATABASE_URL }}
         run: |
@@ -54,6 +57,13 @@ jobs:
             exit 1
           fi
           node scripts/validate-catalog-sync-report.mjs catalog-sync-report.json dry-run
+          HAS_CHANGES=$(node -e '
+            const r = JSON.parse(require("node:fs").readFileSync("catalog-sync-report.json", "utf8"));
+            const keys = ["create", "adopt", "update", "retire"];
+            const n = keys.reduce((s, k) => s + (r.plan.cards[k] || 0) + (r.plan.benefits[k] || 0), 0);
+            process.stdout.write(n > 0 ? "true" : "false");
+          ')
+          echo "has_changes=$HAS_CHANGES" >> "$GITHUB_OUTPUT"
       - name: Record aggregate dry-run result
         if: always()
         run: |
@@ -64,7 +74,7 @@ jobs:
   apply:
     name: Apply approved catalog sync
     needs: dry-run
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || needs.dry-run.outputs.has_changes == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: catalog-sync-production
