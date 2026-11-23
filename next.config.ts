@@ -5,11 +5,11 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { PrismaPlugin } from '@prisma/nextjs-monorepo-workaround-plugin';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const appDir = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
   // Lock workspace root so Vercel/Next doesn't pick a parent lockfile (avoids deploy failures)
-  outputFileTracingRoot: path.join(__dirname),
+  outputFileTracingRoot: appDir,
   /* config options here */
   webpack: (config, { isServer }) => {
     if (isServer) {

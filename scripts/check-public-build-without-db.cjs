@@ -6,7 +6,7 @@ const { spawnSync } = require('child_process');
 
 const unreachableDatabaseUrl = 'postgresql://invalid:invalid@127.0.0.1:1/perks_reminder_unreachable';
 
-const result = spawnSync('npx', ['next', 'build'], {
+const result = spawnSync('npx', ['next', 'build', '--webpack'], {
   env: {
     ...process.env,
     DATABASE_URL: unreachableDatabaseUrl,

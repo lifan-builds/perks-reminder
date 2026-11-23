@@ -11,7 +11,7 @@ Validation:
 ```bash
 npm test -- --runInBand
 npm run lint
-npx next build
+npx next build --webpack
 ```
 
 Manual check:

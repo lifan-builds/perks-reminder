@@ -19,14 +19,9 @@ const mobile = { ...devices["iPhone 13"], viewport: { width: 390, height: 844 },
 
 export default defineConfig({
   testDir: "./tests/e2e/app",
-  // Serial on purpose: under 4 parallel browser contexts the production build throws an
-  // intermittent React #418 hydration error on /settings and /cards/calendar. It reproduces
-  // identically on e5632c3 (before this suite), so it is tracked separately rather than
-  // relaxed in the zero-console-error guard.
-  fullyParallel: false,
+  fullyParallel: true,
   forbidOnly: true,
   retries: 0,
-  workers: 1,
   timeout: 60_000,
   expect: { timeout: 10_000 },
   reporter: [["list"]],
