@@ -193,12 +193,12 @@
 
   html {
     color-scheme: light;
-    scrollbar-color: oklch(0.46 0.13 262 / 35%) transparent;
+    scrollbar-color: color-mix(in oklch, var(--ring) 35%, transparent) transparent;
   }
 
   html.dark {
     color-scheme: dark;
-    scrollbar-color: oklch(0.85 0.075 82 / 30%) transparent;
+    scrollbar-color: color-mix(in oklch, var(--ring) 30%, transparent) transparent;
   }
 
   body {
@@ -235,7 +235,7 @@
   }
 
   .dark ::selection {
-    background: oklch(0.85 0.075 82 / 30%);
+    background: color-mix(in oklch, var(--ring) 30%, transparent);
     color: var(--foreground);
   }
 
@@ -245,14 +245,14 @@
   }
 
   ::-webkit-scrollbar-thumb {
-    background: oklch(0.46 0.13 262 / 28%);
+    background: color-mix(in oklch, var(--ring) 28%, transparent);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
 
   .dark ::-webkit-scrollbar-thumb {
-    background: oklch(0.85 0.075 82 / 26%);
+    background: color-mix(in oklch, var(--ring) 26%, transparent);
     background-clip: padding-box;
   }
 }
@@ -352,7 +352,7 @@
     font-size: 1.25rem;
     line-height: 1.5;
   }
-  .prose code { font-family: var(--font-mono); font-size: 0.9em; background: var(--muted); padding: 0.1em 0.35em; border-radius: 4px; }
+  .prose code { font-family: var(--font-mono); font-size: 0.9em; background: var(--muted); padding: 0.1em 0.35em; border-radius: 6px; }
   .prose table { width: 100%; border-collapse: collapse; font-size: 0.9375rem; }
   .prose th, .prose td { border-bottom: 1px solid var(--border); padding: 0.55em 0.6em; text-align: left; vertical-align: top; }
   .prose th { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted-foreground); }

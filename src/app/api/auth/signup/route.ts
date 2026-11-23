@@ -79,16 +79,16 @@ export async function POST(request: Request) {
       subject: `Verify your ${SITE_NAME} email`,
       html: `
         <div style="font-family: Georgia, 'Times New Roman', serif, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #4F46E5;">Welcome to ${SITE_NAME}!</h1>
+          <h1 style="color: #2B3A6E;">Welcome to ${SITE_NAME}!</h1>
           <p>Please verify your email address by clicking the button below:</p>
-          <a href="${verifyUrl}" style="display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin: 16px 0;">
+          <a href="${verifyUrl}" style="display: inline-block; background-color: #2B3A6E; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin: 16px 0;">
             Verify Email
           </a>
-          <p style="color: #666; font-size: 14px;">
+          <p style="color: #5B6478; font-size: 14px;">
             Or copy and paste this link in your browser:<br/>
             <a href="${verifyUrl}">${verifyUrl}</a>
           </p>
-          <p style="color: #999; font-size: 12px;">This link expires in 24 hours.</p>
+          <p style="color: #8A90A0; font-size: 12px;">This link expires in 24 hours.</p>
         </div>
       `,
       text: `Welcome to ${SITE_NAME}! Verify your email: ${verifyUrl}`,
