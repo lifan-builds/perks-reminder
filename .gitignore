@@ -88,3 +88,19 @@ temp-prod-dump.sql
 # Private marketing and strategy documents
 marketing-lessons-learned.md
 docs/MARKETING.md
+
+# lifan-builds maintainer-only (local; backed up by agent/scripts/harness-sync.py snapshot)
+/RESEARCH.md
+/PRODUCT.md
+/DESIGN.md
+/PLAN.md
+/PLANS.md
+/STORE.md
+/CONTEXT.md
+/NOW.md
+/PERF_REVIEW_PLAYBOOK.md
+/.impeccable/
+/docs/vercel-domains-and-deploy.md
+/docs/supabase-fallback.md
+/docs/safe-migration-guide.md
+# end lifan-builds maintainer-only
