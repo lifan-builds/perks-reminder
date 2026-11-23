@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import BenefitCardClient from '@/components/BenefitCardClient';
 import CategoryBenefitsGroup from '@/components/CategoryBenefitsGroup';
 import EmptyState from '@/components/ui/EmptyState';
@@ -16,6 +16,8 @@ import {
   type DisplayBenefitStatus,
 } from '@/lib/benefit-dashboard-client';
 import type { BenefitTrackingMode } from '@/lib/benefit-tracking-modes';
+import YearEndRescueBanner, { summarizeYearEndRescue } from '@/components/YearEndRescueBanner';
+import { closesAtYearEnd } from '@/lib/year-end-rescue';
 
 interface BenefitsDisplayProps {
   upcomingBenefits: DisplayBenefitStatus[];
@@ -55,6 +57,13 @@ export default function BenefitsDisplayClient({
   const [isReminderPromptDismissed, setIsReminderPromptDismissed] = useState(false);
 
   const [viewMode, setViewMode] = useState<'category' | 'card'>('card');
+  const [rescueOnly, setRescueOnly] = useState(false);
+  const [now, setNow] = useState<Date | null>(null);
+
+  useEffect(() => {
+    setNow(new Date());
+    if (new URLSearchParams(window.location.search).get('rescue') === '1') setRescueOnly(true);
+  }, []);
   const [sortMode, setSortMode] = useState<'expires' | 'value' | 'card'>('expires');
   const [localUpcomingBenefits, setLocalUpcomingBenefits] = useState(upcomingBenefits);
   const [localCompletedBenefits, setLocalCompletedBenefits] = useState(completedBenefits);
@@ -290,6 +299,11 @@ export default function BenefitsDisplayClient({
 
 
 
+  const rescueSummary = useMemo(
+    () => (now ? summarizeYearEndRescue(localUpcomingBenefits, now) : null),
+    [localUpcomingBenefits, now]
+  );
+
   const setCategoryView = () => setViewMode('category');
   const setCardView = () => setViewMode('card');
 
@@ -306,7 +320,8 @@ export default function BenefitsDisplayClient({
       const categoryMatch = !filterCategory || status.benefit.category === filterCategory;
       const cardKey = status.benefit.creditCard?.id ?? CUSTOM_BENEFITS_CARD_NAME;
       const cardMatch = !filterCardId || cardKey === filterCardId;
-      return descMatch && categoryMatch && cardMatch;
+      const rescueMatch = !rescueOnly || !now || closesAtYearEnd(status.cycleEndDate, now.getUTCFullYear());
+      return descMatch && categoryMatch && cardMatch && rescueMatch;
     });
   };
 
@@ -605,6 +620,17 @@ export default function BenefitsDisplayClient({
           Group by Card
         </button>
       </PageHeader>
+
+      {rescueSummary && (
+        <YearEndRescueBanner
+          summary={rescueSummary}
+          rescueOnly={rescueOnly}
+          onToggle={() => {
+            setRescueOnly((current) => !current);
+            setActiveTab('upcoming');
+          }}
+        />
+      )}
 
       {shouldShowReminderPrompt && (
         <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm shadow-black/[0.03] dark:border-amber-900/60 dark:bg-amber-950/30">

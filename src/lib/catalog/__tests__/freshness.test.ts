@@ -44,7 +44,7 @@ describe('catalog lifecycle metadata', () => {
   });
 
   it('keeps every timed description in sync with sunsetAfter', () => {
-    for (const card of predefinedCardsData) {
+    for (const card of predefinedCardsData as readonly StaticPredefinedCard[]) {
       for (const benefit of card.benefits) {
         const end = timedOfferEndFromDescription(benefit.description);
         if (end) expect({ key: benefit.catalogKey, sunsetAfter: benefit.sunsetAfter }).toEqual({ key: benefit.catalogKey, sunsetAfter: end });
