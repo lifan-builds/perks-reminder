@@ -92,6 +92,13 @@ export function validateStaticCatalog(
       if (benefit.parentCatalogKey !== card.catalogKey) {
         throw new Error(`Catalog parent mismatch for ${benefit.catalogKey}.`);
       }
+      if (benefit.fixedCycleStartMonth !== undefined
+        && (!Number.isInteger(benefit.fixedCycleStartMonth) || benefit.fixedCycleStartMonth < 1 || benefit.fixedCycleStartMonth > 12)) {
+        throw new Error(`Invalid fixedCycleStartMonth for ${benefit.catalogKey}; expected 1-12.`);
+      }
+      if (benefit.cycleAlignment === "CALENDAR_FIXED" && (benefit.fixedCycleDurationMonths ?? 0) > 12) {
+        throw new Error(`CALENDAR_FIXED windows longer than 12 months have no calendar anchor: ${benefit.catalogKey}. Use CARD_ANNIVERSARY.`);
+      }
 
       const amexIdentityFields = [benefit.productKey, benefit.creditFamilyKey, benefit.periodKey];
       const populatedIdentityFields = amexIdentityFields.filter((value) => value !== undefined).length;

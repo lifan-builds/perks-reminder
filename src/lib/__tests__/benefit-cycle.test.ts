@@ -168,7 +168,7 @@ describe('calculateBenefitCycle', () => {
       expect(cycleEndDate).toEqual(expectedEndDate);
     });
 
-    it('should jump to next year for annual cycles when reference date is past the cycle', () => {
+    it('keeps a non-January annual window open until it ends instead of jumping ahead', () => {
       const refDate = utcDate(2024, 2, 1); // Feb 1, 2024
       const { cycleStartDate, cycleEndDate } = calculateBenefitCycle(
         BenefitFrequency.YEARLY,
@@ -178,11 +178,9 @@ describe('calculateBenefitCycle', () => {
         3, // March start
         12 // 12 months duration (March-February annual cycle)
       );
-      // Feb 1, 2024 is before the March 2024 cycle starts, so should get March 2024 cycle
-      expect(cycleStartDate).toEqual(utcDate(2024, 3, 1)); // March 1, 2024
-      const expectedEndDate = utcDate(2025, 3, 1); // March 1, 2025
-      expectedEndDate.setUTCMilliseconds(expectedEndDate.getUTCMilliseconds() - 1); // Feb 28/29, 2025 end
-      expect(cycleEndDate).toEqual(expectedEndDate);
+      // Feb 1, 2024 is still inside the March 2023 - February 2024 window.
+      expect(cycleStartDate).toEqual(utcDate(2023, 3, 1));
+      expect(cycleEndDate).toEqual(new Date('2024-02-29T23:59:59.999Z'));
     });
 
     it('should handle recurring quarterly calendar fixed cycles (Aspire card scenario)', () => {

@@ -232,6 +232,12 @@ describe('/api/cron/check-benefits', () => {
     expect(standardSql).toContain('c."lifecycleStatus" = \'ACTIVE\'');
     expect(standardSql).toContain('generate_series');
     expect(standardSql).toContain('LIMIT');
+    // Unmaterializable anniversary credits (no opened date) must not occupy the bounded batch every day.
+    expect(standardSql).toContain('c."openedDate" IS NULL');
+    expect(standardSql).toContain('pb."cycleAlignment" IS DISTINCT FROM');
+    expect(mockQueryRaw.mock.calls[0].slice(1)).toEqual(
+      expect.arrayContaining([BenefitFrequency.YEARLY, BenefitCycleAlignment.CALENDAR_FIXED])
+    );
     expect(customSql).toContain("'CLASSIFIED', 'BRIDGED', 'CLEANED'");
     expect(customSql).toContain('generate_series');
     expect(customSql).toContain('FROM "GlobalBenefitCategoryRepair" repair_order');
@@ -400,7 +406,7 @@ describe('insertMissingBenefitStatuses', () => {
   });
 
   it('does not execute SQL for an empty candidate list', async () => {
-    await expect(insertMissingBenefitStatuses([])).resolves.toBe(0);
+    await expect(insertMissingBenefitStatuses([])).resolves.toEqual({ inserted: 0, discrepancies: [] });
     expect(mockCreateMany).not.toHaveBeenCalled();
   });
 
@@ -416,11 +422,11 @@ describe('insertMissingBenefitStatuses', () => {
     };
     mockFindMany.mockResolvedValue([{ id: 'existing-status', ...row }]);
 
-    await expect(insertMissingBenefitStatuses([row])).resolves.toBe(0);
+    await expect(insertMissingBenefitStatuses([row])).resolves.toEqual({ inserted: 0, discrepancies: [] });
     expect(mockCreateMany).not.toHaveBeenCalled();
   });
 
-  it('stops instead of inserting or rewriting an overlapping cycle discrepancy', async () => {
+  it('skips an overlapping cycle discrepancy without inserting or rewriting, and keeps the rest of the batch', async () => {
     const row = {
       benefitId: null,
       creditCardId: 'card-1',
@@ -430,15 +436,24 @@ describe('insertMissingBenefitStatuses', () => {
       cycleEndDate: new Date('2026-07-31T23:59:59.999Z'),
       occurrenceIndex: 0,
     };
+    const unaffected = { ...row, userId: 'user-2' };
     mockFindMany.mockResolvedValue([{
       id: 'conflicting-status',
       ...row,
       cycleStartDate: utcDate(2026, 7, 2),
     }]);
+    mockCreateMany.mockResolvedValue({ count: 1 });
 
-    await expect(insertMissingBenefitStatuses([row]))
-      .rejects.toThrow('Benefit status cycle discrepancy detected');
-    expect(mockCreateMany).not.toHaveBeenCalled();
+    const result = await insertMissingBenefitStatuses([row, unaffected], utcDate(2026, 7, 10));
+
+    expect(result.inserted).toBe(1);
+    expect(result.discrepancies).toEqual([
+      expect.stringContaining('Benefit status cycle discrepancy detected for global-benefit-1'),
+    ]);
+    expect(mockCreateMany).toHaveBeenCalledTimes(1);
+    expect(mockCreateMany.mock.calls[0][0].data).toEqual([
+      expect.objectContaining({ userId: 'user-2' }),
+    ]);
   });
 
   it('opens a new cycle unclaimed when the benefit is tracked normally', async () => {
@@ -454,7 +469,7 @@ describe('insertMissingBenefitStatuses', () => {
     mockFindMany.mockResolvedValue([]);
     mockCreateMany.mockResolvedValue({ count: 1 });
 
-    await expect(insertMissingBenefitStatuses([row])).resolves.toBe(1);
+    await expect(insertMissingBenefitStatuses([row])).resolves.toEqual({ inserted: 1, discrepancies: [] });
     expect(mockCreateMany).toHaveBeenCalledWith(expect.objectContaining({
       data: [expect.objectContaining({ isCompleted: false, completedAt: null, usedAmount: 0 })],
     }));
@@ -483,7 +498,7 @@ describe('insertMissingBenefitStatuses', () => {
       { id: 'global-benefit-1', maxAmount: 15 },
     ]);
 
-    await expect(insertMissingBenefitStatuses([row])).resolves.toBe(1);
+    await expect(insertMissingBenefitStatuses([row], utcDate(2026, 7, 10))).resolves.toEqual({ inserted: 1, discrepancies: [] });
     expect(mockCreateMany).toHaveBeenCalledWith(expect.objectContaining({
       data: [expect.objectContaining({
         isCompleted: true,
@@ -518,7 +533,7 @@ describe('insertMissingBenefitStatuses', () => {
     await insertMissingBenefitStatuses([
       { ...base, userId: 'user-1' },
       { ...base, userId: 'user-2' },
-    ]);
+    ], utcDate(2026, 7, 10));
 
     expect(mockCreateMany).toHaveBeenCalledWith(expect.objectContaining({
       data: [

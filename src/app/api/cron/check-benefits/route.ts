@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { BenefitFrequency, Prisma, type BenefitCycleAlignment } from '@/generated/prisma';
+import { BenefitCycleAlignment, BenefitFrequency, Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import {
   planBenefitStatusMaterialization,
@@ -124,6 +124,11 @@ async function runCheckBenefitsLogic(dryRun = false) {
         WHERE c."lifecycleStatus" = 'ACTIVE'
           AND pc."retiredAt" IS NULL
           AND pb."retiredAt" IS NULL
+          AND NOT (
+            c."openedDate" IS NULL
+            AND pb."frequency" = ${BenefitFrequency.YEARLY}::"BenefitFrequency"
+            AND pb."cycleAlignment" IS DISTINCT FROM ${BenefitCycleAlignment.CALENDAR_FIXED}::"BenefitCycleAlignment"
+          )
           AND EXISTS (
             SELECT 1
             FROM generate_series(
@@ -338,14 +343,21 @@ async function runCheckBenefitsLogic(dryRun = false) {
     }
 
     let rowsInserted = 0;
+    const cycleDiscrepancies: string[] = [];
     if (dryRun) {
       rowsInserted = plan.rows.length;
     } else {
       for (let index = 0; index < plan.rows.length; index += INSERT_BATCH_SIZE) {
-        rowsInserted += await insertMissingBenefitStatuses(
-          plan.rows.slice(index, index + INSERT_BATCH_SIZE)
+        const batch = await insertMissingBenefitStatuses(
+          plan.rows.slice(index, index + INSERT_BATCH_SIZE),
+          now
         );
+        rowsInserted += batch.inserted;
+        cycleDiscrepancies.push(...batch.discrepancies);
       }
+    }
+    for (const discrepancy of cycleDiscrepancies) {
+      console.warn(discrepancy);
     }
 
     // Pre-materialized rows whose cycle has since opened are claimed here:
@@ -370,6 +382,7 @@ async function runCheckBenefitsLogic(dryRun = false) {
       standardDefinitionsProcessed: standardDefinitions.length,
       customAndLegacyDefinitionsProcessed: customAndLegacyDefinitions.length,
       validationWarnings: plan.warnings.length,
+      cycleDiscrepancies: cycleDiscrepancies.length,
       windowEntryAutoClaims,
       amexSyncAuditsDeleted,
       fetchMs,

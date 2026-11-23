@@ -173,31 +173,31 @@ export function calculateStandaloneBenefitCycle(
     return calculateOneTimeBenefitLifetime(startDate);
   }
 
+  // Cycles are indexed from the anchor (UTC midnight of the start date), so a
+  // time-of-day start never leaves an end that overlaps the next normalized
+  // start, a 29th-31st anchor clamps to each month's last day without drifting
+  // (Jan 31 -> Feb 28 -> Mar 31), and every cycle ends 1ms before the next.
+  const anchor = normalizeCycleDate(startDate);
+
   if (frequency === BenefitFrequency.WEEKLY) {
     const durationMs = 7 * 24 * 60 * 60 * 1000;
-    const cyclesPassed = Math.max(0, Math.floor((referenceDate.getTime() - startDate.getTime()) / durationMs));
-    const cycleStartDate = new Date(startDate.getTime() + cyclesPassed * durationMs);
+    const cyclesPassed = Math.max(0, Math.floor((referenceDate.getTime() - anchor.getTime()) / durationMs));
+    const cycleStartDate = new Date(anchor.getTime() + cyclesPassed * durationMs);
     const cycleEndDate = new Date(cycleStartDate.getTime() + durationMs - 1);
     return { cycleStartDate, cycleEndDate };
   }
 
   const monthsPerCycle = monthsForFrequency(frequency);
-  let cycleStartDate = new Date(startDate);
+  const cycleStartAt = (index: number) => addClampedUtcMonths(anchor, index * monthsPerCycle);
+  const monthDelta =
+    (referenceDate.getUTCFullYear() - anchor.getUTCFullYear()) * 12 +
+    (referenceDate.getUTCMonth() - anchor.getUTCMonth());
+  let index = Math.max(0, Math.floor(monthDelta / monthsPerCycle));
+  while (index > 0 && cycleStartAt(index) > referenceDate) index -= 1;
+  while (cycleStartAt(index + 1) <= referenceDate) index += 1;
 
-  if (referenceDate >= startDate) {
-    const monthDelta =
-      (referenceDate.getUTCFullYear() - startDate.getUTCFullYear()) * 12 +
-      (referenceDate.getUTCMonth() - startDate.getUTCMonth());
-    const initialCycles = Math.max(0, Math.floor(monthDelta / monthsPerCycle) - 1);
-    cycleStartDate = addUtcMonths(startDate, initialCycles * monthsPerCycle);
-  }
-
-  let cycleEndDate = endDateForUtcMonthCycle(cycleStartDate, monthsPerCycle);
-  while (cycleEndDate < referenceDate) {
-    cycleStartDate = addUtcMonths(cycleStartDate, monthsPerCycle);
-    cycleEndDate = endDateForUtcMonthCycle(cycleStartDate, monthsPerCycle);
-  }
-
+  const cycleStartDate = cycleStartAt(index);
+  const cycleEndDate = new Date(cycleStartAt(index + 1).getTime() - 1);
   return { cycleStartDate, cycleEndDate };
 }
 
@@ -214,14 +214,10 @@ function monthsForFrequency(frequency: BenefitFrequency): number {
   }
 }
 
-function addUtcMonths(date: Date, months: number): Date {
-  const result = new Date(date);
-  result.setUTCMonth(result.getUTCMonth() + months);
-  return result;
-}
-
-function endDateForUtcMonthCycle(cycleStartDate: Date, months: number): Date {
-  const cycleEndDate = addUtcMonths(cycleStartDate, months);
-  cycleEndDate.setUTCMilliseconds(cycleEndDate.getUTCMilliseconds() - 1);
-  return cycleEndDate;
+function addClampedUtcMonths(anchor: Date, months: number): Date {
+  const monthIndex = anchor.getUTCMonth() + months;
+  const year = anchor.getUTCFullYear() + Math.floor(monthIndex / 12);
+  const month = ((monthIndex % 12) + 12) % 12;
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(year, month, Math.min(anchor.getUTCDate(), lastDay)));
 }

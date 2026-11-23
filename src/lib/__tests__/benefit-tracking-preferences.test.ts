@@ -145,6 +145,8 @@ describe('applyTrackingModesToPlannedRows', () => {
     creditCardId: 'card-1',
     predefinedBenefitId: 'pb-1',
     benefitId: null,
+    cycleStartDate: new Date('2000-01-01T00:00:00.000Z'),
+    cycleEndDate: new Date('2100-01-01T00:00:00.000Z'),
     ...overrides,
   });
 
@@ -225,6 +227,28 @@ describe('applyTrackingModesToPlannedRows', () => {
     expect(await applyTrackingModesToPlannedRows(db, [])).toEqual([]);
     expect((db as never as { benefitTrackingPreference: { findMany: jest.Mock } })
       .benefitTrackingPreference.findMany).not.toHaveBeenCalled();
+  });
+
+  it('leaves future and closed cycles unclaimed so window entry claims them on opening', async () => {
+    const now = new Date('2026-07-15T00:00:00.000Z');
+    const db = database(
+      [standardPreference({ mode: 'AUTO_CLAIM' })],
+      { predefined: [{ id: 'pb-1', maxAmount: 50 }] }
+    );
+
+    const [future, open, closed, firstInstant, lastInstant] = await applyTrackingModesToPlannedRows(db, [
+      plannedStandard({ cycleStartDate: new Date('2027-01-01T00:00:00.000Z'), cycleEndDate: new Date('2027-06-30T23:59:59.999Z') }),
+      plannedStandard({ cycleStartDate: new Date('2026-07-01T00:00:00.000Z'), cycleEndDate: new Date('2026-12-31T23:59:59.999Z') }),
+      plannedStandard({ cycleStartDate: new Date('2026-01-01T00:00:00.000Z'), cycleEndDate: new Date('2026-06-30T23:59:59.999Z') }),
+      plannedStandard({ cycleStartDate: now, cycleEndDate: new Date('2026-07-31T23:59:59.999Z') }),
+      plannedStandard({ cycleStartDate: new Date('2026-07-01T00:00:00.000Z'), cycleEndDate: now }),
+    ], now);
+
+    expect(future).toEqual({ isCompleted: false, completedAt: null, usedAmount: 0, claimSource: null });
+    expect(closed).toEqual({ isCompleted: false, completedAt: null, usedAmount: 0, claimSource: null });
+    expect(open).toEqual({ isCompleted: true, completedAt: now, usedAmount: 50, claimSource: 'AUTO' });
+    expect(firstInstant.isCompleted).toBe(true);
+    expect(lastInstant.isCompleted).toBe(true);
   });
 
   it('preserves input order so callers can zip defaults back onto rows', async () => {

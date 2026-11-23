@@ -112,6 +112,8 @@ export async function fetchTrackedBenefitStatuses(
 /** A planned status insert, in the shape every materialization path produces. */
 export interface PlannedStatusRow extends BenefitTrackingTarget {
   userId: string;
+  cycleStartDate: Date;
+  cycleEndDate: Date;
 }
 
 export interface MaterializedStatusDefaults {
@@ -125,8 +127,10 @@ export interface MaterializedStatusDefaults {
  * The canonical write helper: resolves each planned row against its owner's
  * tracking mode and returns the status fields that row should be created with.
  *
- * AUTO_CLAIM rows open already claimed at the benefit's full value; every other
- * mode opens unclaimed. Returned in the same order as `rows`.
+ * AUTO_CLAIM rows whose Benefit Cycle is open at `now` start already claimed at
+ * the benefit's full value; future and closed cycles, and every other mode,
+ * start unclaimed (window entry claims future rows once they open). Returned in
+ * the same order as `rows`.
  *
  * Rows whose benefit has no stored maximum claim 0 rather than inventing value.
  */
@@ -146,24 +150,22 @@ export async function applyTrackingModesToPlannedRows<T extends PlannedStatusRow
     return rows.map(() => ({ isCompleted: false, completedAt: null, usedAmount: 0, claimSource: null }));
   }
 
-  const autoClaimRows = rows.filter(
-    (row) => resolveBenefitTrackingMode(modesByUser.get(row.userId), row) === 'AUTO_CLAIM'
-  );
+  const modeAt = (row: T) =>
+    row.cycleStartDate <= now && row.cycleEndDate >= now
+      ? resolveBenefitTrackingMode(modesByUser.get(row.userId), row)
+      : 'TRACK';
+  const autoClaimRows = rows.filter((row) => modeAt(row) === 'AUTO_CLAIM');
   const amounts = await loadClaimableAmounts(database, autoClaimRows);
 
   return rows.map((row) =>
-    initialStatusFieldsForTrackingMode(
-      resolveBenefitTrackingMode(modesByUser.get(row.userId), row),
-      amounts.get(benefitTrackingKey(row) ?? ''),
-      now
-    )
+    initialStatusFieldsForTrackingMode(modeAt(row), amounts.get(benefitTrackingKey(row) ?? ''), now)
   );
 }
 
 /** Full value of each auto-claimed benefit, keyed the way preferences are. */
 async function loadClaimableAmounts(
   database: Pick<PrismaClient, 'predefinedBenefit' | 'benefit'>,
-  rows: readonly PlannedStatusRow[]
+  rows: readonly BenefitTrackingTarget[]
 ): Promise<Map<string, number | null>> {
   const amounts = new Map<string, number | null>();
   if (rows.length === 0) return amounts;

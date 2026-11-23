@@ -4,11 +4,23 @@ import { applyTrackingModesToPlannedRows } from '@/lib/benefit-tracking-preferen
 
 export const INSERT_BATCH_SIZE = 2_000;
 
-/** Insert-only by design: existing cycle boundaries and user state are immutable. */
+export interface BenefitStatusInsertResult {
+  inserted: number;
+  discrepancies: string[];
+}
+
+/**
+ * Insert-only by design: existing cycle boundaries and user state are immutable.
+ * A planned row that overlaps a stored occurrence with different boundaries is
+ * reported and skipped, never inserted or rewritten, so one inconsistent
+ * definition cannot block materialization for every other user.
+ */
 export async function insertMissingBenefitStatuses(
-  rows: PlannedBenefitStatusInsert[]
-): Promise<number> {
-  if (rows.length === 0) return 0;
+  rows: PlannedBenefitStatusInsert[],
+  now: Date = new Date()
+): Promise<BenefitStatusInsertResult> {
+  const discrepancies: string[] = [];
+  if (rows.length === 0) return { inserted: 0, discrepancies };
   if (rows.length > INSERT_BATCH_SIZE) {
     throw new Error(`Benefit status insert batch exceeds ${INSERT_BATCH_SIZE} rows.`);
   }
@@ -41,23 +53,24 @@ export async function insertMissingBenefitStatuses(
 
   const rowsToInsert = rows.filter((row) => {
     const existing = overlapping.filter((candidate) => sameOccurrenceSource(candidate, row));
+    if (existing.length === 0) return true;
     const exact = existing.some((candidate) =>
       candidate.cycleStartDate.getTime() === row.cycleStartDate.getTime() &&
       candidate.cycleEndDate.getTime() === row.cycleEndDate.getTime()
     );
-    if (exact) return false;
-    if (existing.length > 0) {
-      throw new Error(
-        `Benefit status cycle discrepancy detected for ${row.predefinedBenefitId ?? row.benefitId}.`
+    if (!exact) {
+      discrepancies.push(
+        `Benefit status cycle discrepancy detected for ${row.predefinedBenefitId ?? row.benefitId} ` +
+        `(user ${row.userId}, occurrence ${row.occurrenceIndex}, planned ${row.cycleStartDate.toISOString()}).`
       );
     }
-    return true;
+    return false;
   });
 
-  if (rowsToInsert.length === 0) return 0;
+  if (rowsToInsert.length === 0) return { inserted: 0, discrepancies };
 
   // Centralized: AUTO_CLAIM rows open already claimed, resolved per owner.
-  const defaults = await applyTrackingModesToPlannedRows(prisma, rowsToInsert);
+  const defaults = await applyTrackingModesToPlannedRows(prisma, rowsToInsert, now);
 
   // Prisma emits parameterized INSERT ... ON CONFLICT DO NOTHING for
   // skipDuplicates. Keeping Date values on the normal Prisma boundary avoids
@@ -71,7 +84,7 @@ export async function insertMissingBenefitStatuses(
     })),
     skipDuplicates: true,
   } as never);
-  return result.count;
+  return { inserted: result.count, discrepancies };
 }
 
 function sameOccurrenceSource(

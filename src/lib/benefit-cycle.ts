@@ -32,34 +32,12 @@ export function calculateBenefitCycle(
     fixedCycleStartMonth &&
     fixedCycleDurationMonths &&
     fixedCycleStartMonth >= 1 && fixedCycleStartMonth <= 12 &&
-    fixedCycleDurationMonths > 0
+    fixedCycleDurationMonths > 0 &&
+    fixedCycleDurationMonths <= 12
   ) {
-    // --- CALENDAR_FIXED Logic --- 
-    // Enhanced to handle recurring cycles (monthly, quarterly, etc.) within a year
-    // All calculations in UTC
-    
-    // Calculate how many cycles occur per year
-    const cyclesPerYear = Math.floor(12 / fixedCycleDurationMonths);
-    
-    if (cyclesPerYear === 1) {
-      // Annual cycle - use original logic
-      const currentYearCycleStartDate = new Date(Date.UTC(refYear, fixedCycleStartMonth - 1, 1, 0, 0, 0, 0));
-      const currentYearCycleEndDate = new Date(currentYearCycleStartDate.getTime());
-      currentYearCycleEndDate.setUTCMonth(currentYearCycleEndDate.getUTCMonth() + fixedCycleDurationMonths);
-      currentYearCycleEndDate.setUTCMilliseconds(currentYearCycleEndDate.getUTCMilliseconds() - 1);
-
-      if (referenceDate <= currentYearCycleEndDate) {
-        cycleStartDate = currentYearCycleStartDate;
-        cycleEndDate = currentYearCycleEndDate;
-      } else {
-        // Jump to next year for annual cycles
-        const nextYear = refYear + 1;
-        cycleStartDate = new Date(Date.UTC(nextYear, fixedCycleStartMonth - 1, 1, 0, 0, 0, 0));
-        cycleEndDate = new Date(cycleStartDate.getTime());
-        cycleEndDate.setUTCMonth(cycleEndDate.getUTCMonth() + fixedCycleDurationMonths);
-        cycleEndDate.setUTCMilliseconds(cycleEndDate.getUTCMilliseconds() - 1);
-      }
-    } else if (frequency === BenefitFrequency.QUARTERLY && fixedCycleDurationMonths === 3) {
+    // --- CALENDAR_FIXED Logic (UTC) ---
+    // Multi-year windows have no calendar anchor, so they use the card-anniversary branch below.
+    if (frequency === BenefitFrequency.QUARTERLY && fixedCycleDurationMonths === 3) {
       // Quarterly fixed cycles recur throughout the year from the configured start month.
       // For example, a January-start Aspire flight credit should materialize Jan-Mar,
       // Apr-Jun, Jul-Sep, and Oct-Dec cycles instead of jumping from Q1 to next Q1.
@@ -76,33 +54,24 @@ export function calculateBenefitCycle(
       cycleEndDate.setUTCMonth(cycleEndDate.getUTCMonth() + fixedCycleDurationMonths);
       cycleEndDate.setUTCMilliseconds(cycleEndDate.getUTCMilliseconds() - 1);
     } else {
-      // Multiple cycles per year for fixed seasonal benefits.
-      // Each benefit represents only its own cycle pattern, not all possible cycles.
-      // For example, Jan-Jun benefit only calculates Jan-Jun cycles, not Jul-Dec cycles.
-
-      // Current year cycle for this specific benefit
-      const currentYearCycleStartDate = new Date(Date.UTC(refYear, fixedCycleStartMonth - 1, 1, 0, 0, 0, 0));
-      const currentYearCycleEndDate = new Date(currentYearCycleStartDate.getTime());
-      currentYearCycleEndDate.setUTCMonth(currentYearCycleEndDate.getUTCMonth() + fixedCycleDurationMonths);
-      currentYearCycleEndDate.setUTCMilliseconds(currentYearCycleEndDate.getUTCMilliseconds() - 1);
-
-      // Check if reference date falls within the current year's cycle for this benefit
-      if (referenceDate >= currentYearCycleStartDate && referenceDate <= currentYearCycleEndDate) {
-        // Current cycle is active
-        cycleStartDate = currentYearCycleStartDate;
-        cycleEndDate = currentYearCycleEndDate;
-      } else if (referenceDate < currentYearCycleStartDate) {
-        // Reference date is before this year's cycle, use current year cycle
-        cycleStartDate = currentYearCycleStartDate;
-        cycleEndDate = currentYearCycleEndDate;
-      } else {
-        // Reference date is after this year's cycle, use next year's cycle
-        const nextYear = refYear + 1;
-        cycleStartDate = new Date(Date.UTC(nextYear, fixedCycleStartMonth - 1, 1, 0, 0, 0, 0));
-        cycleEndDate = new Date(cycleStartDate.getTime());
-        cycleEndDate.setUTCMonth(cycleEndDate.getUTCMonth() + fixedCycleDurationMonths);
-        cycleEndDate.setUTCMilliseconds(cycleEndDate.getUTCMilliseconds() - 1);
-      }
+      // One window per year (annual, Jan-Jun / Jul-Dec halves, single quarters,
+      // December-only). Each benefit represents only its own window: the window
+      // containing the reference date wins, otherwise the next upcoming one.
+      // The previous year's window is considered so year-wrapping windows
+      // (e.g. Nov-Jan) and non-January annual windows (e.g. Jul-Jun) resolve
+      // to the window that is actually open.
+      const windows = [refYear - 1, refYear, refYear + 1].map((year) => {
+        const start = new Date(Date.UTC(year, fixedCycleStartMonth - 1, 1, 0, 0, 0, 0));
+        const end = new Date(start.getTime());
+        end.setUTCMonth(end.getUTCMonth() + fixedCycleDurationMonths);
+        end.setUTCMilliseconds(end.getUTCMilliseconds() - 1);
+        return { start, end };
+      });
+      const chosen =
+        windows.find((window) => referenceDate >= window.start && referenceDate <= window.end) ??
+        windows.find((window) => window.start > referenceDate)!;
+      cycleStartDate = chosen.start;
+      cycleEndDate = chosen.end;
     }
   } else {
     // --- CARD_ANNIVERSARY or Default Logic (existing logic) ---
