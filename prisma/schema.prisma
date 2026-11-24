@@ -126,6 +126,7 @@ model CreditCard {
   user                User                  @relation(fields: [userId], references: [id])
 
   @@index([userId, productKey, lastFourDigits])
+  @@index([userId, issuer, lifecycleStatus], map: "CreditCard_user_issuer_lifecycle_idx")
   @@index([predefinedCardId])
 }
 
@@ -334,6 +335,7 @@ model AmexSyncAttempt {
   sourceProvenance BenefitStatusSourceProvenance[]
 
   @@unique([userId, idempotencyKey])
+  @@index([userId, completedAt], map: "AmexSyncAttempt_user_completed_idx")
   @@index([createdAt])
 }
 
@@ -355,6 +357,7 @@ model BenefitStatusSourceProvenance {
   attempt                   AmexSyncAttempt?   @relation(fields: [attemptId], references: [id], onDelete: SetNull)
 
   @@unique([benefitStatusId, source])
+  @@index([source, benefitStatusId], map: "BenefitStatusSourceProvenance_source_status_idx")
   @@index([attemptId])
 }
 

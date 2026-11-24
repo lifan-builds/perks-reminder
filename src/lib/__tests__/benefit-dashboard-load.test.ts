@@ -140,13 +140,16 @@ describe('deep Benefit Dashboard loading interface', () => {
       effectiveStatus({ id: 'soon', start: '2026-08-01T00:00:00.000Z', end: '2026-08-10T00:00:00.000Z' }),
       effectiveStatus({ id: 'later', start: '2026-08-01T00:00:00.000Z', end: '2026-08-20T00:00:00.000Z' }),
     ];
+    const allStatuses = [
+      ...currentYearStatuses,
+      ...activeStatuses,
+      effectiveStatus({ id: 'already-done', start: '2026-08-01T00:00:00.000Z', end: '2026-08-10T00:00:00.000Z', completed: true, maxAmount: 0 }),
+    ];
     fetchCardTerms.mockResolvedValue([
       { creditCardId: 'card-1', name: 'Card one', issuer: 'Issuer', annualFee: 95, imageUrl: null },
       { creditCardId: 'card-2', name: 'Card two', issuer: 'Issuer', annualFee: 250, imageUrl: null },
     ]);
-    fetchStatuses
-      .mockResolvedValueOnce(currentYearStatuses)
-      .mockResolvedValueOnce(activeStatuses);
+    fetchStatuses.mockResolvedValueOnce(allStatuses);
 
     const summary = await loadHomeDashboardSummary({
       $queryRaw: jest.fn(),
@@ -156,9 +159,9 @@ describe('deep Benefit Dashboard loading interface', () => {
       now,
     });
 
+    expect(fetchStatuses).toHaveBeenCalledTimes(1);
     expect(fetchStatuses).toHaveBeenNthCalledWith(1, expect.anything(), {
       userId: 'user-1',
-      cycleStartOnOrBefore: new Date('2026-12-31T23:59:59.999Z'),
       cycleEndOnOrAfter: new Date('2026-01-01T00:00:00.000Z'),
     });
     expect(summary).toMatchObject({
@@ -167,6 +170,6 @@ describe('deep Benefit Dashboard loading interface', () => {
       totalClaimedValue: 80,
     });
     expect(summary.expiringSoonBenefits.map((status) => status.id)).toEqual(['soon']);
-    expect(summary.upcomingBenefits.map((status) => status.id)).toEqual(['later']);
+    expect(summary.upcomingBenefits.map((status) => status.id)).toEqual(['later', 'partial', 'legacy']);
   });
 });

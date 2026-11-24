@@ -2,7 +2,7 @@
 // Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { hasSessionCookie } from '@/lib/session-cookie';
+import { hasSessionCookie, SESSION_HINT_COOKIE } from '@/lib/session-cookie';
 
 const LOYALTY_SUBDOMAINS = ['loyalty'];
 /** Client-rendered card pages that only fetch the signed-in user's data. */
@@ -48,13 +48,28 @@ function redirectToSignin(request: NextRequest) {
   return NextResponse.redirect(url);
 }
 
+function withSessionHintCookie(request: NextRequest, response: NextResponse): NextResponse {
+  const signedIn = hasSessionCookie(request);
+  const currentHint = request.cookies.get(SESSION_HINT_COOKIE)?.value;
+  if (signedIn && currentHint !== '1') {
+    response.cookies.set(SESSION_HINT_COOKIE, '1', {
+      httpOnly: false,
+      sameSite: 'lax',
+      path: '/',
+    });
+  } else if (!signedIn && currentHint !== undefined) {
+    response.cookies.delete(SESSION_HINT_COOKIE);
+  }
+  return response;
+}
+
 export function proxy(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const subdomain = getSubdomain(hostname);
   const { pathname } = request.nextUrl;
 
   if (SIGNED_IN_CARD_PATHS.has(pathname) && !hasSessionCookie(request)) {
-    return redirectToSignin(request);
+    return withSessionHintCookie(request, redirectToSignin(request));
   }
 
   if (subdomain && LOYALTY_SUBDOMAINS.includes(subdomain)) {
@@ -69,22 +84,28 @@ export function proxy(request: NextRequest) {
       if (!url.searchParams.has('callbackUrl')) {
         url.searchParams.set('callbackUrl', `${protocol}://${hostname}/loyalty`);
       }
-      return NextResponse.redirect(url);
+      return withSessionHintCookie(request, NextResponse.redirect(url));
     }
 
     // On loyalty subdomain, rewrite root to the loyalty landing page
     if (pathname === '/') {
       const url = request.nextUrl.clone();
       url.pathname = '/loyalty-landing';
-      return NextResponse.rewrite(url);
+      return withSessionHintCookie(request, NextResponse.rewrite(url));
     }
     // Set a header so pages can detect loyalty context
     const response = NextResponse.next();
     response.headers.set('x-subdomain', 'loyalty');
-    return response;
+    return withSessionHintCookie(request, response);
   }
 
-  return NextResponse.next();
+  if (pathname === '/' && !hasSessionCookie(request)) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/landing';
+    return withSessionHintCookie(request, NextResponse.rewrite(url));
+  }
+
+  return withSessionHintCookie(request, NextResponse.next());
 }
 
 export const config = {

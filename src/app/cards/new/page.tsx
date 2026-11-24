@@ -71,7 +71,6 @@ function PredefinedCardForm({ card, matchedFields }: { card: CardWithBenefits; m
             className="h-36 rounded-none border-x-0 border-t-0"
             imageClassName="p-2"
             sizes="220px"
-            unoptimized
           />
 
           {/* Card Name and Match Badges */}

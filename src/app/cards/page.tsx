@@ -70,7 +70,6 @@ function CardItem({ card, setCards }: { card: DisplayUserCard, setCards: React.D
           issuer={card.issuer}
           className="h-28 rounded-xl border-0 !p-2"
           sizes="180px"
-          unoptimized
         />
       </div>
 

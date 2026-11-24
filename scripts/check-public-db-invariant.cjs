@@ -7,6 +7,8 @@ const fs = require('fs');
 
 const publicSurfaceFiles = [
   'src/app/page.tsx',
+  'src/app/landing/page.tsx',
+  'src/components/home/PublicLanding.tsx',
   'src/app/cards/browse/page.tsx',
   'src/app/cards/browse/[name]/page.tsx',
   'src/app/benefits/how-to-use/page.tsx',

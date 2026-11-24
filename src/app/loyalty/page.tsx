@@ -37,48 +37,46 @@ export default async function LoyaltyPage() {
     redirect(await getSignInRedirect());
   }
 
-  // Fetch user's current loyalty accounts
-  const userLoyaltyAccounts = await prisma.loyaltyAccount.findMany({
-    where: { userId: session.user.id },
-    include: {
-      certificates: {
-        where: { isActive: true },
-        orderBy: { expirationDate: 'asc' },
-      },
-      loyaltyProgram: {
-        select: {
-          id: true,
-          name: true,
-          displayName: true,
-          type: true,
-          company: true,
-          expirationMonths: true,
-          hasExpiration: true,
-          expirationBasis: true,
-          description: true,
-          qualifyingActivities: true,
-          website: true,
+  // Fetch user's loyalty accounts and all programs in parallel
+  const [userLoyaltyAccounts, allPrograms] = await Promise.all([
+    prisma.loyaltyAccount.findMany({
+      where: { userId: session.user.id },
+      include: {
+        certificates: {
+          where: { isActive: true },
+          orderBy: { expirationDate: 'asc' },
+        },
+        loyaltyProgram: {
+          select: {
+            id: true,
+            name: true,
+            displayName: true,
+            type: true,
+            company: true,
+            expirationMonths: true,
+            hasExpiration: true,
+            expirationBasis: true,
+            description: true,
+            qualifyingActivities: true,
+            website: true,
+          }
         }
-      }
-    },
-    orderBy: [
-      { loyaltyProgram: { type: 'asc' } },
-      { loyaltyProgram: { company: 'asc' } }
-    ]
-  });
+      },
+      orderBy: [
+        { loyaltyProgram: { type: 'asc' } },
+        { loyaltyProgram: { company: 'asc' } }
+      ]
+    }),
+    prisma.loyaltyProgram.findMany({
+      orderBy: [
+        { type: 'asc' },
+        { company: 'asc' }
+      ]
+    }),
+  ]);
 
-  // Fetch all available loyalty programs for adding new accounts
-  // Only apply notIn when user has accounts (Prisma notIn: [] can be inconsistent)
-  const excludeIds = userLoyaltyAccounts.map(account => account.loyaltyProgramId);
-  const availablePrograms = await prisma.loyaltyProgram.findMany({
-    where: excludeIds.length > 0
-      ? { id: { notIn: excludeIds } }
-      : {},
-    orderBy: [
-      { type: 'asc' },
-      { company: 'asc' }
-    ]
-  });
+  const excludeIds = new Set(userLoyaltyAccounts.map(account => account.loyaltyProgramId));
+  const availablePrograms = allPrograms.filter(program => !excludeIds.has(program.id));
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">

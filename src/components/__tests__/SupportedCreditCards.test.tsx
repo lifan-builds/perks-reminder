@@ -15,9 +15,10 @@ describe('SupportedCreditCards', () => {
   });
 
   it('uses the static catalog count without overstating support', () => {
-    render(<SupportedCreditCards />);
+    const cards = getPublicStaticCards();
+    render(<SupportedCreditCards cards={cards} />);
 
-    const cardCount = getPublicStaticCards().length;
+    const cardCount = cards.length;
     expect(screen.getByText(`Track benefits from ${cardCount} popular credit cards. We support cards from major issuers with detailed benefit tracking and automated cycle management.`)).toBeInTheDocument();
 
     expect(screen.queryByText(new RegExp(`${cardCount}\\\\+ popular credit cards`, 'i'))).not.toBeInTheDocument();

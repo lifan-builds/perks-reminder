@@ -98,12 +98,7 @@ async function checkDatabase(): Promise<HealthCheck> {
   const startTime = Date.now();
   
   try {
-    // Simple query to test database connectivity
-    await prisma.$queryRaw`SELECT 1`;
-    
-    // Test a more complex query to ensure performance is acceptable
     const userCount = await prisma.user.count();
-    
     const responseTime = Date.now() - startTime;
     
     return {

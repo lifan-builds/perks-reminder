@@ -1,4 +1,5 @@
 {
+  "regions": ["pdx1"],
   "crons": [
     {
       "path": "/api/cron/check-benefits",
@@ -9,4 +10,4 @@
       "schedule": "30 5 * * *"
     }
   ]
-} 
+}

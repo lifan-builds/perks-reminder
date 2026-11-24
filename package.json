@@ -50,6 +50,7 @@
     "clone:amex-user:dev": "tsx scripts/clone-amex-user-to-development.ts",
     "postinstall": "prisma generate",
     "db:check": "node scripts/check-database-connection.js",
+    "health": "node scripts/check-health.mjs",
     "db:dev:migrate": "node scripts/with-dev-db.js npx prisma migrate deploy",
     "db:dev:status": "node scripts/with-dev-db.js npx prisma migrate status",
     "db:dev:seed": "node scripts/with-dev-db.js npx prisma db seed",

@@ -174,6 +174,17 @@ function copyHeaders(target: Map<string, string>, headers: any) {
   });
 }
 
+function createMockHeaders(init?: any): Map<string, string> & { append(key: string, value: string): void } {
+  const headers = new Map<string, string>() as Map<string, string> & { append(key: string, value: string): void };
+  headers.append = (key: string, value: string) => {
+    const normalized = key.toLowerCase();
+    const existing = headers.get(normalized);
+    headers.set(normalized, existing ? `${existing}, ${value}` : value);
+  };
+  copyHeaders(headers, init);
+  return headers;
+}
+
 // Mock Next.js Request and Response objects for API tests
 global.Request = class Request {
   private _url: string;
@@ -184,10 +195,8 @@ global.Request = class Request {
   constructor(url: string, init?: any) {
     this._url = url;
     this.method = init?.method || 'GET';
-    this.headers = new Map();
-    
-    copyHeaders(this.headers, init?.headers);
-    
+    this.headers = createMockHeaders(init?.headers);
+
     this.body = init?.body;
   }
 
@@ -209,10 +218,8 @@ global.Response = class Response {
   constructor(body?: any, init?: any) {
     this.status = init?.status || 200;
     this.statusText = init?.statusText || 'OK';
-    this.headers = new Map();
+    this.headers = createMockHeaders(init?.headers);
     this.body = body;
-
-    copyHeaders(this.headers, init?.headers);
   }
 
   async json() {

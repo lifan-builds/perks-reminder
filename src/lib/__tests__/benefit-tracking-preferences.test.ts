@@ -130,12 +130,13 @@ describe('fetchTrackedBenefitStatuses', () => {
     expect(result.map((row) => row.id)).toEqual(['user-2-row']);
   });
 
-  it('skips the preference query entirely when there are no statuses', async () => {
-    mockFetchStatuses.mockResolvedValue([]);
+  it('skips all queries when userIds is empty', async () => {
     const db = database([standardPreference()]);
 
-    await fetchTrackedBenefitStatuses(db, { userId: 'user-1' });
+    const result = await fetchTrackedBenefitStatuses(db, { userIds: [] });
 
+    expect(result).toEqual([]);
+    expect(mockFetchStatuses).not.toHaveBeenCalled();
     expect((db as never as { benefitTrackingPreference: { findMany: jest.Mock } })
       .benefitTrackingPreference.findMany).not.toHaveBeenCalled();
   });

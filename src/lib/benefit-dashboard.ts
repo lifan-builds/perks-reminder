@@ -465,34 +465,36 @@ export async function loadHomeDashboardSummary(
   input: { userId: string; now: Date }
 ): Promise<HomeDashboardSummary> {
   const { userId, now } = input;
+  const yearStart = calendarYearStart(now);
+  const yearEnd = calendarYearEnd(now);
   const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  const [cardTerms, currentYearStatuses, rawActiveStatuses, trackingModes] = await Promise.all([
+  const minEnd = yearStart < now ? yearStart : now;
+  const [cardTerms, relevantStatuses, trackingModes] = await Promise.all([
     fetchEffectiveCardTerms(database, userId),
     fetchEffectiveBenefitStatuses(database, {
       userId,
-      cycleStartOnOrBefore: calendarYearEnd(now),
-      cycleEndOnOrAfter: calendarYearStart(now),
-    }),
-    fetchEffectiveBenefitStatuses(database, {
-      userId,
-      completed: false,
-      notUsable: false,
-      cycleStartOnOrBefore: now,
-      cycleEndOnOrAfter: now,
+      cycleEndOnOrAfter: minEnd,
     }),
     loadBenefitTrackingModes(database, userId),
   ]);
 
+  const currentYearStatuses = relevantStatuses.filter(
+    (status) => status.cycleStartDate <= yearEnd && status.cycleEndDate >= yearStart
+  );
+  const rawActiveStatuses = relevantStatuses.filter(
+    (status) =>
+      !status.isCompleted &&
+      !status.isNotUsable &&
+      status.cycleStartDate <= now &&
+      status.cycleEndDate >= now
+  );
+
   // Ignored benefits stay out of the home summary the same way they stay out
   // of the dashboard projection.
   const activeStatuses = excludeIgnoredBenefits(rawActiveStatuses, trackingModes);
-  const yearStart = calendarYearStart(now);
-  const yearEnd = calendarYearEnd(now);
   const claimedStatuses = deduplicateBenefitStatusesForDashboard(
     augmentBenefitStatusesForDashboard(
-      excludeIgnoredBenefits(currentYearStatuses, trackingModes).filter((status) =>
-        status.cycleStartDate <= yearEnd && status.cycleEndDate >= yearStart
-      ),
+      excludeIgnoredBenefits(currentYearStatuses, trackingModes),
       [],
       []
     )

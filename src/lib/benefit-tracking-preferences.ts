@@ -96,18 +96,23 @@ export async function fetchTrackedBenefitStatuses(
   database: StatusReadDatabase & TrackingPreferenceDatabase,
   filters: EffectiveBenefitStatusFilters
 ): Promise<EffectiveBenefitStatus[]> {
-  const statuses = await fetchEffectiveBenefitStatuses(database, filters);
-  if (statuses.length === 0) return statuses;
-
   if (filters.userIds) {
-    const modesByUser = await loadBenefitTrackingModesByUser(database, filters.userIds);
-    if (modesByUser.size === 0) return statuses;
+    if (filters.userIds.length === 0) return [];
+    const [statuses, modesByUser] = await Promise.all([
+      fetchEffectiveBenefitStatuses(database, filters),
+      loadBenefitTrackingModesByUser(database, filters.userIds),
+    ]);
+    if (statuses.length === 0 || modesByUser.size === 0) return statuses;
     return statuses.filter(
       (status) => resolveBenefitTrackingMode(modesByUser.get(status.userId), status) !== 'IGNORE'
     );
   }
 
-  const modes = await loadBenefitTrackingModes(database, filters.userId!);
+  const [statuses, modes] = await Promise.all([
+    fetchEffectiveBenefitStatuses(database, filters),
+    loadBenefitTrackingModes(database, filters.userId!),
+  ]);
+  if (statuses.length === 0) return statuses;
   return excludeIgnoredBenefits(statuses, modes);
 }
 

@@ -78,8 +78,10 @@ const referralData: Record<string, { cards: { name: string; description: string;
 };
 
 export default async function ReferralsPage() {
+  const staticCards = getPublicStaticCards();
+  const catalogCardNames = new Set(staticCards.map((card) => card.name));
   const referralCardNames = new Set(Object.values(referralData).flatMap(issuer => issuer.cards.map(c => c.name)));
-  const cardImageMap = getPublicStaticCards().filter((card) => referralCardNames.has(card.name)).reduce((acc, card) => {
+  const cardImageMap = staticCards.filter((card) => referralCardNames.has(card.name)).reduce((acc, card) => {
     acc[card.name] = card.imageUrl;
     return acc;
   }, {} as Record<string, string | null>);
@@ -177,12 +179,14 @@ export default async function ReferralsPage() {
                             Coming Soon
                           </span>
                         )}
-                        <Link
-                          href={`/cards/browse/${encodeURIComponent(card.name)}`}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
-                        >
-                          View Card Details
-                        </Link>
+                        {catalogCardNames.has(card.name) && (
+                          <Link
+                            href={`/cards/browse/${encodeURIComponent(card.name)}`}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium"
+                          >
+                            View Card Details
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </div>

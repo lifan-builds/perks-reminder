@@ -8,12 +8,12 @@ import {
   ChevronDownIcon,
   ChevronUpIcon,
 } from '@heroicons/react/24/outline';
-import { searchCards } from '@/lib/cardSearchUtils';
+import { searchCards, type SearchableCard } from '@/lib/cardSearchUtils';
 import CardImageWell from '@/components/ui/CardImageWell';
-import { getPublicStaticCards, type PublicStaticCard } from '@/lib/static-catalog';
 
-export default function SupportedCreditCards() {
-  const [cards] = useState(() => getPublicStaticCards());
+export type SupportedCreditCardSummary = SearchableCard;
+
+export default function SupportedCreditCards({ cards }: { cards: SupportedCreditCardSummary[] }) {
   const [showAll, setShowAll] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -29,7 +29,7 @@ export default function SupportedCreditCards() {
     }
     acc[card.issuer].push(card);
     return acc;
-  }, {} as Record<string, PublicStaticCard[]>);
+  }, {} as Record<string, SupportedCreditCardSummary[]>);
 
   return (
     <section id="supported-cards" className="border-b border-border bg-background py-14">
@@ -86,7 +86,6 @@ export default function SupportedCreditCards() {
                       issuer={card.issuer}
                       className="h-28 rounded-none border-x-0 border-t-0"
                       sizes="220px"
-                      unoptimized
                     />
                     <div className="p-4">
                       <h4 className="mb-1.5 text-base font-semibold leading-snug text-foreground">

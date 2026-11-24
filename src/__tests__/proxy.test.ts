@@ -26,6 +26,21 @@ describe('proxy', () => {
     }
   });
 
+  it('rewrites anonymous / to the static /landing route while passing signed-in / through', () => {
+    const anonymous = proxy(requestFor('https://www.perks-reminder.com/'));
+    expect(anonymous.headers.get('x-middleware-rewrite')).toBe('https://www.perks-reminder.com/landing');
+    expect(anonymous.cookies.get('pr_has_session')).toBeUndefined();
+
+    const signedIn = proxy(new NextRequest('https://www.perks-reminder.com/', {
+      headers: {
+        host: 'www.perks-reminder.com',
+        cookie: 'next-auth.session-token=fake-token',
+      },
+    }));
+    expect(signedIn.headers.get('x-middleware-rewrite') ?? null).toBeNull();
+    expect(signedIn.cookies.get('pr_has_session')?.value).toBe('1');
+  });
+
   it('redirects loyalty auth pages to the canonical www auth host', () => {
     const response = proxy(
       requestFor('https://loyalty.perks-reminder.com/auth/signin')

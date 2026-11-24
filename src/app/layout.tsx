@@ -10,8 +10,6 @@ import Providers from "@/components/Providers"; // Reinstate original Providers
 import Footer from "@/components/Footer";
 import SkipLink from "@/components/ui/SkipLink";
 import PathAwareTelemetry from "@/components/PathAwareTelemetry";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { ErrorBoundary } from "@/lib/monitoring/errorBoundary";
 import { PRIMARY_SITE_URL, SITE_DESCRIPTION, SITE_NAME } from "@/lib/site";
 import IosInstallPrompt from "@/components/IosInstallPrompt";
@@ -130,14 +128,11 @@ export const viewport = {
   viewportFit: "cover",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Get the session server-side to prevent authentication flash
-  const session = await getServerSession(authOptions);
-
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
       <head>
@@ -164,7 +159,7 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${displayFace.variable} antialiased h-full`}
       >
         {/* <ThemeProviders> */}
-        <Providers session={session}>{/* Use original Providers */}
+        <Providers>
           <ErrorBoundary>
             <ServiceWorkerRegistrar />
             <SkipLink />
