@@ -5,8 +5,6 @@ import type { NextRequest } from 'next/server';
 import { hasSessionCookie } from '@/lib/session-cookie';
 
 const LOYALTY_SUBDOMAINS = ['loyalty'];
-const OLD_DOMAIN = 'coupon-cycle.site';
-const NEW_DOMAIN = 'perks-reminder.com';
 /** Client-rendered card pages that only fetch the signed-in user's data. */
 const SIGNED_IN_CARD_PATHS = new Set(['/cards', '/cards/new']);
 
@@ -54,23 +52,6 @@ export function proxy(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
   const subdomain = getSubdomain(hostname);
   const { pathname } = request.nextUrl;
-  const { host: hostnameWithoutPort } = splitHostAndPort(hostname);
-
-  if (hostnameWithoutPort === OLD_DOMAIN || hostnameWithoutPort === `www.${OLD_DOMAIN}`) {
-    const url = request.nextUrl.clone();
-    url.protocol = 'https';
-    url.hostname = `www.${NEW_DOMAIN}`;
-    url.port = '';
-    return NextResponse.redirect(url, 308);
-  }
-
-  if (hostnameWithoutPort === `loyalty.${OLD_DOMAIN}`) {
-    const url = request.nextUrl.clone();
-    url.protocol = 'https';
-    url.hostname = `loyalty.${NEW_DOMAIN}`;
-    url.port = '';
-    return NextResponse.redirect(url, 308);
-  }
 
   if (SIGNED_IN_CARD_PATHS.has(pathname) && !hasSessionCookie(request)) {
     return redirectToSignin(request);
