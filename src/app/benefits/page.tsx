@@ -7,6 +7,9 @@ import { redirect } from 'next/navigation';
 import BenefitsDisplayClient from '@/components/BenefitsDisplayClient';
 import { Metadata } from 'next';
 import { loadBenefitDashboard } from '@/lib/benefit-dashboard';
+import AmexReaderSuggestion from '@/components/AmexReaderSuggestion';
+import { AMEX_READER_SUGGESTION_PARAM } from '@/lib/amex-reader-suggestion';
+import { loadAmexReaderSuggestion } from '@/lib/amex-reader-suggestion.server';
 
 export const metadata: Metadata = {
   title: "Benefits Dashboard - Track All Your Credit Card Benefits",
@@ -23,13 +26,26 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function BenefitsDashboardPage() {
+export default async function BenefitsDashboardPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     redirect('/api/auth/signin?callbackUrl=/benefits');
   }
   const userId = session.user.id;
-  const dashboard = await loadBenefitDashboard(prisma, { userId, now: new Date() });
+  const cardAdded = (await searchParams)[AMEX_READER_SUGGESTION_PARAM] === '1';
+  const [dashboard, amexReaderSuggestion] = await Promise.all([
+    loadBenefitDashboard(prisma, { userId, now: new Date() }),
+    cardAdded ? loadAmexReaderSuggestion(userId) : null,
+  ]);
 
-  return <BenefitsDisplayClient {...dashboard} />;
+  return (
+    <>
+      {amexReaderSuggestion && (
+        <div className="mx-auto w-full max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
+          <AmexReaderSuggestion {...amexReaderSuggestion} />
+        </div>
+      )}
+      <BenefitsDisplayClient {...dashboard} />
+    </>
+  );
 }

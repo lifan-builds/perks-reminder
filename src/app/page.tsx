@@ -236,14 +236,21 @@ export default async function Home() {
   const userId = session.user.id;
 
   try {
-    const { loadHomeDashboardSummaryForUser } = await import('@/lib/benefit-dashboard');
-    const {
+    const [{ loadHomeDashboardSummaryForUser }, { loadAmexReaderSuggestion }, { default: AmexReaderSuggestion }] = await Promise.all([
+      import('@/lib/benefit-dashboard'),
+      import('@/lib/amex-reader-suggestion.server'),
+      import('@/components/AmexReaderSuggestion'),
+    ]);
+    const [{
       cardCount,
       totalAnnualFees,
       totalClaimedValue,
       expiringSoonBenefits,
       upcomingBenefits,
-    } = await loadHomeDashboardSummaryForUser(userId);
+    }, amexReaderSuggestion] = await Promise.all([
+      loadHomeDashboardSummaryForUser(userId),
+      loadAmexReaderSuggestion(userId),
+    ]);
 
     const netRoi = totalClaimedValue - totalAnnualFees;
 
@@ -266,6 +273,12 @@ export default async function Home() {
             Add card
           </Link>
         </div>
+
+        {amexReaderSuggestion && (
+          <div className="mt-6">
+            <AmexReaderSuggestion {...amexReaderSuggestion} />
+          </div>
+        )}
 
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <DashboardMetric

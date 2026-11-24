@@ -65,4 +65,37 @@ test.describe("signed-in surfaces", () => {
     await expect(page.getByText(/handoff link is missing or invalid/i)).toBeVisible();
     await expectHealthyPage(page, errors, testInfo);
   });
+
+  test("dashboard suggests the Amex extension to an unsynced two-Amex user until dismissed", async ({ page }, testInfo) => {
+    const errors = watchErrors(page);
+    await signIn(page);
+    await page.goto("/");
+    const suggestion = page.getByRole("region", { name: /sync your amex benefits/i });
+    await expect(suggestion).toBeVisible();
+    if (testInfo.project.name.startsWith("mobile")) {
+      await expect(suggestion.getByRole("link", { name: /add to chrome/i })).toHaveCount(0);
+      await expect(suggestion.getByText(/this is a desktop step/i)).toBeVisible();
+    } else {
+      await expect(suggestion.getByRole("link", { name: /add to chrome/i }))
+        .toHaveAttribute("href", "https://chromewebstore.google.com/detail/idpcieaeladegdoelljadhcggjndclpk");
+    }
+    await expect(suggestion.getByRole("link", { name: "See how it works" })).toHaveAttribute("href", "/integrations/amex-sync/setup");
+    await expect(suggestion.getByRole("link", { name: /greasy fork userscript/i })).toHaveAttribute("href", /greasyfork\.org\/.*591349/);
+    await expectHealthyPage(page, errors, testInfo);
+
+    await suggestion.getByRole("button", { name: /dismiss/i }).click();
+    await expect(suggestion).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 1, name: /dashboard/i })).toBeVisible();
+    await expect(page.getByRole("region", { name: /sync your amex benefits/i })).toHaveCount(0);
+  });
+
+  test("the landing after adding an Amex card repeats the extension suggestion", async ({ page }) => {
+    await signIn(page);
+    await page.goto("/benefits?amexReader=1");
+    await expect(page.getByRole("region", { name: /sync your amex benefits/i })).toBeVisible();
+    await page.goto("/benefits");
+    await expect(page.getByRole("heading", { level: 1, name: /benefits dashboard/i })).toBeVisible();
+    await expect(page.getByRole("region", { name: /sync your amex benefits/i })).toHaveCount(0);
+  });
 });

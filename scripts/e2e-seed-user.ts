@@ -7,8 +7,8 @@
  *   node scripts/with-dev-db.js npx tsx scripts/e2e-seed-user.ts
  *
  * Idempotent. Creates a verified credentials user with every email
- * notification off and two physical cards through the normal card-creation
- * path. Refuses to run unless DATABASE_URL is DATABASE_URL_DEV.
+ * notification off and three physical cards (two Amex, so the Amex reader
+ * suggestion shows) through the normal card-creation path. Refuses to run unless DATABASE_URL is DATABASE_URL_DEV.
  */
 import bcrypt from "bcryptjs";
 import { prisma } from "../src/lib/prisma";
@@ -19,6 +19,7 @@ export const E2E_PASSWORD = "perks-e2e-local-only";
 const CARDS = [
   { catalogKey: "card:american-express-platinum-card", openedDate: "2024-02-29" },
   { catalogKey: "card:csr", openedDate: "2023-07-31" },
+  { catalogKey: "card:american-express-gold-card", openedDate: "2025-03-15" },
 ];
 
 async function main() {
@@ -40,14 +41,12 @@ async function main() {
     },
   });
 
-  const existing = await prisma.creditCard.count({ where: { userId: user.id } });
-  if (existing === 0) {
-    for (const card of CARDS) {
-      const product = await prisma.predefinedCard.findFirst({ where: { catalogKey: card.catalogKey }, select: { id: true } });
-      if (!product) throw new Error(`Development catalog is missing ${card.catalogKey}; run the guarded catalog sync on dev first.`);
-      const result = await createCardForUser(user.id, product.id, new Date(`${card.openedDate}T00:00:00Z`));
-      if (!result.success) throw new Error(result.message ?? `Could not create ${card.catalogKey}.`);
-    }
+  for (const card of CARDS) {
+    const product = await prisma.predefinedCard.findFirst({ where: { catalogKey: card.catalogKey }, select: { id: true } });
+    if (!product) throw new Error(`Development catalog is missing ${card.catalogKey}; run the guarded catalog sync on dev first.`);
+    if (await prisma.creditCard.count({ where: { userId: user.id, predefinedCardId: product.id } })) continue;
+    const result = await createCardForUser(user.id, product.id, new Date(`${card.openedDate}T00:00:00Z`));
+    if (!result.success) throw new Error(result.message ?? `Could not create ${card.catalogKey}.`);
   }
 
   const statuses = await prisma.benefitStatus.count({ where: { userId: user.id } });

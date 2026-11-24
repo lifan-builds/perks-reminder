@@ -10,7 +10,9 @@ import { revalidatePath } from 'next/cache';
 // import { calculateBenefitCycle, calculateOneTimeBenefitLifetime } from '@/lib/benefit-cycle'; // Removed unused imports
 // import { BenefitFrequency, BenefitCycleAlignment } from '@/generated/prisma'; // Also remove this as it's not used after refactor
 import { createCardForUser } from '@/lib/actions/cardUtils';
-import { validateCardDigits } from '@/lib/cardDisplayUtils';
+import { isAmexCard, validateCardDigits } from '@/lib/cardDisplayUtils';
+import { AMEX_READER_SUGGESTION_PARAM } from '@/lib/amex-reader-suggestion';
+import { loadAmexReaderSuggestion } from '@/lib/amex-reader-suggestion.server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -22,6 +24,12 @@ const bulkCardItemSchema = z.object({
 });
 
 const bulkCardsSchema = z.array(bulkCardItemSchema).min(1).max(50);
+
+async function benefitsPathAfterAdding(userId: string, addedAmex: boolean): Promise<string> {
+  return addedAmex && await loadAmexReaderSuggestion(userId)
+    ? `/benefits?${AMEX_READER_SUGGESTION_PARAM}=1`
+    : '/benefits';
+}
 
 export async function addCardAction(formData: FormData) {
   const session = await getServerSession(authOptions);
@@ -97,7 +105,7 @@ export async function addCardAction(formData: FormData) {
   }
 
 
-  redirect('/benefits');
+  redirect(await benefitsPathAfterAdding(userId, isAmexCard(predefinedCard.issuer)));
 }
 
 export async function bulkAddCardsAction(formData: FormData) {
@@ -176,5 +184,8 @@ export async function bulkAddCardsAction(formData: FormData) {
   revalidatePath('/cards');
   revalidatePath('/benefits');
 
-  redirect('/benefits');
+  redirect(await benefitsPathAfterAdding(
+    session.user.id,
+    items.some((item) => isAmexCard(cardById.get(item.predefinedCardId)?.issuer ?? '')),
+  ));
 }
