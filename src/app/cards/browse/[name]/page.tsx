@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export async function generateStaticParams() {
   return getPublicStaticCards().map((card) => ({
-    name: encodeURIComponent(card.name),
+    name: card.name,
   }));
 }
 
