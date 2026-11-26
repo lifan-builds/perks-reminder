@@ -44,6 +44,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   return getPublicStaticCards().map((card) => ({
     name: card.name,

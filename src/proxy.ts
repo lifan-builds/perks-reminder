@@ -109,8 +109,35 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
+  // Next.js requires static literals in config.matcher. Only invoke middleware
+  // for loyalty subdomain routing or one-time session-hint cookie sync;
+  // anonymous /, /cards, and public pages route via next.config.ts / CDN.
   matcher: [
-    // Match all paths except static files, api routes, and Next.js internals
-    '/((?!_next/static|_next/image|favicon\\.png|manifest\\.json|images/|api/).*)',
+    {
+      source:
+        '/((?!_next/static|_next/image|favicon\\.png|favicon\\.ico|manifest\\.json|robots\\.txt|sitemap\\.xml|images/|icons/|api/).*)',
+      has: [{ type: 'host', value: 'loyalty\\..*' }],
+    },
+    {
+      source:
+        '/((?!_next/static|_next/image|favicon\\.png|favicon\\.ico|manifest\\.json|robots\\.txt|sitemap\\.xml|images/|icons/|api/).*)',
+      has: [{ type: 'cookie', key: '__Secure-next-auth.session-token' }],
+      missing: [{ type: 'cookie', key: 'pr_has_session', value: '1' }],
+    },
+    {
+      source:
+        '/((?!_next/static|_next/image|favicon\\.png|favicon\\.ico|manifest\\.json|robots\\.txt|sitemap\\.xml|images/|icons/|api/).*)',
+      has: [{ type: 'cookie', key: 'next-auth.session-token' }],
+      missing: [{ type: 'cookie', key: 'pr_has_session', value: '1' }],
+    },
+    {
+      source:
+        '/((?!_next/static|_next/image|favicon\\.png|favicon\\.ico|manifest\\.json|robots\\.txt|sitemap\\.xml|images/|icons/|api/).*)',
+      has: [{ type: 'cookie', key: 'pr_has_session' }],
+      missing: [
+        { type: 'cookie', key: '__Secure-next-auth.session-token' },
+        { type: 'cookie', key: 'next-auth.session-token' },
+      ],
+    },
   ],
 };

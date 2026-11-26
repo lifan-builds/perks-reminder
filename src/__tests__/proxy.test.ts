@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 import { NextRequest } from 'next/server';
-import { proxy } from '../proxy';
+import { config as proxyConfig, proxy } from '../proxy';
 
 function requestFor(url: string): NextRequest {
   return new NextRequest(url, {
@@ -74,5 +74,13 @@ describe('proxy', () => {
     expect(response.headers.get('location')).toBe(
       'http://localhost:3000/auth/signin?callbackUrl=http%3A%2F%2Floyalty.localhost%3A3000%2Floyalty'
     );
+  });
+
+  it('scopes proxy matcher rules with host or cookie predicates to avoid running on public traffic', () => {
+    expect(proxyConfig.matcher.length).toBeGreaterThan(0);
+    for (const rule of proxyConfig.matcher) {
+      expect(typeof rule).toBe('object');
+      expect((rule.has?.length ?? 0) + (rule.missing?.length ?? 0)).toBeGreaterThan(0);
+    }
   });
 });

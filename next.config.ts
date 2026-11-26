@@ -78,15 +78,48 @@ const nextConfig: NextConfig = {
     ];
   },
   
-  // Redirects for SEO
+  // Redirects for SEO and zero-CPU anonymous route gating
   async redirects() {
+    const anonymousSessionMissing = [
+      { type: 'cookie' as const, key: 'next-auth.session-token' },
+      { type: 'cookie' as const, key: '__Secure-next-auth.session-token' },
+    ];
     return [
       {
         source: '/home',
         destination: '/',
         permanent: true,
       },
+      {
+        source: '/cards',
+        missing: anonymousSessionMissing,
+        destination: '/auth/signin?callbackUrl=%2Fcards',
+        permanent: false,
+      },
+      {
+        source: '/cards/new',
+        missing: anonymousSessionMissing,
+        destination: '/auth/signin?callbackUrl=%2Fcards%2Fnew',
+        permanent: false,
+      },
     ];
+  },
+
+  // Zero-CPU anonymous root rewrite to static /landing
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: '/',
+          missing: [
+            { type: 'cookie', key: 'next-auth.session-token' },
+            { type: 'cookie', key: '__Secure-next-auth.session-token' },
+            { type: 'host', value: 'loyalty\\..*' },
+          ],
+          destination: '/landing',
+        },
+      ],
+    };
   },
 };
 
