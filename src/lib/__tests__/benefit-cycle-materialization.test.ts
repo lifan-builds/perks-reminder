@@ -4,6 +4,7 @@ import { BenefitCycleAlignment, BenefitFrequency } from '@/generated/prisma';
 import {
   calculateStandaloneBenefitCycle,
   materializeBenefitStatusRows,
+  materializeStandardBenefitStatusRows,
 } from '../benefit-cycle-materialization';
 
 const utc = (value: string) => new Date(`${value}T00:00:00.000Z`);
@@ -62,5 +63,49 @@ describe('materializeBenefitStatusRows', () => {
       occurrenceIndex: 0,
     });
     expect(result.rows[1].occurrenceIndex).toBe(1);
+  });
+
+  it.each([
+    ['card-linked', 'card-1', '2026-04-01', '2026-04-30'],
+    ['standalone', null, '2026-04-15', '2026-05-14'],
+  ])('materializes a %s monthly benefit without a card opened date', (_, creditCardId, start, end) => {
+    const result = materializeBenefitStatusRows(
+      {
+        id: 'benefit-1',
+        userId: 'user-1',
+        creditCardId,
+        frequency: BenefitFrequency.MONTHLY,
+        startDate: utc('2026-01-15'),
+        cycleAlignment: BenefitCycleAlignment.CALENDAR_FIXED,
+      },
+      { referenceDate: utc('2026-04-20'), cardOpenedDate: null }
+    );
+
+    expect(result.rows).toEqual([expect.objectContaining({
+      cycleStartDate: utc(start),
+      cycleEndDate: new Date(`${end}T23:59:59.999Z`),
+    })]);
+  });
+});
+
+describe('materializeStandardBenefitStatusRows', () => {
+  it('uses the configured calendar window without a card opened date', () => {
+    const result = materializeStandardBenefitStatusRows(
+      {
+        id: 'benefit-1',
+        frequency: BenefitFrequency.QUARTERLY,
+        startDate: utc('2026-01-15'),
+        cycleAlignment: BenefitCycleAlignment.CALENDAR_FIXED,
+        fixedCycleStartMonth: 2,
+        fixedCycleDurationMonths: 3,
+      },
+      { userId: 'user-1', creditCardId: 'card-1' },
+      { referenceDate: utc('2026-06-20'), cardOpenedDate: null }
+    );
+
+    expect(result.rows).toEqual([expect.objectContaining({
+      cycleStartDate: utc('2026-05-01'),
+      cycleEndDate: new Date('2026-07-31T23:59:59.999Z'),
+    })]);
   });
 });

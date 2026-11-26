@@ -8,6 +8,7 @@ import { validateBenefitCycle } from '@/lib/benefit-validation';
 export interface BenefitCycleMaterializationInput {
   id: string;
   userId: string;
+  creditCardId?: string | null;
   frequency: BenefitFrequency;
   startDate?: Date | null;
   description?: string;
@@ -127,7 +128,7 @@ export function materializeStandardBenefitStatusRows(
   owner: { userId: string; creditCardId: string },
   options: BenefitStatusMaterializationOptions = {}
 ): StandardBenefitStatusMaterializationResult {
-  const materialized = deriveBenefitCycleCoordinates(benefit, options);
+  const materialized = deriveBenefitCycleCoordinates({ ...benefit, creditCardId: owner.creditCardId }, options);
   return {
     rows: materialized.rows.map((row) => ({
       ...row,
@@ -144,10 +145,12 @@ function calculateMaterializedCycle(
   referenceDate: Date,
   cardOpenedDate: Date | null
 ): { cycleStartDate: Date; cycleEndDate: Date } {
+  const fixedCardCycle = benefit.creditCardId != null &&
+    benefit.cycleAlignment === BenefitCycleAlignment.CALENDAR_FIXED;
   let cycle: { cycleStartDate: Date; cycleEndDate: Date };
   if (benefit.frequency === BenefitFrequency.ONE_TIME) {
     cycle = calculateOneTimeBenefitLifetime(benefit.startDate ?? referenceDate);
-  } else if (!cardOpenedDate && benefit.startDate) {
+  } else if (!fixedCardCycle && !cardOpenedDate && benefit.startDate) {
     cycle = calculateStandaloneBenefitCycle(benefit.frequency, referenceDate, benefit.startDate);
   } else {
     cycle = calculateBenefitCycle(

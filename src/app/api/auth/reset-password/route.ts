@@ -34,8 +34,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (resetToken.expires < new Date()) {
-      await prisma.passwordResetToken.delete({ where: { id: resetToken.id } });
+    if (resetToken.expires <= new Date()) {
       return NextResponse.json(
         { error: 'Reset link has expired. Please request a new one.' },
         { status: 400 }
@@ -44,15 +43,26 @@ export async function POST(request: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    await prisma.user.update({
-      where: { email: resetToken.email },
-      data: {
-        password: hashedPassword,
-        emailVerified: new Date(), // Also verify email since they clicked the link
-      },
+    const reset = await prisma.$transaction(async (transaction) => {
+      const { count } = await transaction.passwordResetToken.deleteMany({
+        where: { token, expires: { gt: new Date() } },
+      });
+
+      if (count !== 1) return false;
+
+      await transaction.user.update({
+        where: { email: resetToken.email },
+        data: { password: hashedPassword, emailVerified: new Date() },
+      });
+      return true;
     });
 
-    await prisma.passwordResetToken.delete({ where: { id: resetToken.id } });
+    if (!reset) {
+      return NextResponse.json(
+        { error: 'Invalid or expired reset link' },
+        { status: 400 }
+      );
+    }
 
     return NextResponse.json({
       message: 'Password reset successfully. You can now sign in with your new password.',
