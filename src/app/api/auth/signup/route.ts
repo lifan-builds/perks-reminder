@@ -33,43 +33,20 @@ export async function POST(request: Request) {
     });
 
     if (existingUser) {
-      // Don't reveal whether the email exists (security best practice)
-      // But if the user has a password, they already signed up
-      if (existingUser.password) {
-        return NextResponse.json(
-          { error: 'An account with this email already exists. Please sign in.' },
-          { status: 409 }
-        );
-      }
-
-      // User exists from OAuth but has no password — let them add one
-      const hashedPassword = await bcrypt.hash(password, 12);
-      await prisma.user.update({
-        where: { email: normalizedEmail },
-        data: {
-          password: hashedPassword,
-          name: name || existingUser.name,
-        },
-      });
-
-      // If they already verified via OAuth, no need to re-verify
-      if (existingUser.emailVerified) {
-        return NextResponse.json({
-          message: 'Password added to your existing account. You can now sign in with email and password.',
-          requiresVerification: false,
-        });
-      }
-    } else {
-      // Brand new user
-      const hashedPassword = await bcrypt.hash(password, 12);
-      await prisma.user.create({
-        data: {
-          email: normalizedEmail,
-          password: hashedPassword,
-          name: name || null,
-        },
-      });
+      return NextResponse.json(
+        { error: 'An account with this email already exists. Please sign in.' },
+        { status: 409 }
+      );
     }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    await prisma.user.create({
+      data: {
+        email: normalizedEmail,
+        password: hashedPassword,
+        name: name || null,
+      },
+    });
 
     // Send verification email
     const token = await createVerificationToken(normalizedEmail);
