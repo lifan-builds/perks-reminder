@@ -2,7 +2,7 @@
 // Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -419,6 +419,8 @@ function receiptMatchesPreview(preview: PreviewResponse, rows: SyncRowResult[]):
   });
 }
 
+const emptySubscribe = () => () => {};
+
 export function AmexSyncHandoffClient({
   transferId,
   initialMode,
@@ -426,8 +428,26 @@ export function AmexSyncHandoffClient({
   transferId: string | null;
   initialMode: AmexSyncMode;
 }) {
-  const [state, setState] = useState<HandoffState>(transferId ? "waiting" : "invalid");
-  const [message, setMessage] = useState(transferId ? "Waiting for the local Amex reader…" : "This handoff link is missing or invalid.");
+  const clientOrigin = useSyncExternalStore(
+    emptySubscribe,
+    () => window.location.origin,
+    () => null,
+  );
+  const handoffTarget = useMemo(
+    () => (clientOrigin ? resolveAmexSyncHandoffTargetForOrigin(clientOrigin) : null),
+    [clientOrigin],
+  );
+  const isUnsupportedOrigin = Boolean(transferId) && clientOrigin !== null && !handoffTarget;
+  const [asyncState, setState] = useState<HandoffState>(transferId ? "waiting" : "invalid");
+  const [asyncMessage, setMessage] = useState(
+    transferId ? "Waiting for the local Amex reader…" : "This handoff link is missing or invalid.",
+  );
+  const state: HandoffState = !transferId || isUnsupportedOrigin ? "invalid" : asyncState;
+  const message = !transferId
+    ? "This handoff link is missing or invalid."
+    : isUnsupportedOrigin
+      ? "This Amex sync handoff is not available on the current origin."
+      : asyncMessage;
   const [envelope, setEnvelope] = useState<AmexSyncEnvelope | null>(null);
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [result, setResult] = useState<ConfirmationResponse | null>(null);
@@ -465,13 +485,7 @@ export function AmexSyncHandoffClient({
   }, []);
 
   useEffect(() => {
-    if (!transferId) return;
-    const handoffTarget = resolveAmexSyncHandoffTargetForOrigin(window.location.origin);
-    if (!handoffTarget) {
-      setState("invalid");
-      setMessage("This Amex sync handoff is not available on the current origin.");
-      return;
-    }
+    if (!transferId || !handoffTarget) return;
 
     let active = true;
     const timeout = window.setTimeout(() => {
@@ -528,7 +542,7 @@ export function AmexSyncHandoffClient({
       window.clearInterval(readyInterval);
       window.removeEventListener("message", receivePayload);
     };
-  }, [initialMode, runPreview, transferId]);
+  }, [handoffTarget, initialMode, runPreview, transferId]);
 
   useEffect(() => {
     if (!preview || state === "result" || state === "invalid") return;

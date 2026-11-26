@@ -6,11 +6,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useSyncExternalStore } from 'react';
 import { Bars3Icon, XMarkIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import { getLoyaltySwitchUrl } from '@/lib/site';
 import { cn } from '@/lib/utils';
+
+const emptySubscribe = () => () => {};
 
 interface NavItem {
   name: string;
@@ -33,20 +35,19 @@ const loyaltyNavigation: NavItem[] = [
   { name: 'Contact', href: '/contact' },
 ];
 
-function getSignOutCallbackUrl(isLoyaltyContext: boolean): string {
-  if (!isLoyaltyContext || typeof window === 'undefined') return '/';
+function getSignOutCallbackUrl(isLoyaltyContext: boolean, origin: string | null): string {
+  if (!isLoyaltyContext || !origin) return '/';
 
-  const host = window.location.hostname;
-  if (host.includes('loyalty.')) {
-    return `${window.location.protocol}//${window.location.host}/`;
+  if (new URL(origin).hostname.includes('loyalty.')) {
+    return `${origin}/`;
   }
 
   return '/loyalty-landing';
 }
 
-function getSignOutHref(isLoyaltyContext: boolean): string {
+function getSignOutHref(isLoyaltyContext: boolean, origin: string | null): string {
   return `/api/force-signout?callbackUrl=${encodeURIComponent(
-    getSignOutCallbackUrl(isLoyaltyContext)
+    getSignOutCallbackUrl(isLoyaltyContext, origin)
   )}`;
 }
 
@@ -54,14 +55,15 @@ const Navbar = () => {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoyaltyContext, setIsLoyaltyContext] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const host = typeof window !== 'undefined' ? window.location.hostname : '';
-    const loyaltyPath = pathname.startsWith('/loyalty');
-    const loyaltyHost = host.includes('loyalty.');
-    setIsLoyaltyContext(loyaltyPath || loyaltyHost);
-  }, [pathname]);
+  const clientOrigin = useSyncExternalStore(
+    emptySubscribe,
+    () => window.location.origin,
+    () => null,
+  );
+  const isLoyaltyContext =
+    clientOrigin === null
+      ? null
+      : pathname.startsWith('/loyalty') || new URL(clientOrigin).hostname.includes('loyalty.');
 
   const baseNavigation = isLoyaltyContext ? loyaltyNavigation : mainNavigation;
 
@@ -74,7 +76,7 @@ const Navbar = () => {
 
   const switchLabel = isLoyaltyContext ? 'Credit Card Benefits' : 'Loyalty Points';
   const switchHref = getLoyaltySwitchUrl(isLoyaltyContext ?? false);
-  const signOutHref = getSignOutHref(isLoyaltyContext ?? false);
+  const signOutHref = getSignOutHref(isLoyaltyContext ?? false, clientOrigin);
 
   return (
     <header role="banner" className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/75">

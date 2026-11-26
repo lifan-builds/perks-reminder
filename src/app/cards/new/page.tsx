@@ -260,8 +260,14 @@ export default function AddNewCardPage() {
   }, []); // Empty dependency array means this runs once on mount
 
   // Enhanced search logic
-  const searchResults = searchCards(predefinedCards, searchTerm);
-  const filteredCards = searchResults.map(result => result.card);
+  const searchResults = React.useMemo(
+    () => searchCards(predefinedCards, searchTerm),
+    [predefinedCards, searchTerm]
+  );
+  const filteredCards = React.useMemo(
+    () => searchResults.map((result) => result.card),
+    [searchResults]
+  );
   const cardById = React.useMemo(
     () => new Map(predefinedCards.map((card) => [card.id, card])),
     [predefinedCards]

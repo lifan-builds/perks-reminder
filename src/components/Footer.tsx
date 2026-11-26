@@ -2,7 +2,7 @@
 // Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -10,15 +10,18 @@ import { ArrowRightIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/o
 import { AMEX_READER_SETUP_PATH } from '@/lib/amex-benefit-reader/public-links';
 import { getLoyaltySwitchUrl } from '@/lib/site';
 
+const emptySubscribe = () => () => {};
+
 const Footer = () => {
   const pathname = usePathname();
-  const [isLoyaltyContext, setIsLoyaltyContext] = useState<boolean | null>(null);
+  const hostname = useSyncExternalStore(
+    emptySubscribe,
+    () => window.location.hostname,
+    () => null,
+  );
+  const isLoyaltyContext =
+    hostname === null ? null : pathname.startsWith('/loyalty') || hostname.includes('loyalty.');
   const currentYear = new Date().getFullYear();
-
-  useEffect(() => {
-    const host = typeof window !== 'undefined' ? window.location.hostname : '';
-    setIsLoyaltyContext(pathname.startsWith('/loyalty') || host.includes('loyalty.'));
-  }, [pathname]);
 
   const footerLinks = {
     product: [

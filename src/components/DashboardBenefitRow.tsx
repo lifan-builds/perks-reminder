@@ -22,12 +22,14 @@ interface DashboardBenefitRowProps {
       creditCard: { name: string } | null;
     };
   };
+  nowIso: string;
   isExpiringSoon?: boolean;
   onComplete?: () => void;
 }
 
 export default function DashboardBenefitRow({
   status,
+  nowIso,
   isExpiringSoon = false,
   onComplete,
 }: DashboardBenefitRowProps) {
@@ -40,7 +42,7 @@ export default function DashboardBenefitRow({
   const usedAmount = status.usedAmount ?? 0;
   const remainingAmount = Math.max(0, benefitAmount - usedAmount);
   const daysLeft = Math.ceil(
-    (new Date(status.cycleEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+    (new Date(status.cycleEndDate).getTime() - new Date(nowIso).getTime()) / (1000 * 60 * 60 * 24)
   );
 
   const handleFullCompletion = () => {

@@ -142,10 +142,10 @@ export default async function LoyaltyLandingPage() {
             <div className="grid grid-cols-2 gap-4">
               {/* Program cards preview */}
               {[
-                { name: 'United MileagePlus', type: 'Airline', color: 'blue' },
-                { name: 'Hilton Honors', type: 'Hotel', color: 'indigo' },
-                { name: 'Delta SkyMiles', type: 'Airline', color: 'red' },
-                { name: 'Marriott Bonvoy', type: 'Hotel', color: 'purple' },
+                { name: 'United MileagePlus', type: 'Airline', color: 'blue', progress: 72 },
+                { name: 'Hilton Honors', type: 'Hotel', color: 'indigo', progress: 58 },
+                { name: 'Delta SkyMiles', type: 'Airline', color: 'red', progress: 84 },
+                { name: 'Marriott Bonvoy', type: 'Hotel', color: 'purple', progress: 46 },
               ].map((program) => (
                 <div
                   key={program.name}
@@ -161,7 +161,7 @@ export default async function LoyaltyLandingPage() {
                     <div
                       className="h-1.5 rounded-full bg-blue-500"
                       style={{
-                        width: `${Math.floor(Math.random() * 60 + 30)}%`,
+                        width: `${program.progress}%`,
                       }}
                     />
                   </div>

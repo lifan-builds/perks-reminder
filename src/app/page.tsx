@@ -65,6 +65,18 @@ export default async function Home() {
   }
 
   const userId = session.user.id;
+  const now = new Date();
+  const nowIso = now.toISOString();
+
+  let dashboardData: {
+    cardCount: number;
+    totalAnnualFees: number;
+    totalClaimedValue: number;
+    expiringSoonBenefits: Awaited<ReturnType<typeof import('@/lib/benefit-dashboard')['loadHomeDashboardSummaryForUser']>>['expiringSoonBenefits'];
+    upcomingBenefits: Awaited<ReturnType<typeof import('@/lib/benefit-dashboard')['loadHomeDashboardSummaryForUser']>>['upcomingBenefits'];
+    amexReaderSuggestion: Awaited<ReturnType<typeof import('@/lib/amex-reader-suggestion.server')['loadAmexReaderSuggestion']>>;
+    AmexReaderSuggestion: typeof import('@/components/AmexReaderSuggestion')['default'];
+  } | null = null;
 
   try {
     const [{ loadHomeDashboardSummaryForUser }, { loadAmexReaderSuggestion }, { default: AmexReaderSuggestion }] = await Promise.all([
@@ -79,153 +91,175 @@ export default async function Home() {
       expiringSoonBenefits,
       upcomingBenefits,
     }, amexReaderSuggestion] = await Promise.all([
-      loadHomeDashboardSummaryForUser(userId),
+      loadHomeDashboardSummaryForUser(userId, now),
       loadAmexReaderSuggestion(userId),
     ]);
+    dashboardData = {
+      cardCount,
+      totalAnnualFees,
+      totalClaimedValue,
+      expiringSoonBenefits,
+      upcomingBenefits,
+      amexReaderSuggestion,
+      AmexReaderSuggestion,
+    };
+  } catch (error) {
+    console.error('Failed to load homepage dashboard:', error);
+  }
 
-    const netRoi = totalClaimedValue - totalAnnualFees;
+  if (!dashboardData) {
+    return <DashboardUnavailable />;
+  }
 
-    return (
-      <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="font-display text-3xl leading-tight text-foreground sm:text-4xl">
-              Dashboard
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-              Review tracked cards, claimed value, annual fees, and benefits that need attention.
-            </p>
-          </div>
-          <Link
-            href="/cards/new"
-            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm shadow-black/5 transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:ring-offset-2 focus:ring-offset-background active:translate-y-px"
-          >
-            <PlusIcon className="mr-2 h-4 w-4" aria-hidden="true" />
-            Add card
-          </Link>
+  const {
+    cardCount,
+    totalAnnualFees,
+    totalClaimedValue,
+    expiringSoonBenefits,
+    upcomingBenefits,
+    amexReaderSuggestion,
+    AmexReaderSuggestion,
+  } = dashboardData;
+  const netRoi = totalClaimedValue - totalAnnualFees;
+
+  return (
+    <div className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-4 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-display text-3xl leading-tight text-foreground sm:text-4xl">
+            Dashboard
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+            Review tracked cards, claimed value, annual fees, and benefits that need attention.
+          </p>
         </div>
+        <Link
+          href="/cards/new"
+          className="inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm shadow-black/5 transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-ring/30 focus:ring-offset-2 focus:ring-offset-background active:translate-y-px"
+        >
+          <PlusIcon className="mr-2 h-4 w-4" aria-hidden="true" />
+          Add card
+        </Link>
+      </div>
 
-        {amexReaderSuggestion && (
-          <div className="mt-6">
-            <AmexReaderSuggestion {...amexReaderSuggestion} />
-          </div>
-        )}
-
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <DashboardMetric
-            href="/cards"
-            icon={<CreditCardIcon className="h-5 w-5" aria-hidden="true" />}
-            label="Cards tracked"
-            value={String(cardCount)}
-            detail="Cards with benefits in your account."
-          />
-          <DashboardMetric
-            href="/benefits"
-            icon={<CheckCircleIcon className="h-5 w-5" aria-hidden="true" />}
-            label="Claimed value"
-            value={`$${totalClaimedValue.toFixed(2)}`}
-            detail="Value recorded from benefits you marked as used."
-          />
-          <DashboardMetric
-            icon={<BanknotesIcon className="h-5 w-5" aria-hidden="true" />}
-            label="Net annual fee position"
-            value={`$${netRoi.toFixed(2)}`}
-            detail={`$${totalAnnualFees.toFixed(2)} in annual fees tracked.`}
-          />
-          <DashboardMetric
-            href="/benefits"
-            icon={<ClockIcon className="h-5 w-5" aria-hidden="true" />}
-            label="Due soon"
-            value={String(expiringSoonBenefits.length)}
-            detail="Benefits expiring in the next 7 days."
-          />
+      {amexReaderSuggestion && (
+        <div className="mt-6">
+          <AmexReaderSuggestion {...amexReaderSuggestion} />
         </div>
+      )}
 
-        {expiringSoonBenefits.length > 0 && (
-          <section className="mt-12">
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
-                  <BellAlertIcon className="h-4 w-4" aria-hidden="true" />
-                  Action needed
-                </div>
-                <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">Expiring in 7 days</h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Use these benefits before they reset.
-                </p>
-              </div>
-              <Link
-                href="/benefits"
-                className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground shadow-sm shadow-black/[0.03] transition-colors hover:bg-accent"
-              >
-                View all
-                <ArrowRightIcon className="ml-2 h-4 w-4" aria-hidden="true" />
-              </Link>
-            </div>
-            <div className="overflow-hidden rounded-xl border border-amber-200 bg-card shadow-sm shadow-black/[0.03] dark:border-amber-900/60">
-              <ul role="list" className="divide-y divide-border">
-                {expiringSoonBenefits.map((status) => (
-                  <DashboardBenefitRow
-                    key={status.id}
-                    status={status}
-                    isExpiringSoon
-                  />
-                ))}
-              </ul>
-            </div>
-          </section>
-        )}
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <DashboardMetric
+          href="/cards"
+          icon={<CreditCardIcon className="h-5 w-5" aria-hidden="true" />}
+          label="Cards tracked"
+          value={String(cardCount)}
+          detail="Cards with benefits in your account."
+        />
+        <DashboardMetric
+          href="/benefits"
+          icon={<CheckCircleIcon className="h-5 w-5" aria-hidden="true" />}
+          label="Claimed value"
+          value={`$${totalClaimedValue.toFixed(2)}`}
+          detail="Value recorded from benefits you marked as used."
+        />
+        <DashboardMetric
+          icon={<BanknotesIcon className="h-5 w-5" aria-hidden="true" />}
+          label="Net annual fee position"
+          value={`$${netRoi.toFixed(2)}`}
+          detail={`$${totalAnnualFees.toFixed(2)} in annual fees tracked.`}
+        />
+        <DashboardMetric
+          href="/benefits"
+          icon={<ClockIcon className="h-5 w-5" aria-hidden="true" />}
+          label="Due soon"
+          value={String(expiringSoonBenefits.length)}
+          detail="Benefits expiring in the next 7 days."
+        />
+      </div>
 
+      {expiringSoonBenefits.length > 0 && (
         <section className="mt-12">
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-xl font-semibold tracking-tight text-foreground">Upcoming benefits</h2>
+              <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-sm font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">
+                <BellAlertIcon className="h-4 w-4" aria-hidden="true" />
+                Action needed
+              </div>
+              <h2 className="mt-3 text-xl font-semibold tracking-tight text-foreground">Expiring in 7 days</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                The next benefit cycles that need your attention.
+                Use these benefits before they reset.
               </p>
             </div>
             <Link
               href="/benefits"
               className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground shadow-sm shadow-black/[0.03] transition-colors hover:bg-accent"
             >
-              View benefits
+              View all
               <ArrowRightIcon className="ml-2 h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
-
-          {upcomingBenefits.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center shadow-sm shadow-black/[0.03]">
-              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                <CalendarDaysIcon className="h-7 w-7" aria-hidden="true" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground">No upcoming benefits</h3>
-              <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
-                Add cards with benefits or check back later for upcoming cycles.
-              </p>
-              <Link
-                href="/cards/new"
-                className="mt-6 inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm shadow-black/5 transition-colors hover:bg-primary/90"
-              >
-                <PlusIcon className="mr-2 h-4 w-4" aria-hidden="true" />
-                Add first card
-              </Link>
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm shadow-black/[0.03]">
-              <ul role="list" className="divide-y divide-border">
-                {upcomingBenefits.map((status) => (
-                  <DashboardBenefitRow key={status.id} status={status} />
-                ))}
-              </ul>
-            </div>
-          )}
+          <div className="overflow-hidden rounded-xl border border-amber-200 bg-card shadow-sm shadow-black/[0.03] dark:border-amber-900/60">
+            <ul role="list" className="divide-y divide-border">
+              {expiringSoonBenefits.map((status) => (
+                <DashboardBenefitRow
+                  key={status.id}
+                  status={status}
+                  nowIso={nowIso}
+                  isExpiringSoon
+                />
+              ))}
+            </ul>
+          </div>
         </section>
-      </div>
-    );
-  } catch (error) {
-    console.error('Failed to load homepage dashboard:', error);
-    return <DashboardUnavailable />;
-  }
+      )}
+
+      <section className="mt-12">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">Upcoming benefits</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The next benefit cycles that need your attention.
+            </p>
+          </div>
+          <Link
+            href="/benefits"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-foreground shadow-sm shadow-black/[0.03] transition-colors hover:bg-accent"
+          >
+            View benefits
+            <ArrowRightIcon className="ml-2 h-4 w-4" aria-hidden="true" />
+          </Link>
+        </div>
+
+        {upcomingBenefits.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center shadow-sm shadow-black/[0.03]">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+              <CalendarDaysIcon className="h-7 w-7" aria-hidden="true" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">No upcoming benefits</h3>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+              Add cards with benefits or check back later for upcoming cycles.
+            </p>
+            <Link
+              href="/cards/new"
+              className="mt-6 inline-flex min-h-10 items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm shadow-black/5 transition-colors hover:bg-primary/90"
+            >
+              <PlusIcon className="mr-2 h-4 w-4" aria-hidden="true" />
+              Add first card
+            </Link>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm shadow-black/[0.03]">
+            <ul role="list" className="divide-y divide-border">
+              {upcomingBenefits.map((status) => (
+                <DashboardBenefitRow key={status.id} status={status} nowIso={nowIso} />
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }
 
 function DashboardUnavailable() {

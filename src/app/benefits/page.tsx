@@ -32,9 +32,12 @@ export default async function BenefitsDashboardPage({ searchParams }: { searchPa
     redirect('/api/auth/signin?callbackUrl=/benefits');
   }
   const userId = session.user.id;
-  const cardAdded = (await searchParams)[AMEX_READER_SUGGESTION_PARAM] === '1';
+  const params = await searchParams;
+  const cardAdded = params[AMEX_READER_SUGGESTION_PARAM] === '1';
+  const initialRescueOnly = params.rescue === '1';
+  const now = new Date();
   const [dashboard, amexReaderSuggestion] = await Promise.all([
-    loadBenefitDashboard(prisma, { userId, now: new Date() }),
+    loadBenefitDashboard(prisma, { userId, now }),
     cardAdded ? loadAmexReaderSuggestion(userId) : null,
   ]);
 
@@ -45,7 +48,11 @@ export default async function BenefitsDashboardPage({ searchParams }: { searchPa
           <AmexReaderSuggestion {...amexReaderSuggestion} />
         </div>
       )}
-      <BenefitsDisplayClient {...dashboard} />
+      <BenefitsDisplayClient
+        {...dashboard}
+        nowIso={now.toISOString()}
+        initialRescueOnly={initialRescueOnly}
+      />
     </>
   );
 }

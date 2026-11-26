@@ -9,36 +9,48 @@ import Link from 'next/link';
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-  const [message, setMessage] = useState('');
+  const [verification, setVerification] = useState<{
+    token: string;
+    status: 'success' | 'error';
+    message: string;
+  } | null>(null);
 
   useEffect(() => {
-    if (!token) {
-      setStatus('error');
-      setMessage('No verification token provided.');
-      return;
-    }
+    if (!token) return;
+    let cancelled = false;
 
     const verify = async () => {
       try {
-        const res = await fetch(`/api/auth/verify-email?token=${token}`);
+        const res = await fetch(`/api/auth/verify-email?token=${encodeURIComponent(token)}`);
         const data = await res.json();
+        if (cancelled) return;
 
         if (res.ok) {
-          setStatus('success');
-          setMessage(data.message);
+          setVerification({ token, status: 'success', message: data.message });
         } else {
-          setStatus('error');
-          setMessage(data.error || 'Verification failed.');
+          setVerification({ token, status: 'error', message: data.error || 'Verification failed.' });
         }
       } catch {
-        setStatus('error');
-        setMessage('Network error. Please try again.');
+        if (cancelled) return;
+        setVerification({ token, status: 'error', message: 'Network error. Please try again.' });
       }
     };
 
-    verify();
+    void verify();
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
+
+  const activeVerification = token && verification?.token === token ? verification : null;
+  const status: 'loading' | 'success' | 'error' = !token
+    ? 'error'
+    : activeVerification
+      ? activeVerification.status
+      : 'loading';
+  const message = !token
+    ? 'No verification token provided.'
+    : activeVerification?.message ?? '';
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12">

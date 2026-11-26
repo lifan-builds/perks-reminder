@@ -4,7 +4,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { ArrowRightIcon, CheckIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import GuillocheRosette from '@/components/art/GuillocheRosette';
 import InkStamp from '@/components/art/InkStamp';
@@ -43,6 +43,7 @@ const QUICK_PICKS = [
 
 const WINDOW_ORDER: RescueWindow[] = ['december', 'q4', 'h2', 'calendar-year'];
 const STORAGE_KEY = 'perks-reminder:year-end-rescue';
+const emptySubscribe = () => () => {};
 
 const money = (amount: number) =>
   amount.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: amount % 1 ? 2 : 0 });
@@ -53,33 +54,66 @@ function shortDay(isoDay: string) {
 
 const slugOf = (catalogKey: string) => catalogKey.slice('card:'.length);
 
-export default function YearEndRescueClient({ rescue, cards, nowIso }: YearEndRescueClientProps) {
-  const [now, setNow] = useState(() => new Date(nowIso));
-  const [selected, setSelected] = useState<string[]>([]);
-  const [buffer, setBuffer] = useState<number>(DEFAULT_POSTING_BUFFER_DAYS);
-  const [windowFilter, setWindowFilter] = useState<RescueWindow | 'all'>('all');
-  const [query, setQuery] = useState('');
-  const [hydrated, setHydrated] = useState(false);
+function readInitialRescueState(
+  cards: PickerCard[],
+  hydrated: boolean,
+  nowIso: string,
+): {
+  now: Date;
+  selected: string[];
+  buffer: number;
+  windowFilter: RescueWindow | 'all';
+} {
+  if (!hydrated) {
+    return {
+      now: new Date(nowIso),
+      selected: [],
+      buffer: DEFAULT_POSTING_BUFFER_DAYS,
+      windowFilter: 'all',
+    };
+  }
+  const params = new URLSearchParams(window.location.search);
+  const fromUrl = params.get('cards')?.split(',').filter(Boolean).map((slug) => `card:${slug}`);
+  let fromStorage: { cards?: string[]; buffer?: number } = {};
+  try {
+    fromStorage = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}');
+  } catch {
+    fromStorage = {};
+  }
+  const known = new Set(cards.map((card) => card.catalogKey));
+  const selected = (fromUrl ?? fromStorage.cards ?? []).filter((key) => known.has(key));
+  const urlBuffer = Number(params.get('buffer'));
+  const nextBuffer = POSTING_BUFFER_OPTIONS.find((option) => option === (urlBuffer || fromStorage.buffer));
+  const urlWindow = params.get('window') as RescueWindow | null;
+  return {
+    now: new Date(),
+    selected,
+    buffer: nextBuffer ?? DEFAULT_POSTING_BUFFER_DAYS,
+    windowFilter: urlWindow && WINDOW_ORDER.includes(urlWindow) ? urlWindow : 'all',
+  };
+}
 
-  useEffect(() => {
-    setNow(new Date());
-    const params = new URLSearchParams(window.location.search);
-    const fromUrl = params.get('cards')?.split(',').filter(Boolean).map((slug) => `card:${slug}`);
-    let fromStorage: { cards?: string[]; buffer?: number } = {};
-    try {
-      fromStorage = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}');
-    } catch {
-      fromStorage = {};
-    }
-    const known = new Set(cards.map((card) => card.catalogKey));
-    setSelected((fromUrl ?? fromStorage.cards ?? []).filter((key) => known.has(key)));
-    const urlBuffer = Number(params.get('buffer'));
-    const nextBuffer = POSTING_BUFFER_OPTIONS.find((option) => option === (urlBuffer || fromStorage.buffer));
-    if (nextBuffer) setBuffer(nextBuffer);
-    const urlWindow = params.get('window') as RescueWindow | null;
-    if (urlWindow && WINDOW_ORDER.includes(urlWindow)) setWindowFilter(urlWindow);
-    setHydrated(true);
-  }, [cards]);
+export default function YearEndRescueClient(props: YearEndRescueClientProps) {
+  const hydrated = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
+  return <YearEndRescueContent key={hydrated ? 'client' : 'ssr'} {...props} hydrated={hydrated} />;
+}
+
+function YearEndRescueContent({
+  rescue,
+  cards,
+  nowIso,
+  hydrated,
+}: YearEndRescueClientProps & { hydrated: boolean }) {
+  const [initialState] = useState(() => readInitialRescueState(cards, hydrated, nowIso));
+  const now = initialState.now;
+  const [selected, setSelected] = useState<string[]>(initialState.selected);
+  const [buffer, setBuffer] = useState<number>(initialState.buffer);
+  const [windowFilter, setWindowFilter] = useState<RescueWindow | 'all'>(initialState.windowFilter);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     if (!hydrated) return;

@@ -2,7 +2,7 @@
 // Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 'use client';
 
-import React, { useEffect, useId, useState, useTransition } from 'react';
+import React, { useId, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { formatDate } from '@/lib/dateUtils';
 import {
@@ -62,16 +62,19 @@ export default function BenefitCardClient({ status, onStatusChange, onDelete, on
   const [showTrackingMenu, setShowTrackingMenu] = useState(false);
 
   const trackingPanelId = useId();
-  const [trackingMode, setTrackingMode] = useState<BenefitTrackingMode>(status.trackingMode ?? 'TRACK');
+  const propTrackingMode: BenefitTrackingMode = status.trackingMode ?? 'TRACK';
+  // Keep the control responsive after a server action succeeds before the
+  // parent supplies an updated status object, while falling back to fresh props
+  // as soon as status updates.
+  const [optimisticTrackingMode, setOptimisticTrackingMode] = useState<{
+    forStatus: DisplayBenefitStatus;
+    mode: BenefitTrackingMode;
+  } | null>(null);
+  const trackingMode =
+    optimisticTrackingMode?.forStatus === status
+      ? optimisticTrackingMode.mode
+      : propTrackingMode;
   const trackingModeLabel = TRACKING_MODE_OPTIONS.find((option) => option.mode === trackingMode)?.label ?? 'Track every cycle';
-
-  // The tracking action revalidates the server data, but this card can remain
-  // mounted in the dashboard's local mirror. Keep the control responsive until
-  // the parent receives fresh props, while still treating the server action as
-  // the source of truth (only update after it succeeds).
-  useEffect(() => {
-    setTrackingMode(status.trackingMode ?? 'TRACK');
-  }, [status.trackingMode]);
 
   const handleTrackingModeChange = (mode: BenefitTrackingMode) => {
     if (mode === trackingMode) {
@@ -87,7 +90,7 @@ export default function BenefitCardClient({ status, onStatusChange, onDelete, on
       try {
         setActionError(null);
         await setBenefitTrackingModeAction(formData);
-        setTrackingMode(mode);
+        setOptimisticTrackingMode({ forStatus: status, mode });
         setShowTrackingMenu(false);
         onTrackingModeChange?.(status.id, previousMode, mode);
       } catch (error) {

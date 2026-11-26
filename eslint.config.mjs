@@ -21,10 +21,6 @@ const eslintConfig = [
   {
     rules: {
       "@typescript-eslint/no-explicit-any": "off",
-      "react-hooks/error-boundaries": "off",
-      "react-hooks/purity": "off",
-      "react-hooks/preserve-manual-memoization": "off",
-      "react-hooks/set-state-in-effect": "off",
     },
   },
 ];

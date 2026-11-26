@@ -2,7 +2,7 @@
 // Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import BenefitCardClient from '@/components/BenefitCardClient';
 import CategoryBenefitsGroup from '@/components/CategoryBenefitsGroup';
 import EmptyState from '@/components/ui/EmptyState';
@@ -33,6 +33,8 @@ interface BenefitsDisplayProps {
   cardCount?: number;
   notifyBenefitExpiration?: boolean;
   notifyExpirationDays?: number;
+  nowIso?: string;
+  initialRescueOnly?: boolean;
 }
 
 export default function BenefitsDisplayClient({
@@ -47,6 +49,8 @@ export default function BenefitsDisplayClient({
   cardCount = 0,
   notifyBenefitExpiration = false,
   notifyExpirationDays = 7,
+  nowIso,
+  initialRescueOnly = false,
 }: BenefitsDisplayProps) {
   const [activeTab, setActiveTab] = useState('upcoming');
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,13 +63,8 @@ export default function BenefitsDisplayClient({
   const [isReminderPromptDismissed, setIsReminderPromptDismissed] = useState(false);
 
   const [viewMode, setViewMode] = useState<'category' | 'card'>('card');
-  const [rescueOnly, setRescueOnly] = useState(false);
-  const [now, setNow] = useState<Date | null>(null);
-
-  useEffect(() => {
-    setNow(new Date());
-    if (new URLSearchParams(window.location.search).get('rescue') === '1') setRescueOnly(true);
-  }, []);
+  const [rescueOnly, setRescueOnly] = useState(initialRescueOnly);
+  const [now] = useState(() => (nowIso ? new Date(nowIso) : new Date()));
   const [sortMode, setSortMode] = useState<'expires' | 'value' | 'card'>('expires');
   const [localUpcomingBenefits, setLocalUpcomingBenefits] = useState(upcomingBenefits);
   const [localCompletedBenefits, setLocalCompletedBenefits] = useState(completedBenefits);
@@ -97,11 +96,12 @@ export default function BenefitsDisplayClient({
       .sort((a, b) => b.netRoi - a.netRoi || b.claimedValue - a.claimedValue);
   }, [cardLevelRoi, localUpcomingBenefits, localCompletedBenefits]);
 
+  const nowMs = now.getTime();
   const reminderWindowDays = Math.max(1, notifyExpirationDays || 7);
-  const reminderWindowEnd = Date.now() + reminderWindowDays * 24 * 60 * 60 * 1000;
+  const reminderWindowEnd = nowMs + reminderWindowDays * 24 * 60 * 60 * 1000;
   const expiringReminderBenefitCount = localUpcomingBenefits.filter((status) => {
     const endTime = new Date(status.cycleEndDate).getTime();
-    return Number.isFinite(endTime) && endTime >= Date.now() && endTime <= reminderWindowEnd;
+    return Number.isFinite(endTime) && endTime >= nowMs && endTime <= reminderWindowEnd;
   }).length;
   const shouldShowReminderPrompt = cardCount > 0 && !notifyBenefitExpiration && expiringReminderBenefitCount > 0 && !isReminderPromptDismissed;
 
@@ -302,7 +302,7 @@ export default function BenefitsDisplayClient({
 
 
   const rescueSummary = useMemo(
-    () => (now ? summarizeYearEndRescue(localUpcomingBenefits, now) : null),
+    () => summarizeYearEndRescue(localUpcomingBenefits, now),
     [localUpcomingBenefits, now]
   );
 
@@ -322,7 +322,7 @@ export default function BenefitsDisplayClient({
       const categoryMatch = !filterCategory || status.benefit.category === filterCategory;
       const cardKey = status.benefit.creditCard?.id ?? CUSTOM_BENEFITS_CARD_NAME;
       const cardMatch = !filterCardId || cardKey === filterCardId;
-      const rescueMatch = !rescueOnly || !now || closesAtYearEnd(status.cycleEndDate, now.getUTCFullYear());
+      const rescueMatch = !rescueOnly || closesAtYearEnd(status.cycleEndDate, now.getUTCFullYear());
       return descMatch && categoryMatch && cardMatch && rescueMatch;
     });
   };
