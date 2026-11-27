@@ -79,6 +79,11 @@ export function parseDateInput(value: FormDataEntryValue | null): Date | null {
   return parseIsoDateOnly(value);
 }
 
+function clampedUtcDate(year: number, month: number, day: number): Date {
+  const lastDay = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(year, month, Math.min(day, lastDay)));
+}
+
 export function deriveNextAnnualFeeDueDate(
   openedDate: Date | string | null | undefined,
   referenceDate: Date = new Date()
@@ -87,18 +92,18 @@ export function deriveNextAnnualFeeDueDate(
   if (!opened) return null;
 
   const reference = toUtcDate(referenceDate) ?? new Date();
-  let dueDate = new Date(Date.UTC(
+  let dueDate = clampedUtcDate(
     reference.getUTCFullYear(),
     opened.getUTCMonth(),
     opened.getUTCDate()
-  ));
+  );
 
   if (dueDate.getTime() < reference.getTime()) {
-    dueDate = new Date(Date.UTC(
+    dueDate = clampedUtcDate(
       reference.getUTCFullYear() + 1,
       opened.getUTCMonth(),
       opened.getUTCDate()
-    ));
+    );
   }
 
   return dueDate;

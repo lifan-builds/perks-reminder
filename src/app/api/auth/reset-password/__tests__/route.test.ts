@@ -19,10 +19,12 @@ jest.mock('bcryptjs', () => ({ hash: jest.fn() }));
 
 const token = 'reset-token';
 const email = 'user@example.com';
+const userId = 'user-1';
 const now = new Date('2026-01-01T00:00:00.000Z');
 const expires = new Date('2026-01-01T01:00:00.000Z');
 const deleteMany = jest.fn();
 const update = jest.fn();
+const deleteSessions = jest.fn();
 
 function resetPassword() {
   return POST(new Request('http://localhost/api/auth/reset-password', {
@@ -37,15 +39,18 @@ describe('POST /api/auth/reset-password', () => {
     jest.useFakeTimers().setSystemTime(now);
     (prisma.passwordResetToken.findUnique as jest.Mock).mockResolvedValue({ email, expires });
     (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
+    update.mockResolvedValue({ id: userId });
+    deleteSessions.mockResolvedValue({ count: 1 });
     (prisma.$transaction as jest.Mock).mockImplementation(async (operation) => operation({
       passwordResetToken: { deleteMany },
       user: { update },
+      session: { deleteMany: deleteSessions },
     }));
   });
 
   afterEach(() => jest.useRealTimers());
 
-  it('updates the password once when two requests try to claim the same token', async () => {
+  it('updates the password and revokes sessions once when two requests try to claim the same token', async () => {
     deleteMany.mockResolvedValueOnce({ count: 1 }).mockResolvedValueOnce({ count: 0 });
 
     const [accepted, rejected] = await Promise.all([resetPassword(), resetPassword()]);
@@ -59,8 +64,12 @@ describe('POST /api/auth/reset-password', () => {
     expect(update).toHaveBeenCalledWith({
       where: { email },
       data: { password: 'hashed-password', emailVerified: now },
+      select: { id: true },
     });
+    expect(deleteSessions).toHaveBeenCalledTimes(1);
+    expect(deleteSessions).toHaveBeenCalledWith({ where: { userId } });
     expect(deleteMany.mock.invocationCallOrder[0]).toBeLessThan(update.mock.invocationCallOrder[0]);
+    expect(update.mock.invocationCallOrder[0]).toBeLessThan(deleteSessions.mock.invocationCallOrder[0]);
   });
 
   it('checks expiration again after hashing', async () => {
@@ -75,6 +84,7 @@ describe('POST /api/auth/reset-password', () => {
     expect(response.status).toBe(400);
     expect(deleteMany).toHaveBeenCalledWith({ where: { token, expires: { gt: expires } } });
     expect(update).not.toHaveBeenCalled();
+    expect(deleteSessions).not.toHaveBeenCalled();
   });
 
   it('leaves the password untouched when claiming the token fails', async () => {
@@ -83,6 +93,7 @@ describe('POST /api/auth/reset-password', () => {
     try {
       expect((await resetPassword()).status).toBe(500);
       expect(update).not.toHaveBeenCalled();
+      expect(deleteSessions).not.toHaveBeenCalled();
     } finally {
       log.mockRestore();
     }

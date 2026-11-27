@@ -72,6 +72,15 @@ function deriveBenefitCycleCoordinates(
   }
 
   if (
+    benefit.frequency === BenefitFrequency.ONE_TIME &&
+    !benefit.startDate &&
+    !options.cardOpenedDate
+  ) {
+    warnings.push(`Skipping one-time benefit ${benefit.id}: no start date or card opened date.`);
+    return { rows: [], warnings };
+  }
+
+  if (
     benefit.frequency === BenefitFrequency.YEARLY &&
     benefit.cycleAlignment !== BenefitCycleAlignment.CALENDAR_FIXED &&
     !options.cardOpenedDate &&
@@ -140,18 +149,53 @@ export function materializeStandardBenefitStatusRows(
   };
 }
 
+function hasExplicitCalendarFixedWindow(
+  benefit: Pick<
+    BenefitCycleMaterializationInput,
+    'cycleAlignment' | 'fixedCycleStartMonth' | 'fixedCycleDurationMonths'
+  >
+): boolean {
+  return (
+    benefit.cycleAlignment === BenefitCycleAlignment.CALENDAR_FIXED &&
+    benefit.fixedCycleStartMonth != null &&
+    benefit.fixedCycleDurationMonths != null &&
+    benefit.fixedCycleStartMonth >= 1 &&
+    benefit.fixedCycleStartMonth <= 12 &&
+    benefit.fixedCycleDurationMonths > 0 &&
+    benefit.fixedCycleDurationMonths <= 12
+  );
+}
+
 function calculateMaterializedCycle(
   benefit: Omit<BenefitCycleMaterializationInput, 'userId'>,
   referenceDate: Date,
   cardOpenedDate: Date | null
 ): { cycleStartDate: Date; cycleEndDate: Date } {
-  const fixedCardCycle = benefit.creditCardId != null &&
-    benefit.cycleAlignment === BenefitCycleAlignment.CALENDAR_FIXED;
+  const multiYearDuration =
+    benefit.frequency === BenefitFrequency.YEARLY &&
+    benefit.fixedCycleDurationMonths != null &&
+    Number.isInteger(benefit.fixedCycleDurationMonths) &&
+    benefit.fixedCycleDurationMonths > 12
+      ? benefit.fixedCycleDurationMonths
+      : null;
+  const fixedCalendarCycle =
+    multiYearDuration === null &&
+    benefit.cycleAlignment === BenefitCycleAlignment.CALENDAR_FIXED &&
+    (benefit.creditCardId != null || hasExplicitCalendarFixedWindow(benefit));
   let cycle: { cycleStartDate: Date; cycleEndDate: Date };
   if (benefit.frequency === BenefitFrequency.ONE_TIME) {
-    cycle = calculateOneTimeBenefitLifetime(benefit.startDate ?? referenceDate);
-  } else if (!fixedCardCycle && !cardOpenedDate && benefit.startDate) {
-    cycle = calculateStandaloneBenefitCycle(benefit.frequency, referenceDate, benefit.startDate);
+    const anchor = benefit.startDate ?? cardOpenedDate;
+    if (!anchor) {
+      throw new Error(`One-time benefit ${benefit.id} requires a start date or card opened date.`);
+    }
+    cycle = calculateOneTimeBenefitLifetime(anchor);
+  } else if (!fixedCalendarCycle && !cardOpenedDate && benefit.startDate) {
+    cycle = calculateStandaloneBenefitCycle(
+      benefit.frequency,
+      referenceDate,
+      benefit.startDate,
+      multiYearDuration
+    );
   } else {
     cycle = calculateBenefitCycle(
       benefit.frequency,
@@ -172,7 +216,8 @@ function calculateMaterializedCycle(
 export function calculateStandaloneBenefitCycle(
   frequency: BenefitFrequency,
   referenceDate: Date,
-  startDate: Date
+  startDate: Date,
+  durationMonths?: number | null
 ): { cycleStartDate: Date; cycleEndDate: Date } {
   if (frequency === BenefitFrequency.ONE_TIME) {
     return calculateOneTimeBenefitLifetime(startDate);
@@ -192,7 +237,13 @@ export function calculateStandaloneBenefitCycle(
     return { cycleStartDate, cycleEndDate };
   }
 
-  const monthsPerCycle = monthsForFrequency(frequency);
+  const monthsPerCycle =
+    frequency === BenefitFrequency.YEARLY &&
+    durationMonths != null &&
+    Number.isInteger(durationMonths) &&
+    durationMonths > 12
+      ? durationMonths
+      : monthsForFrequency(frequency);
   const cycleStartAt = (index: number) => addClampedUtcMonths(anchor, index * monthsPerCycle);
   const monthDelta =
     (referenceDate.getUTCFullYear() - anchor.getUTCFullYear()) * 12 +

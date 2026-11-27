@@ -128,8 +128,13 @@ async function runCheckBenefitsLogic(dryRun = false) {
           AND pb."retiredAt" IS NULL
           AND NOT (
             c."openedDate" IS NULL
-            AND pb."frequency" = ${BenefitFrequency.YEARLY}::"BenefitFrequency"
-            AND pb."cycleAlignment" IS DISTINCT FROM ${BenefitCycleAlignment.CALENDAR_FIXED}::"BenefitCycleAlignment"
+            AND (
+              pb."frequency" = ${BenefitFrequency.ONE_TIME}::"BenefitFrequency"
+              OR (
+                pb."frequency" = ${BenefitFrequency.YEARLY}::"BenefitFrequency"
+                AND pb."cycleAlignment" IS DISTINCT FROM ${BenefitCycleAlignment.CALENDAR_FIXED}::"BenefitCycleAlignment"
+              )
+            )
           )
           AND EXISTS (
             SELECT 1

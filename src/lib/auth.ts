@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 lifan-builds and contributors. Perks Reminder; Section 7 attribution terms in ATTRIBUTION.md.
+import { createHash, createHmac, timingSafeEqual } from 'crypto';
 import { NextAuthOptions, DefaultSession } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from './prisma';
@@ -23,7 +24,22 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
+    sessionVersion?: string;
   }
+}
+
+export function computeSessionVersion(passwordHash: string | null | undefined): string {
+  if (!passwordHash) return 'oauth';
+  const secret = process.env.NEXTAUTH_SECRET || process.env.AUTH_SECRET;
+  return secret
+    ? createHmac('sha256', secret).update(passwordHash).digest('hex').slice(0, 32)
+    : createHash('sha256').update(passwordHash).digest('hex').slice(0, 32);
+}
+
+function sessionVersionsMatch(actual: string, expected: string): boolean {
+  const left = Buffer.from(actual);
+  const right = Buffer.from(expected);
+  return left.length === right.length && timingSafeEqual(left, right);
 }
 
 const canonicalNextAuthUrl = getCanonicalAuthUrl(process.env.NEXTAUTH_URL);
@@ -154,12 +170,41 @@ export const authOptions: NextAuthOptions = {
       return baseUrl;
     },
     async jwt({ token, user }) {
+      const userId = user?.id ?? token.id;
+      if (!userId) {
+        throw new Error('SESSION_REVOKED');
+      }
+
+      const dbUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { password: true },
+      });
+
+      if (!dbUser) {
+        throw new Error('SESSION_REVOKED');
+      }
+
+      const currentSessionVersion = computeSessionVersion(dbUser.password);
+
       if (user) {
         token.id = user.id;
+        token.sessionVersion = currentSessionVersion;
+        return token;
       }
+
+      if (
+        typeof token.sessionVersion !== 'string' ||
+        !sessionVersionsMatch(token.sessionVersion, currentSessionVersion)
+      ) {
+        throw new Error('SESSION_REVOKED');
+      }
+
       return token;
     },
     async session({ session, token }) {
+      if (!token?.id || typeof token.sessionVersion !== 'string') {
+        return null as unknown as typeof session;
+      }
       session.user.id = token.id as string;
       return session;
     },

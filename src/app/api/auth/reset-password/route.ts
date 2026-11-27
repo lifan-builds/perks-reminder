@@ -50,9 +50,14 @@ export async function POST(request: Request) {
 
       if (count !== 1) return false;
 
-      await transaction.user.update({
+      const updatedUser = await transaction.user.update({
         where: { email: resetToken.email },
         data: { password: hashedPassword, emailVerified: new Date() },
+        select: { id: true },
+      });
+
+      await transaction.session.deleteMany({
+        where: { userId: updatedUser.id },
       });
       return true;
     });

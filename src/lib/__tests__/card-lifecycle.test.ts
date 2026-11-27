@@ -17,6 +17,18 @@ describe('card lifecycle helpers', () => {
     expect(result?.toISOString()).toBe('2027-03-15T00:00:00.000Z');
   });
 
+  it('clamps Feb 29 card anniversaries to Feb 28 in non-leap years and restores Feb 29 in leap years', () => {
+    const opened = new Date('2024-02-29T00:00:00Z');
+    expect(deriveNextAnnualFeeDueDate(opened, new Date('2025-01-15T00:00:00Z'))?.toISOString())
+      .toBe('2025-02-28T00:00:00.000Z');
+    expect(deriveNextAnnualFeeDueDate(opened, new Date('2025-02-28T00:00:00Z'))?.toISOString())
+      .toBe('2025-02-28T00:00:00.000Z');
+    expect(deriveNextAnnualFeeDueDate(opened, new Date('2025-03-01T00:00:00Z'))?.toISOString())
+      .toBe('2026-02-28T00:00:00.000Z');
+    expect(deriveNextAnnualFeeDueDate(opened, new Date('2027-03-01T00:00:00Z'))?.toISOString())
+      .toBe('2028-02-29T00:00:00.000Z');
+  });
+
   it('strictly parses real date-only values', () => {
     expect(parseIsoDateOnly('2026-02-28')?.toISOString()).toBe('2026-02-28T00:00:00.000Z');
     expect(parseIsoDateOnly('2026-02-30')).toBeNull();

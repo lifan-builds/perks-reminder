@@ -264,6 +264,36 @@ describe('calculateBenefitCycle', () => {
       }).toThrow('Unsupported frequency for recurring benefit cycle calculation: ONE_TIME');
     });
 
+    it('should reject ONE_TIME frequency even when CALENDAR_FIXED parameters are supplied', () => {
+      const refDate = utcDate(2026, 7, 1);
+      expect(() => {
+        calculateBenefitCycle(
+          BenefitFrequency.ONE_TIME,
+          refDate,
+          null,
+          BenefitCycleAlignment.CALENDAR_FIXED,
+          1,
+          6
+        );
+      }).toThrow('Unsupported frequency for recurring benefit cycle calculation: ONE_TIME');
+    });
+
+    it.each([
+      ['WEEKLY', BenefitFrequency.WEEKLY, null, null, null],
+      ['CALENDAR_FIXED', BenefitFrequency.YEARLY, BenefitCycleAlignment.CALENDAR_FIXED, 1, 6],
+      ['MONTHLY', BenefitFrequency.MONTHLY, null, null, null],
+    ] as const)('should throw a controlled error for invalid referenceDate in %s branch', (_label, freq, alignment, startMonth, duration) => {
+      expect(() => {
+        calculateBenefitCycle(freq, new Date('invalid'), null, alignment, startMonth, duration);
+      }).toThrow('Could not calculate valid benefit cycle dates.');
+    });
+
+    it('should throw a controlled error for invalid cardOpenedDate', () => {
+      expect(() => {
+        calculateBenefitCycle(BenefitFrequency.YEARLY, utcDate(2026, 7, 1), new Date('invalid'));
+      }).toThrow('Could not calculate valid benefit cycle dates.');
+    });
+
     // The function itself has internal checks for invalid dates and logs errors.
     // Here we ensure it doesn't produce an end date before start date.
     // (Specific internal error conditions leading to NaN are hard to trigger from outside
@@ -333,27 +363,17 @@ describe('calculateOneTimeBenefitLifetime', () => {
     expect(cycleEndDate.getUTCMilliseconds()).toBe(999);
   });
 
-  it('should handle dates at the end of a month correctly, e.g., leap year Feb 29', () => {
+  it('should clamp leap year Feb 29 expiry to Feb 28 in non-leap target year', () => {
     const startDate = utcDate(2024, 2, 29); // Feb 29, 2024 (leap year)
     const { cycleStartDate, cycleEndDate } = calculateOneTimeBenefitLifetime(startDate);
     expect(cycleStartDate).toEqual(startDate);
+    expect(cycleEndDate.toISOString()).toBe('2034-02-28T23:59:59.999Z');
+  });
 
-    // const expectedEndDate = utcDate(2034, 2, 29); // Unused variable
-                                                  // The implementation actually preserves day, so this would be Feb 29, 2034 if new Date() handles it.
-                                                  // Let's check the actual behavior based on the implementation.
-                                                  // Implementation uses: Date.UTC(year + 10, month, day, 23, 59, 59, 999)
-                                                  // Date.UTC handles month overflow, but not really day overflow if month is valid.
-                                                  // For Feb 29, 2034, it becomes March 1, 2034 in JS Date if not careful.
-                                                  // The current implementation passes the original day directly.
-    
-    // const checkDate = new Date(Date.UTC(2034, 1, 29)); // Unused variable. This becomes March 1, 2034, month is 0-indexed (1 = Feb)
-    // So, if startDate is Feb 29, expectedEndDate will be March 1, 2034, 23:59:59.999
-    // This is because Date.UTC(2034, 1 (Feb), 29) results in March 1st for a non-leap year.
-
-    expect(cycleEndDate.getUTCFullYear()).toBe(2034);
-    // Due to Date.UTC behavior for non-existent dates like Feb 29 in a non-leap year:
-    expect(cycleEndDate.getUTCMonth()).toBe(2); // March (0-indexed)
-    expect(cycleEndDate.getUTCDate()).toBe(1);   // 1st
+  it('should throw on invalid one-time start date', () => {
+    expect(() => calculateOneTimeBenefitLifetime(new Date('invalid'))).toThrow(
+      'Could not calculate valid one-time benefit lifetime dates.'
+    );
   });
 
    it('should handle Dec 31 correctly', () => {

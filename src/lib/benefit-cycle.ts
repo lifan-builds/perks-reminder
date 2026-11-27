@@ -22,6 +22,19 @@ export function calculateBenefitCycle(
   fixedCycleStartMonth?: number | null,
   fixedCycleDurationMonths?: number | null
 ): { cycleStartDate: Date; cycleEndDate: Date } {
+  if (frequency === BenefitFrequency.ONE_TIME) {
+    console.error("calculateBenefitCycle called with unsupported frequency for recurring benefits:", frequency);
+    throw new Error(`Unsupported frequency for recurring benefit cycle calculation: ${frequency}`);
+  }
+
+  if (
+    Number.isNaN(referenceDate.getTime()) ||
+    (cardOpenedDate !== null && Number.isNaN(cardOpenedDate.getTime()))
+  ) {
+    console.error("Calculated invalid date for benefit cycle", { frequency, referenceDate, cardOpenedDate, cycleAlignment, fixedCycleStartMonth, fixedCycleDurationMonths });
+    throw new Error("Could not calculate valid benefit cycle dates.");
+  }
+
   const refYear = referenceDate.getUTCFullYear();
   const refMonth = referenceDate.getUTCMonth(); // 0-indexed
 
@@ -160,7 +173,6 @@ export function calculateBenefitCycle(
         }
         break;
 
-      case BenefitFrequency.ONE_TIME:
       default:
         console.error("calculateBenefitCycle called with unsupported frequency for recurring benefits:", frequency);
         throw new Error(`Unsupported frequency for recurring benefit cycle calculation: ${frequency}`);
@@ -212,19 +224,22 @@ export function calculateBenefitCycle(
 export function calculateOneTimeBenefitLifetime(
     benefitStartDate: Date
 ): { cycleStartDate: Date; cycleEndDate: Date } {
-    const cycleStartDate = new Date(benefitStartDate.getTime()); // Use the provided start date
-    // Set an arbitrary long lifetime, e.g., 10 years, for the 'cycle' end
-    const cycleEndDate = new Date(Date.UTC(
-        benefitStartDate.getUTCFullYear() + 10,
-        benefitStartDate.getUTCMonth(),
-        benefitStartDate.getUTCDate(),
-        23, 59, 59, 999
-    ));
-
-    if (isNaN(cycleStartDate.getTime()) || isNaN(cycleEndDate.getTime())) {
+    if (Number.isNaN(benefitStartDate.getTime())) {
         console.error("Calculated invalid date for one-time benefit lifetime", { benefitStartDate });
         throw new Error("Could not calculate valid one-time benefit lifetime dates.");
     }
+
+    const cycleStartDate = new Date(benefitStartDate.getTime()); // Use the provided start date
+    // Set an arbitrary long lifetime (10 years), clamping leap-day starts (e.g. Feb 29 -> Feb 28)
+    const endYear = benefitStartDate.getUTCFullYear() + 10;
+    const endMonth = benefitStartDate.getUTCMonth();
+    const lastDayOfEndMonth = new Date(Date.UTC(endYear, endMonth + 1, 0)).getUTCDate();
+    const cycleEndDate = new Date(Date.UTC(
+        endYear,
+        endMonth,
+        Math.min(benefitStartDate.getUTCDate(), lastDayOfEndMonth),
+        23, 59, 59, 999
+    ));
 
     return { cycleStartDate, cycleEndDate };
 }
