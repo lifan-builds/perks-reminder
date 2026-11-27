@@ -8,30 +8,31 @@ jest.mock("next/navigation", () => ({ usePathname: () => mockPathname() }));
 jest.mock("next/script", () => function MockScript(props: { id?: string; src?: string }) {
   return <span data-testid={props.id ?? "script"} data-src={props.src} />;
 });
-jest.mock("@vercel/analytics/next", () => ({ Analytics: () => <span data-testid="vercel-analytics" /> }));
 
 describe("pathname-aware telemetry", () => {
-  const originalEnv = process.env.NEXT_PUBLIC_VERCEL_ENV;
+  const originalVercelEnv = process.env.NEXT_PUBLIC_VERCEL_ENV;
+  const originalSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
   beforeEach(() => {
     mockPathname.mockReturnValue("/");
     process.env.NEXT_PUBLIC_VERCEL_ENV = "production";
+    delete process.env.NEXT_PUBLIC_SITE_URL;
   });
   afterAll(() => {
-    process.env.NEXT_PUBLIC_VERCEL_ENV = originalEnv;
+    process.env.NEXT_PUBLIC_VERCEL_ENV = originalVercelEnv;
+    process.env.NEXT_PUBLIC_SITE_URL = originalSiteUrl;
   });
 
-  it.each([undefined, "preview", "development"])("loads zero telemetry outside a Vercel production deployment (%p)", (environment) => {
+  it.each([undefined, "preview", "development"])("loads zero telemetry outside a production deployment (%p)", (environment) => {
     if (environment === undefined) delete process.env.NEXT_PUBLIC_VERCEL_ENV;
     else process.env.NEXT_PUBLIC_VERCEL_ENV = environment;
     const { container } = render(<PathAwareTelemetry />);
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("loads cookieless first-party telemetry outside the private handoff without Google gtag", () => {
+  it("loads cookieless first-party telemetry outside the private handoff without Google gtag or Vercel insights", () => {
     render(<PathAwareTelemetry />);
-    expect(screen.getByTestId("clifan-telemetry")).toHaveAttribute("data-src", "https://clifan-umami.vercel.app/script.js");
+    expect(screen.getByTestId("clifan-telemetry")).toHaveAttribute("data-src", "https://stats.clifan.com/script.js");
     expect(screen.queryByTestId("google-analytics-loader")).not.toBeInTheDocument();
-    expect(screen.getByTestId("vercel-analytics")).toBeInTheDocument();
   });
 
   it("loads zero telemetry scripts on the exact handoff path", () => {
@@ -44,6 +45,5 @@ describe("pathname-aware telemetry", () => {
     mockPathname.mockReturnValue("/integrations/amex-sync-history");
     render(<PathAwareTelemetry />);
     expect(screen.getByTestId("clifan-telemetry")).toBeInTheDocument();
-    expect(screen.getByTestId("vercel-analytics")).toBeInTheDocument();
   });
 });
