@@ -107,13 +107,13 @@ async function main() {
     },
     {
       name: 'alaska_mileage_plan',
-      displayName: 'Alaska Mileage Plan',
+      displayName: 'Atmos Rewards',
       type: LoyaltyProgramType.AIRLINE,
       company: 'Alaska Airlines',
-      expirationMonths: 24,
-      hasExpiration: true,
+      expirationMonths: null,
+      hasExpiration: false,
       website: 'https://www.alaskaair.com/mileageplan',
-      description: 'Miles expire 24 months after earning or redeeming activity'
+      description: 'Atmos Rewards points do not expire due to account inactivity.'
     },
     {
       name: 'jal_mileage_bank',
