@@ -1,0 +1,126 @@
+name: Daily crons
+
+on:
+  schedule:
+    # Replicates vercel.json crons:
+    # - /api/cron/check-benefits at 05:00 UTC daily
+    # - /api/cron/send-notifications at 05:30 UTC daily
+    - cron: '0 5 * * *'
+    - cron: '30 5 * * *'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Which cron endpoint to invoke'
+        required: true
+        type: choice
+        default: check-benefits
+        options:
+          - check-benefits
+          - send-notifications
+          - both
+      dry_run:
+        description: 'Pass ?dryRun=true (recommended for manual testing; scheduled runs always execute live)'
+        required: true
+        type: boolean
+        default: true
+
+permissions: {}
+
+concurrency:
+  group: daily-crons-${{ github.event.schedule || inputs.job || 'manual' }}
+  cancel-in-progress: false
+
+jobs:
+  check-benefits:
+    name: Cron — check-benefits
+    if: >-
+      (github.event_name == 'schedule' && github.event.schedule == '0 5 * * *') ||
+      (github.event_name == 'workflow_dispatch' && (inputs.job == 'check-benefits' || inputs.job == 'both'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Invoke /api/cron/check-benefits
+        env:
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${APP_BASE_URL}" ] || [ -z "${CRON_SECRET}" ]; then
+            echo "Missing required secrets: APP_BASE_URL and CRON_SECRET must be set." >&2
+            exit 1
+          fi
+
+          BASE_URL="${APP_BASE_URL%/}"
+          # Wake sleeping free-tier containers before hitting the cron endpoint.
+          curl --silent --show-error --fail --max-time 60 \
+            --retry 3 --retry-delay 5 --retry-all-errors \
+            "${BASE_URL}/landing" > /dev/null
+
+          URL="${BASE_URL}/api/cron/check-benefits"
+          if [ "${DRY_RUN}" = "true" ]; then
+            URL="${URL}?dryRun=true"
+          fi
+
+          HTTP_CODE=$(curl --silent --show-error --max-time 120 \
+            -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Cache-Control: no-cache" \
+            -o response.json \
+            -w "%{http_code}" \
+            "${URL}")
+
+          echo "HTTP ${HTTP_CODE}"
+          cat response.json
+          echo ""
+          if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -ge 300 ]; then
+            echo "check-benefits cron failed with HTTP ${HTTP_CODE}" >&2
+            exit 1
+          fi
+
+  send-notifications:
+    name: Cron — send-notifications
+    if: >-
+      (github.event_name == 'schedule' && github.event.schedule == '30 5 * * *') ||
+      (github.event_name == 'workflow_dispatch' && (inputs.job == 'send-notifications' || inputs.job == 'both'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Invoke /api/cron/send-notifications
+        env:
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && 'true' || 'false' }}
+        run: |
+          set -euo pipefail
+          if [ -z "${APP_BASE_URL}" ] || [ -z "${CRON_SECRET}" ]; then
+            echo "Missing required secrets: APP_BASE_URL and CRON_SECRET must be set." >&2
+            exit 1
+          fi
+
+          BASE_URL="${APP_BASE_URL%/}"
+          # Wake sleeping free-tier containers before hitting the cron endpoint.
+          curl --silent --show-error --fail --max-time 60 \
+            --retry 3 --retry-delay 5 --retry-all-errors \
+            "${BASE_URL}/landing" > /dev/null
+
+          URL="${BASE_URL}/api/cron/send-notifications"
+          if [ "${DRY_RUN}" = "true" ]; then
+            URL="${URL}?dryRun=true"
+          fi
+
+          HTTP_CODE=$(curl --silent --show-error --max-time 120 \
+            -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Cache-Control: no-cache" \
+            -o response.json \
+            -w "%{http_code}" \
+            "${URL}")
+
+          echo "HTTP ${HTTP_CODE}"
+          cat response.json
+          echo ""
+          if [ "${HTTP_CODE}" -lt 200 ] || [ "${HTTP_CODE}" -ge 300 ]; then
+            echo "send-notifications cron failed with HTTP ${HTTP_CODE}" >&2
+            exit 1
+          fi

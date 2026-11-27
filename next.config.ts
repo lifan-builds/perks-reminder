@@ -10,6 +10,7 @@ const appDir = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig: NextConfig = {
   // Lock workspace root so Vercel/Next doesn't pick a parent lockfile (avoids deploy failures)
   outputFileTracingRoot: appDir,
+  output: 'standalone',
   /* config options here */
   webpack: (config, { isServer }) => {
     if (isServer) {
